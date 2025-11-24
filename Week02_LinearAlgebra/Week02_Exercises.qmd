@@ -1,0 +1,136 @@
+# Week 2 Exercises {#sec-week02-exercises}
+
+## Computational Problems
+
+### Exercise 2.1: Computing Matrix Rank
+
+For each matrix, compute the rank by hand and verify in R:
+
+a) $\mathbf{A} = \begin{bmatrix} 1 & 2 \\ 3 & 6 \end{bmatrix}$
+
+b) $\mathbf{B} = \begin{bmatrix} 1 & 0 & 2 \\ 0 & 1 & 3 \\ 0 & 0 & 0 \end{bmatrix}$
+
+c) $\mathbf{C} = \begin{bmatrix} 1 & 2 & 3 \\ 2 & 4 & 6 \\ 1 & 2 & 3 \end{bmatrix}$
+
+### Exercise 2.2: Linear Independence
+
+Determine if the following sets of vectors are linearly independent:
+
+a) $\mathbf{v}_1 = \begin{bmatrix} 1 \\ 0 \\ 0 \end{bmatrix}$, $\mathbf{v}_2 = \begin{bmatrix} 0 \\ 1 \\ 0 \end{bmatrix}$, $\mathbf{v}_3 = \begin{bmatrix} 0 \\ 0 \\ 1 \end{bmatrix}$
+
+b) $\mathbf{v}_1 = \begin{bmatrix} 1 \\ 2 \end{bmatrix}$, $\mathbf{v}_2 = \begin{bmatrix} 2 \\ 4 \end{bmatrix}$
+
+c) $\mathbf{v}_1 = \begin{bmatrix} 1 \\ 1 \\ 0 \end{bmatrix}$, $\mathbf{v}_2 = \begin{bmatrix} 0 \\ 1 \\ 1 \end{bmatrix}$, $\mathbf{v}_3 = \begin{bmatrix} 1 \\ 0 \\ -1 \end{bmatrix}$
+
+### Exercise 2.3: Matrix Inversion
+
+a) Compute the inverse of $\mathbf{A} = \begin{bmatrix} 3 & 1 \\ 5 & 2 \end{bmatrix}$ by hand
+
+b) Verify: $\mathbf{A}\mathbf{A}^{-1} = \mathbf{I}$
+
+c) Solve the system: $\mathbf{A}\mathbf{x} = \begin{bmatrix} 7 \\ 12 \end{bmatrix}$
+
+## Applied Problems
+
+### Exercise 2.4: Beef Cattle Design Matrix
+
+Four beef steers are assigned to two diets:
+
+| Steer | Diet | Weight Gain (kg) |
+|-------|------|------------------|
+| 1     | A    | 120              |
+| 2     | A    | 125              |
+| 3     | B    | 135              |
+| 4     | B    | 140              |
+
+a) Construct the design matrix for the effects model: $y_{ij} = \mu + \delta_i + e_{ij}$
+
+b) Compute the rank of $\mathbf{X}$ and $\mathbf{X}'\mathbf{X}$
+
+c) Is $\mathbf{X}'\mathbf{X}$ invertible? Why or why not?
+
+d) Use `ginv()` to find one solution to the normal equations
+
+e) Compute the estimable contrast: Diet B - Diet A
+
+### Exercise 2.5: Dairy Sire Evaluation
+
+Three dairy bulls have daughters with the following milk yields:
+
+- **Bull 1**: 3 daughters (yields: 28, 30, 29 kg/day)
+- **Bull 2**: 2 daughters (yields: 32, 33 kg/day)
+- **Bull 3**: 1 daughter (yield: 27 kg/day)
+
+Model: $y_{ij} = \mu + s_i + e_{ij}$ where $s_i$ is the sire effect
+
+a) Create vectors for `y` (observations) and `sire` (factor)
+
+b) Build the design matrix using `model.matrix(~ sire)`
+
+c) Check if $\mathbf{X}'\mathbf{X}$ is singular
+
+d) Solve using generalized inverse
+
+e) Compute sire differences (Bull 2 - Bull 1, Bull 3 - Bull 1)
+
+f) Compare with cell means model results
+
+### Exercise 2.6: Generalized Inverse Properties
+
+Given matrix $\mathbf{A} = \begin{bmatrix} 1 & 2 \\ 2 & 4 \end{bmatrix}$:
+
+a) Verify this matrix is rank deficient
+
+b) Compute $\mathbf{A}^{-}$ using `ginv()`
+
+c) Verify the property: $\mathbf{A}\mathbf{A}^{-}\mathbf{A} = \mathbf{A}$
+
+d) Show that $\mathbf{A}\mathbf{A}^{-} \neq \mathbf{I}$
+
+e) Compute $(\mathbf{A}'\mathbf{A})^{-}$ and verify it satisfies the g-inverse property
+
+## Theoretical Problems
+
+### Exercise 2.7: Rank Properties
+
+Prove the following properties:
+
+a) For any matrix $\mathbf{A}$: $r(\mathbf{A}') = r(\mathbf{A})$
+
+b) For matrices $\mathbf{A}$ and $\mathbf{B}$: $r(\mathbf{A}'\mathbf{A}) = r(\mathbf{A})$
+
+c) If $\mathbf{A}$ is $n \times p$ with $r(\mathbf{A}) = p$, then $\mathbf{A}'\mathbf{A}$ is invertible
+
+### Exercise 2.8: Solving Systems
+
+For each system $\mathbf{A}\mathbf{x} = \mathbf{b}$, determine if there is:
+(i) unique solution, (ii) infinite solutions, or (iii) no solution
+
+a) $\mathbf{A} = \begin{bmatrix} 1 & 2 \\ 2 & 4 \end{bmatrix}$, $\mathbf{b} = \begin{bmatrix} 3 \\ 6 \end{bmatrix}$
+
+b) $\mathbf{A} = \begin{bmatrix} 1 & 2 \\ 2 & 4 \end{bmatrix}$, $\mathbf{b} = \begin{bmatrix} 3 \\ 5 \end{bmatrix}$
+
+c) $\mathbf{A} = \begin{bmatrix} 1 & 2 \\ 3 & 4 \end{bmatrix}$, $\mathbf{b} = \begin{bmatrix} 5 \\ 11 \end{bmatrix}$
+
+## Challenge Problem
+
+### Exercise 2.9: Estimability Preview
+
+Consider the model $\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}$ where:
+
+$$
+\mathbf{X} = \begin{bmatrix} 1 & 1 & 0 \\ 1 & 1 & 0 \\ 1 & 0 & 1 \\ 1 & 0 & 1 \end{bmatrix}, \quad
+\boldsymbol{\beta} = \begin{bmatrix} \mu \\ \alpha_1 \\ \alpha_2 \end{bmatrix}
+$$
+
+a) Show that $\mathbf{X}$ is not full rank
+
+b) Show that $\mu$ alone is not estimable (depends on choice of g-inverse)
+
+c) Show that $\alpha_1 - \alpha_2$ IS estimable (invariant to choice of g-inverse)
+
+**Hint**: Try two different g-inverses and compute both $\mu$ and $\alpha_1 - \alpha_2$ with each.
+
+---
+
+Solutions provided in `Week02_Solutions.qmd` and Appendix E.

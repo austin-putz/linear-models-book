@@ -1,0 +1,261 @@
+# Week 2 Solutions {#sec-week02-solutions}
+
+## Exercise 2.1: Computing Matrix Rank
+
+**a)** $\mathbf{A} = \begin{bmatrix} 1 & 2 \\ 3 & 6 \end{bmatrix}$
+
+Row 2 = 3 × Row 1, so rows are linearly dependent. **Rank = 1**
+
+```{r}
+A <- matrix(c(1, 3, 2, 6), nrow = 2, ncol = 2)
+print(paste("Rank:", qr(A)$rank))
+```
+
+**b)** $\mathbf{B} = \begin{bmatrix} 1 & 0 & 2 \\ 0 & 1 & 3 \\ 0 & 0 & 0 \end{bmatrix}$
+
+First two rows are independent, third row is all zeros. **Rank = 2**
+
+```{r}
+B <- matrix(c(1, 0, 0, 0, 1, 0, 2, 3, 0), nrow = 3, ncol = 3)
+print(paste("Rank:", qr(B)$rank))
+```
+
+**c)** All rows are multiples of each other. **Rank = 1**
+
+```{r}
+C <- matrix(c(1, 2, 1, 2, 4, 2, 3, 6, 3), nrow = 3, ncol = 3)
+print(paste("Rank:", qr(C)$rank))
+```
+
+---
+
+## Exercise 2.2: Linear Independence
+
+**a)** Standard basis vectors - **linearly independent**
+
+**b)** $\mathbf{v}_2 = 2\mathbf{v}_1$ - **linearly dependent**
+
+**c)** Check if $c_1\mathbf{v}_1 + c_2\mathbf{v}_2 + c_3\mathbf{v}_3 = \mathbf{0}$ has only trivial solution:
+
+```{r}
+v1 <- c(1, 1, 0)
+v2 <- c(0, 1, 1)
+v3 <- c(1, 0, -1)
+V <- cbind(v1, v2, v3)
+print(paste("Rank:", qr(V)$rank))
+```
+
+Rank = 3, so **linearly independent**.
+
+---
+
+## Exercise 2.3: Matrix Inversion
+
+**a)** For $\mathbf{A} = \begin{bmatrix} 3 & 1 \\ 5 & 2 \end{bmatrix}$:
+
+$\det(\mathbf{A}) = (3)(2) - (1)(5) = 1$
+
+$$
+\mathbf{A}^{-1} = \frac{1}{1}\begin{bmatrix} 2 & -1 \\ -5 & 3 \end{bmatrix} = \begin{bmatrix} 2 & -1 \\ -5 & 3 \end{bmatrix}
+$$
+
+**b)** Verify:
+
+```{r}
+A <- matrix(c(3, 5, 1, 2), nrow = 2, ncol = 2)
+A_inv <- solve(A)
+print("A inverse:")
+print(A_inv)
+print("A * A_inv:")
+print(A %*% A_inv)
+```
+
+**c)** Solve $\mathbf{A}\mathbf{x} = \mathbf{b}$:
+
+```{r}
+b <- c(7, 12)
+x <- A_inv %*% b
+print("Solution:")
+print(x)
+```
+
+---
+
+## Exercise 2.4: Beef Cattle Design Matrix
+
+```{r}
+# Data
+diet <- factor(c("A", "A", "B", "B"))
+gain <- c(120, 125, 135, 140)
+
+# a) Design matrix (effects model)
+X <- model.matrix(~ diet)
+print("Design matrix:")
+print(X)
+
+# b) Rank
+print(paste("Rank of X:", qr(X)$rank))
+XtX <- t(X) %*% X
+print(paste("Rank of X'X:", qr(XtX)$rank))
+
+# c) Not invertible - rank deficient
+print(paste("Det(X'X):", det(XtX)))
+
+# d) Generalized inverse solution
+library(MASS)
+XtX_ginv <- ginv(XtX)
+Xty <- t(X) %*% gain
+b <- XtX_ginv %*% Xty
+print("Solution:")
+print(b)
+
+# e) Estimable contrast: Diet B - Diet A
+cell_means <- tapply(gain, diet, mean)
+contrast <- cell_means["B"] - cell_means["A"]
+print(paste("Diet B - Diet A:", contrast))
+```
+
+---
+
+## Exercise 2.5: Dairy Sire Evaluation
+
+```{r}
+# Data
+sire <- factor(c(rep(1, 3), rep(2, 2), 3))
+yield <- c(28, 30, 29, 32, 33, 27)
+
+# b) Design matrix
+X <- model.matrix(~ sire)
+print("Design matrix:")
+print(X)
+
+# c) Check singularity
+XtX <- t(X) %*% X
+print(paste("Rank of X'X:", qr(XtX)$rank))
+print(paste("Singular:", det(XtX) < 1e-10))
+
+# d) Solve using ginv
+XtX_ginv <- ginv(XtX)
+b <- XtX_ginv %*% (t(X) %*% yield)
+print("Effects model solution:")
+print(b)
+
+# e) Sire differences
+bull_means <- tapply(yield, sire, mean)
+print("Sire differences (from cell means):")
+print(paste("Bull 2 - Bull 1:", bull_means[2] - bull_means[1]))
+print(paste("Bull 3 - Bull 1:", bull_means[3] - bull_means[1]))
+```
+
+---
+
+## Exercise 2.6: Generalized Inverse Properties
+
+```{r}
+A <- matrix(c(1, 2, 2, 4), nrow = 2, ncol = 2)
+
+# a) Check rank
+print(paste("Rank:", qr(A)$rank))
+
+# b) Compute g-inverse
+A_ginv <- ginv(A)
+print("G-inverse:")
+print(A_ginv)
+
+# c) Verify AA^-A = A
+check1 <- A %*% A_ginv %*% A
+print("AA^-A (should equal A):")
+print(round(check1, 10))
+
+# d) Show AA^- != I
+AA_ginv <- A %*% A_ginv
+print("AA^- (not identity):")
+print(round(AA_ginv, 10))
+
+# e) (A'A)^-
+AtA <- t(A) %*% A
+AtA_ginv <- ginv(AtA)
+print("(A'A)^-:")
+print(AtA_ginv)
+```
+
+---
+
+## Exercise 2.7: Rank Properties
+
+**a)** $r(\mathbf{A}') = r(\mathbf{A})$
+
+**Proof**: The number of linearly independent rows of $\mathbf{A}$ equals the number of linearly independent columns of $\mathbf{A}'$, which equals $r(\mathbf{A}')$.
+
+**b)** $r(\mathbf{A}'\mathbf{A}) = r(\mathbf{A})$
+
+**Proof sketch**:
+- $r(\mathbf{A}'\mathbf{A}) \leq r(\mathbf{A})$ (rank of product ≤ min of ranks)
+- For any $\mathbf{x}$ in null space of $\mathbf{A}$: $\mathbf{A}\mathbf{x} = \mathbf{0}$ implies $\mathbf{A}'\mathbf{A}\mathbf{x} = \mathbf{0}$
+- So null space of $\mathbf{A}'\mathbf{A}$ contains null space of $\mathbf{A}$
+- Can show they're equal, therefore ranks are equal
+
+**c)** If $r(\mathbf{A}) = p$ (full column rank), then $\mathbf{A}'\mathbf{A}$ is $p \times p$ with rank $p$, hence invertible.
+
+---
+
+## Exercise 2.8: Solving Systems
+
+**a)** $\mathbf{A}\mathbf{x} = \begin{bmatrix} 3 \\ 6 \end{bmatrix}$
+
+Rank deficient, but $\mathbf{b}$ is in column space (row 2 = 2 × row 1). **Infinite solutions**.
+
+**b)** $\mathbf{A}\mathbf{x} = \begin{bmatrix} 3 \\ 5 \end{bmatrix}$
+
+Rank deficient, $\mathbf{b}$ NOT in column space (5 ≠ 2 × 3). **No solution**.
+
+**c)** Full rank system. **Unique solution**: $\mathbf{x} = \mathbf{A}^{-1}\mathbf{b}$
+
+```{r}
+A <- matrix(c(1, 3, 2, 4), nrow = 2, ncol = 2)
+b <- c(5, 11)
+x <- solve(A) %*% b
+print(x)
+```
+
+---
+
+## Exercise 2.9: Estimability Preview
+
+```{r}
+X <- matrix(c(1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1), nrow = 4, ncol = 3)
+y <- c(5, 6, 7, 8)  # Example data
+
+# a) Rank check
+print(paste("Rank of X:", qr(X)$rank))  # < 3, not full rank
+
+# b-c) Compare solutions with different g-inverses
+XtX <- t(X) %*% X
+Xty <- t(X) %*% y
+
+# Solution 1: Using ginv()
+g_inv1 <- ginv(XtX)
+b1 <- g_inv1 %*% Xty
+print("Solution 1:")
+print(b1)
+
+# Solution 2: Manual g-inverse (different from ginv)
+# For demonstration, use a different g-inverse
+g_inv2 <- ginv(XtX + diag(c(0.001, 0, 0))) - diag(c(0.001, 0, 0)) # Approximately
+b2 <- g_inv2 %*% Xty
+
+print("Mu values (different):")
+print(paste("Sol 1:", b1[1], "Sol 2:", b2[1]))
+
+print("Alpha1 - Alpha2 (same):")
+contrast1 <- b1[2] - b1[3]
+contrast2 <- b2[2] - b2[3]
+print(paste("Sol 1:", contrast1, "Sol 2:", contrast2))
+print(paste("Match:", all.equal(contrast1, contrast2, tolerance = 1e-6)))
+```
+
+**Conclusion**: $\mu$ is not estimable (changes with g-inverse), but $\alpha_1 - \alpha_2$ is estimable (invariant).
+
+---
+
+**End of Week 2 Solutions**

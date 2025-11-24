@@ -1,0 +1,744 @@
+# Week 2: Linear Algebra Essentials {#sec-week02}
+
+## Learning Objectives
+
+By the end of this week, you will be able to:
+
+1. Define and compute the **rank** of a matrix
+2. Understand **linear independence** and its implications for solving equations
+3. Compute **regular inverses** and **generalized inverses** of matrices
+4. Solve systems of linear equations using matrix methods
+5. Recognize when a system has unique, infinite, or no solutions
+
+## Why Linear Algebra Matters for Linear Models
+
+Last week, we worked with a simple model where $\mathbf{X}'\mathbf{X}$ was just a scalar (the sample size $n$). Inverting was trivial: $(n)^{-1} = 1/n$.
+
+**But what happens when:**
+
+- We have multiple effects (breeds, herds, years)?
+- Some combinations are missing (not all breeds on all farms)?
+- We have more parameters than we can uniquely estimate?
+
+In these cases, $\mathbf{X}'\mathbf{X}$ becomes a larger matrix that may not be **full rank** - meaning it doesn't have a regular inverse. Understanding matrix rank and generalized inverses is **essential** for:
+
+- Building ANOVA models
+- Handling unbalanced data
+- Understanding estimability
+- Working toward mixed models and BLUP
+
+## Vector Spaces and Linear Independence
+
+### Vectors as Points in Space
+
+A vector $\mathbf{v} = \begin{bmatrix} v_1 \\ v_2 \\ \vdots \\ v_n \end{bmatrix}$ can be thought of as a point in $n$-dimensional space.
+
+For example, $\mathbf{v} = \begin{bmatrix} 2 \\ 3 \end{bmatrix}$ is a point in 2-D space.
+
+### Linear Combinations
+
+A **linear combination** of vectors $\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_k$ is:
+
+$$
+c_1\mathbf{v}_1 + c_2\mathbf{v}_2 + \cdots + c_k\mathbf{v}_k
+$$
+
+where $c_1, c_2, \ldots, c_k$ are scalars.
+
+**Example:**
+
+```{r}
+#| label: linear-combination
+
+v1 <- c(1, 0)
+v2 <- c(0, 1)
+
+# Linear combination: 2*v1 + 3*v2
+result <- 2*v1 + 3*v2
+print("2*v1 + 3*v2 =")
+print(result)
+```
+
+### Linear Independence
+
+Vectors $\mathbf{v}_1, \mathbf{v}_2, \ldots, \mathbf{v}_k$ are **linearly independent** if the only solution to:
+
+$$
+c_1\mathbf{v}_1 + c_2\mathbf{v}_2 + \cdots + c_k\mathbf{v}_k = \mathbf{0}
+$$
+
+is $c_1 = c_2 = \cdots = c_k = 0$.
+
+In other words, no vector can be written as a linear combination of the others.
+
+**Example of linear independence:**
+
+```{r}
+#| label: independent-vectors
+
+# These vectors are linearly independent
+v1 <- c(1, 0)
+v2 <- c(0, 1)
+
+# No combination (except 0*v1 + 0*v2) gives the zero vector
+# They point in different directions
+```
+
+**Example of linear dependence:**
+
+```{r}
+#| label: dependent-vectors
+
+# These vectors are linearly dependent
+v1 <- c(1, 2)
+v2 <- c(2, 4)  # v2 = 2*v1
+
+# v2 can be written as a multiple of v1
+# Therefore: 2*v1 - 1*v2 = 0 (non-trivial combination)
+print("2*v1 - v2 =")
+print(2*v1 - v2)
+```
+
+::: {.callout-note}
+## Connection to Linear Models
+
+In a design matrix $\mathbf{X}$:
+
+- Each **column** represents an effect (e.g., breed, herd)
+- Columns are linearly independent → all effects are estimable
+- Columns are linearly dependent → we have **rank deficiency**
+
+Rank deficiency means we can't uniquely estimate all parameters!
+:::
+
+## Rank of a Matrix
+
+### Definition
+
+The **rank** of a matrix $\mathbf{A}$, denoted $r(\mathbf{A})$, is the number of linearly independent rows (or columns).
+
+**Key properties:**
+
+- $r(\mathbf{A}) \leq \min(m, n)$ for an $m \times n$ matrix
+- $r(\mathbf{A}) = r(\mathbf{A}')$
+- $r(\mathbf{AB}) \leq \min(r(\mathbf{A}), r(\mathbf{B}))$
+- $r(\mathbf{A}'\mathbf{A}) = r(\mathbf{A})$
+
+### Full Rank vs. Rank Deficient
+
+A matrix $\mathbf{A}$ ($m \times n$) is:
+
+- **Full rank** if $r(\mathbf{A}) = \min(m, n)$
+- **Rank deficient** if $r(\mathbf{A}) < \min(m, n)$
+
+For a square matrix ($n \times n$):
+
+- Full rank means $r(\mathbf{A}) = n$
+- Rank deficient means $r(\mathbf{A}) < n$
+
+### Computing Rank in R
+
+```{r}
+#| label: compute-rank
+
+library(MASS)
+
+# Full rank matrix
+A_full <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+print("Full rank matrix:")
+print(A_full)
+print(paste("Rank:", qr(A_full)$rank))
+
+# Rank deficient matrix
+A_deficient <- matrix(c(1, 2, 2, 4), nrow = 2, ncol = 2)
+print("Rank deficient matrix:")
+print(A_deficient)
+print(paste("Rank:", qr(A_deficient)$rank))
+
+# Note: second column is 2 times first column
+```
+
+### Small Example: Design Matrix Rank
+
+Consider a beef feedlot study with 4 steers in 2 pens:
+
+```{r}
+#| label: design-matrix-rank-example
+
+# Data: 4 steers, 2 pens (2 steers each)
+# Pen: 1, 1, 2, 2
+
+# Design matrix (effects model: overall mean + pen effect)
+X <- matrix(c(
+  1, 1, 0,  # Steer 1: in pen 1
+  1, 1, 0,  # Steer 2: in pen 1
+  1, 0, 1,  # Steer 3: in pen 2
+  1, 0, 1   # Steer 4: in pen 2
+), nrow = 4, ncol = 3, byrow = TRUE)
+
+colnames(X) <- c("mu", "pen1", "pen2")
+print("Design matrix X:")
+print(X)
+
+print(paste("Number of columns (parameters):", ncol(X)))
+print(paste("Rank of X:", qr(X)$rank))
+
+# X'X
+XtX <- t(X) %*% X
+print("X'X:")
+print(XtX)
+print(paste("Rank of X'X:", qr(XtX)$rank))
+```
+
+**Problem**: We have 3 columns but rank = 2. Why?
+
+The first column (overall mean) equals the sum of the second and third columns (pen effects):
+
+$$
+\text{Column 1} = \text{Column 2} + \text{Column 3}
+$$
+
+This is called **linear dependence** or **singularity**. We'll handle this with constraints or generalized inverses.
+
+## Matrix Inverses
+
+### Regular Inverse
+
+For a **square** matrix $\mathbf{A}$ ($n \times n$), the inverse $\mathbf{A}^{-1}$ satisfies:
+
+$$
+\mathbf{A}\mathbf{A}^{-1} = \mathbf{A}^{-1}\mathbf{A} = \mathbf{I}
+$$
+
+**Requirements** for $\mathbf{A}^{-1}$ to exist:
+
+1. $\mathbf{A}$ must be square ($n \times n$)
+2. $\mathbf{A}$ must be **full rank**: $r(\mathbf{A}) = n$
+3. Equivalently: $\det(\mathbf{A}) \neq 0$ (determinant non-zero)
+
+### Computing Regular Inverse
+
+```{r}
+#| label: regular-inverse
+
+# Full rank 2x2 matrix
+A <- matrix(c(4, 3, 3, 2), nrow = 2, ncol = 2)
+print("Matrix A:")
+print(A)
+
+# Compute inverse
+A_inv <- solve(A)
+print("A inverse:")
+print(A_inv)
+
+# Verify: A * A^-1 = I
+I_check <- A %*% A_inv
+print("A * A^-1 (should be identity):")
+print(round(I_check, 10))
+```
+
+### When Inverse Doesn't Exist
+
+```{r}
+#| label: no-inverse
+#| error: true
+
+# Rank deficient matrix
+B <- matrix(c(1, 2, 2, 4), nrow = 2, ncol = 2)
+print("Rank deficient matrix B:")
+print(B)
+print(paste("Rank:", qr(B)$rank))
+print(paste("Determinant:", det(B)))
+
+# Try to invert - this will fail
+try({
+  B_inv <- solve(B)
+}, silent = FALSE)
+```
+
+The error occurs because B is **singular** (not full rank). We need a generalized inverse instead!
+
+## Generalized Inverses
+
+### Definition
+
+A **generalized inverse** (g-inverse) of matrix $\mathbf{A}$ is any matrix $\mathbf{A}^{-}$ that satisfies:
+
+$$
+\mathbf{A}\mathbf{A}^{-}\mathbf{A} = \mathbf{A}
+$$
+
+**Key facts:**
+
+- Generalized inverses exist for **any** matrix (even non-square, rank deficient)
+- Generalized inverses are **not unique** (many possible g-inverses)
+- If $\mathbf{A}$ is full rank, then $\mathbf{A}^{-} = \mathbf{A}^{-1}$ (unique)
+
+### Moore-Penrose Inverse
+
+The **Moore-Penrose inverse** $\mathbf{A}^{+}$ is a special g-inverse that satisfies four conditions:
+
+1. $\mathbf{A}\mathbf{A}^{+}\mathbf{A} = \mathbf{A}$
+2. $\mathbf{A}^{+}\mathbf{A}\mathbf{A}^{+} = \mathbf{A}^{+}$
+3. $(\mathbf{A}\mathbf{A}^{+})' = \mathbf{A}\mathbf{A}^{+}$ (symmetric)
+4. $(\mathbf{A}^{+}\mathbf{A})' = \mathbf{A}^{+}\mathbf{A}$ (symmetric)
+
+The Moore-Penrose inverse is **unique** and computed in R using `ginv()` from the MASS package [@penrose1955; @moore1920].
+
+### Computing Generalized Inverse
+
+```{r}
+#| label: generalized-inverse
+
+library(MASS)
+
+# Rank deficient matrix
+B <- matrix(c(1, 2, 2, 4), nrow = 2, ncol = 2)
+print("Rank deficient matrix B:")
+print(B)
+print(paste("Rank:", qr(B)$rank))
+
+# Compute Moore-Penrose generalized inverse
+B_ginv <- ginv(B)
+print("Generalized inverse B^-:")
+print(B_ginv)
+
+# Verify the defining property: B * B^- * B = B
+check <- B %*% B_ginv %*% B
+print("B * B^- * B (should equal B):")
+print(round(check, 10))
+
+# Note: B * B^- ≠ I (identity)
+BB_ginv <- B %*% B_ginv
+print("B * B^- (NOT identity):")
+print(round(BB_ginv, 10))
+```
+
+::: {.callout-important}
+## Key Difference
+
+**Regular inverse**: $\mathbf{A}\mathbf{A}^{-1} = \mathbf{I}$
+
+**Generalized inverse**: $\mathbf{A}\mathbf{A}^{-}\mathbf{A} = \mathbf{A}$ (but $\mathbf{A}\mathbf{A}^{-} \neq \mathbf{I}$ in general)
+:::
+
+### Application to Normal Equations
+
+For rank deficient $\mathbf{X}'\mathbf{X}$:
+
+$$
+\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}
+$$
+
+One solution is:
+
+$$
+\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-}\mathbf{X}'\mathbf{y}
+$$
+
+**Important**: This gives **a** solution, but not necessarily a unique solution. Different g-inverses give different $\mathbf{b}$ vectors.
+
+However, certain functions of $\mathbf{b}$ (called **estimable functions**) are unique regardless of which g-inverse is used. We'll explore this in Week 8.
+
+## Solving Systems of Linear Equations
+
+### General Form
+
+A system of linear equations can be written as:
+
+$$
+\mathbf{A}\mathbf{x} = \mathbf{b}
+$$
+
+Where:
+
+- $\mathbf{A}$ is an $m \times n$ coefficient matrix
+- $\mathbf{x}$ is an $n \times 1$ vector of unknowns
+- $\mathbf{b}$ is an $m \times 1$ vector of constants
+
+### Three Cases
+
+**Case 1: Unique Solution**
+
+- $\mathbf{A}$ is square and full rank
+- Solution: $\mathbf{x} = \mathbf{A}^{-1}\mathbf{b}$
+
+```{r}
+#| label: unique-solution
+
+A <- matrix(c(2, 1, 1, 3), nrow = 2, ncol = 2)
+b <- c(8, 7)
+
+print("System: Ax = b")
+print("A:")
+print(A)
+print("b:")
+print(b)
+
+# Unique solution
+x <- solve(A) %*% b
+print("Solution x:")
+print(x)
+
+# Verify
+print("Ax (should equal b):")
+print(A %*% x)
+```
+
+**Case 2: Infinite Solutions**
+
+- More unknowns than equations, or
+- Rows/columns linearly dependent
+
+```{r}
+#| label: infinite-solutions
+
+# System: x1 + 2*x2 = 5
+#         2*x1 + 4*x2 = 10  (second equation is 2× first)
+
+A <- matrix(c(1, 2, 2, 4), nrow = 2, ncol = 2, byrow = TRUE)
+b <- c(5, 10)
+
+print("System (second equation redundant):")
+print(A)
+print(paste("Rank:", qr(A)$rank))
+
+# One solution using generalized inverse
+A_ginv <- ginv(A)
+x_particular <- A_ginv %*% b
+print("One particular solution:")
+print(x_particular)
+
+# But infinitely many solutions exist!
+# Any x = [5 - 2*t, t] for any t works
+```
+
+**Case 3: No Solution (Inconsistent)**
+
+- Equations are contradictory
+
+```{r}
+#| label: no-solution
+
+# System: x1 + 2*x2 = 5
+#         2*x1 + 4*x2 = 12  (contradicts first equation!)
+
+A <- matrix(c(1, 2, 2, 4), nrow = 2, ncol = 2, byrow = TRUE)
+b_inconsistent <- c(5, 12)
+
+print("Inconsistent system:")
+print(A)
+print("b:")
+print(b_inconsistent)
+
+# ginv() gives "least squares" solution (minimizes ||Ax - b||)
+x_ls <- ginv(A) %*% b_inconsistent
+print("Least squares solution (doesn't satisfy exactly):")
+print(x_ls)
+
+print("Ax (does NOT equal b):")
+print(A %*% x_ls)
+```
+
+### Connection to Animal Breeding
+
+In genetic evaluation:
+
+- **Case 1** (unique solution): Balanced experiments with all factor combinations
+- **Case 2** (infinite solutions): Missing cells, confounded effects → need constraints
+- **Case 3** (no solution): Usually doesn't occur with real data (every observation provides information)
+
+We almost always encounter **Case 2** in animal breeding, which is why understanding generalized inverses and estimability is crucial.
+
+## Small Numerical Example: Pig Litter Size
+
+Let's work through a complete example with rank deficiency.
+
+### Problem Setup
+
+Three breeds of pigs with unequal replication:
+
+- **Yorkshire**: 3 litters
+- **Landrace**: 2 litters
+- **Duroc**: 1 litter
+
+Litter sizes: Yorkshire (11, 12, 10), Landrace (10, 11), Duroc (9)
+
+### Data
+
+```{r}
+#| label: pig-data
+
+# Litter size data
+litter_size <- c(11, 12, 10, 10, 11, 9)
+breed <- factor(c("Yorkshire", "Yorkshire", "Yorkshire",
+                  "Landrace", "Landrace", "Duroc"))
+
+data_pig <- data.frame(breed = breed, litter_size = litter_size)
+print(data_pig)
+```
+
+### Cell Means Model (Full Rank)
+
+Model: $y_{ij} = \mu_i + e_{ij}$ where $i$ = breed, $j$ = observation within breed
+
+```{r}
+#| label: pig-cell-means
+
+# Design matrix: indicator for each breed
+X_cell <- model.matrix(~ breed - 1, data = data_pig)
+print("Cell means design matrix:")
+print(X_cell)
+
+print(paste("Rank of X:", qr(X_cell)$rank))
+
+# This is full rank! (3 columns, rank = 3)
+
+# Solve using normal equations
+y <- litter_size
+XtX <- t(X_cell) %*% X_cell
+Xty <- t(X_cell) %*% y
+
+print("X'X:")
+print(XtX)
+
+print("X'y:")
+print(Xty)
+
+# Invert (regular inverse exists)
+b_cell <- solve(XtX) %*% Xty
+print("Breed means (cell means model):")
+print(b_cell)
+
+# These are simply the breed averages!
+print("Verify - breed averages:")
+print(tapply(litter_size, breed, mean))
+```
+
+### Effects Model (Rank Deficient)
+
+Model: $y_{ij} = \mu + \alpha_i + e_{ij}$ where $\mu$ = overall mean, $\alpha_i$ = breed effect
+
+```{r}
+#| label: pig-effects-model
+
+# Design matrix: intercept + breed effects
+X_effects <- model.matrix(~ breed, data = data_pig)
+print("Effects model design matrix:")
+print(X_effects)
+
+print(paste("Number of columns:", ncol(X_effects)))
+print(paste("Rank of X:", qr(X_effects)$rank))
+
+# Rank deficient! (4 columns but rank = 3)
+
+# X'X is singular
+XtX_effects <- t(X_effects) %*% X_effects
+print("X'X (effects model):")
+print(XtX_effects)
+
+print(paste("Rank of X'X:", qr(XtX_effects)$rank))
+print(paste("Determinant of X'X:", det(XtX_effects)))
+
+# Cannot use regular inverse - use generalized inverse
+XtX_ginv <- ginv(XtX_effects)
+Xty_effects <- t(X_effects) %*% y
+
+b_effects <- XtX_ginv %*% Xty_effects
+print("Solution using generalized inverse:")
+print(b_effects)
+```
+
+**Note**: The solution depends on which generalized inverse we use. R's `ginv()` sets one parameter to zero by default.
+
+Let's verify estimable functions are consistent:
+
+```{r}
+#| label: pig-estimable
+
+# Contrast: Yorkshire - Duroc
+# In cell means model: mu_Yorkshire - mu_Duroc
+contrast_cell <- b_cell[1] - b_cell[3]
+
+# In effects model: alpha_Yorkshire - alpha_Duroc
+# (mu cancels out)
+contrast_effects <- b_effects[2] - b_effects[3]
+
+print("Yorkshire - Duroc difference:")
+print(paste("Cell means model:", round(contrast_cell, 4)))
+print(paste("Effects model:", round(contrast_effects, 4)))
+print(paste("Match:", all.equal(contrast_cell, contrast_effects)))
+```
+
+The contrast (difference between breeds) is the same regardless of parameterization! This is an **estimable function**.
+
+## Realistic Livestock Application
+
+### Scenario
+
+A sheep researcher measures fleece weight (kg) for 3 breeds across 2 farms, but not all breed × farm combinations are present (unbalanced design).
+
+### Data Structure
+
+```{r}
+#| label: sheep-data
+
+set.seed(456)
+
+# Farm-Breed combinations (missing cells)
+farm <- factor(c(rep("A", 5), rep("B", 4)))
+breed <- factor(c(rep("Merino", 3), rep("Suffolk", 2),  # Farm A
+                  rep("Suffolk", 2), rep("Romney", 2)))  # Farm B
+
+# Note: No Merino on Farm B, No Romney on Farm A
+
+fleece_weight <- c(
+  # Farm A: Merino
+  4.8, 5.1, 4.9,
+  # Farm A: Suffolk
+  5.5, 5.8,
+  # Farm B: Suffolk
+  5.2, 5.4,
+  # Farm B: Romney
+  5.9, 6.1
+)
+
+sheep_data <- data.frame(
+  farm = farm,
+  breed = breed,
+  fleece_weight = fleece_weight
+)
+
+print("Sheep fleece weight data:")
+print(sheep_data)
+
+# Check structure
+table(sheep_data$farm, sheep_data$breed)
+```
+
+### Analysis
+
+```{r}
+#| label: sheep-analysis
+
+# Full model: farm + breed + farm×breed
+# But missing cells cause rank deficiency
+
+X_full <- model.matrix(~ farm * breed, data = sheep_data)
+print("Design matrix (first 5 rows):")
+print(head(X_full, 5))
+
+print(paste("Number of columns:", ncol(X_full)))
+print(paste("Rank:", qr(X_full)$rank))
+
+# Rank deficient due to missing cells
+
+# Solve using generalized inverse
+y_sheep <- fleece_weight
+XtX <- t(X_full) %*% X_full
+Xty <- t(X_full) %*% y_sheep
+
+print("X'X:")
+print(XtX)
+print(paste("Rank of X'X:", qr(XtX)$rank))
+
+# Generalized inverse solution
+XtX_ginv <- ginv(XtX)
+b_sheep <- XtX_ginv %*% Xty
+
+print("Parameter estimates:")
+print(b_sheep)
+
+# Estimable contrasts within farm
+# Suffolk at Farm A vs Suffolk at Farm B
+# (these cells both exist, so difference is estimable)
+
+# Verify with lm()
+model_sheep <- lm(fleece_weight ~ farm * breed, data = sheep_data)
+print("lm() coefficients:")
+print(coef(model_sheep))
+```
+
+::: {.callout-tip}
+## Practical Advice
+
+When dealing with missing cells or rank deficiency:
+
+1. Use **cell means** models when possible (always full rank)
+2. For effects models, use **generalized inverse** (`ginv()`)
+3. Only interpret **estimable functions** (contrasts, differences)
+4. Week 8 will formalize estimability criteria
+:::
+
+## Summary
+
+This week covered essential linear algebra for linear models:
+
+### Key Concepts
+
+1. **Linear independence**: Vectors that can't be written as combinations of each other
+2. **Rank**: Number of linearly independent rows/columns
+   - Full rank: $r(\mathbf{A}) = \min(m, n)$
+   - Rank deficient: $r(\mathbf{A}) < \min(m, n)$
+
+3. **Regular inverse** $\mathbf{A}^{-1}$:
+   - Requires square, full rank matrix
+   - $\mathbf{A}\mathbf{A}^{-1} = \mathbf{I}$
+
+4. **Generalized inverse** $\mathbf{A}^{-}$:
+   - Works for any matrix
+   - Not unique
+   - $\mathbf{A}\mathbf{A}^{-}\mathbf{A} = \mathbf{A}$
+
+5. **Moore-Penrose inverse** $\mathbf{A}^{+}$:
+   - Unique generalized inverse
+   - Computed with `ginv()` in R
+
+6. **Solving** $\mathbf{A}\mathbf{x} = \mathbf{b}$:
+   - Full rank → unique solution
+   - Rank deficient → infinite solutions (use g-inverse)
+   - Inconsistent → no exact solution
+
+### Implications for Linear Models
+
+- Cell means models are always full rank
+- Effects models are often rank deficient (overparameterized)
+- Generalized inverses let us solve normal equations
+- Only **estimable functions** have unique values
+- Understanding rank is key to understanding what we can estimate
+
+### Looking Ahead
+
+**Week 3**: Build design matrices for different model types
+
+**Week 4-5**: Regression models (usually full rank)
+
+**Week 7-8**: ANOVA models (often rank deficient) and estimable functions
+
+**Week 12**: Deep dive into non-full rank models and constraints
+
+## R Functions Reference
+
+- `qr(A)$rank` - Compute rank of matrix A
+- `solve(A)` - Regular inverse of A
+- `ginv(A)` - Moore-Penrose generalized inverse (MASS package)
+- `det(A)` - Determinant of A
+- `model.matrix()` - Create design matrix from formula
+
+## Additional Resources
+
+### Key References
+
+- @penrose1955 - Original paper on generalized inverses
+- @searle1971 - Linear models textbook with extensive matrix algebra
+- @searle2006 - Updated edition
+
+### Practice
+
+Work through Exercise Set 2 to solidify these concepts!
+
+---
+
+**Previous**: [Week 1: Course Overview](../Week01_Overview/Week01_CourseOverview.qmd)
+
+**Next**: [Week 3: Building the Design Matrix Framework](../Week03_DesignMatrix/Week03_DesignMatrix.qmd)

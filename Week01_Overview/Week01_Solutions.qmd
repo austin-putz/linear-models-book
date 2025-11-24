@@ -1,0 +1,700 @@
+# Week 1 Solutions {#sec-week01-solutions}
+
+## Exercise 1.1: Hand Calculation of Sample Mean
+
+**Data**: Body weights (kg) of 6 market-ready pigs: 115, 118, 121, 116, 119, 123
+
+### Solution
+
+**a) Design matrix $\mathbf{X}$:**
+
+$$
+\mathbf{X} = \begin{bmatrix} 1 \\ 1 \\ 1 \\ 1 \\ 1 \\ 1 \end{bmatrix} \quad (6 \times 1)
+$$
+
+**b) Compute $\mathbf{X}'\mathbf{X}$:**
+
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix} 1 & 1 & 1 & 1 & 1 & 1 \end{bmatrix} \begin{bmatrix} 1 \\ 1 \\ 1 \\ 1 \\ 1 \\ 1 \end{bmatrix} = 6
+$$
+
+**c) Compute $\mathbf{X}'\mathbf{y}$:**
+
+$$
+\mathbf{X}'\mathbf{y} = \begin{bmatrix} 1 & 1 & 1 & 1 & 1 & 1 \end{bmatrix} \begin{bmatrix} 115 \\ 118 \\ 121 \\ 116 \\ 119 \\ 123 \end{bmatrix} = 115 + 118 + 121 + 116 + 119 + 123 = 712
+$$
+
+**d) Solve normal equation:**
+
+$$
+\mathbf{X}'\mathbf{X} \mathbf{b} = \mathbf{X}'\mathbf{y}
+$$
+$$
+6b = 712
+$$
+$$
+\hat{\mu} = \frac{712}{6} = 118.67 \text{ kg}
+$$
+
+**e) Residuals:**
+
+| $i$ | $y_i$ | $\hat{y}_i$ | $e_i = y_i - \hat{y}_i$ |
+|-----|-------|-------------|-------------------------|
+| 1   | 115   | 118.67      | -3.67                   |
+| 2   | 118   | 118.67      | -0.67                   |
+| 3   | 121   | 118.67      |  2.33                   |
+| 4   | 116   | 118.67      | -2.67                   |
+| 5   | 119   | 118.67      |  0.33                   |
+| 6   | 123   | 118.67      |  4.33                   |
+
+**f) Verify sum of residuals:**
+
+$$
+\sum e_i = -3.67 + (-0.67) + 2.33 + (-2.67) + 0.33 + 4.33 = 0 \quad \checkmark
+$$
+
+**g) Compute $SSE$:**
+
+$$
+SSE = \sum e_i^2 = (-3.67)^2 + (-0.67)^2 + (2.33)^2 + (-2.67)^2 + (0.33)^2 + (4.33)^2
+$$
+$$
+SSE = 13.47 + 0.45 + 5.43 + 7.13 + 0.11 + 18.75 = 45.34
+$$
+
+### Verification in R
+
+```{r}
+#| label: ex1-1-verify
+
+# Data
+y <- c(115, 118, 121, 116, 119, 123)
+n <- length(y)
+
+# Design matrix
+X <- matrix(1, nrow = n, ncol = 1)
+
+# Solve
+b <- solve(t(X) %*% X) %*% t(X) %*% y
+print(paste("Estimated mean:", round(b, 2)))
+
+# Residuals
+residuals <- y - b
+print("Residuals:")
+print(round(residuals, 2))
+
+print(paste("Sum of residuals:", round(sum(residuals), 10)))
+print(paste("SSE:", round(sum(residuals^2), 2)))
+```
+
+---
+
+## Exercise 1.2: Matrix Operations Practice
+
+### Solution
+
+Given:
+
+$$
+\mathbf{A} = \begin{bmatrix} 2 & 4 \\ 1 & 3 \end{bmatrix}, \quad
+\mathbf{B} = \begin{bmatrix} 5 & 2 \\ 3 & 1 \end{bmatrix}
+$$
+
+**a) Transpose of A:**
+
+$$
+\mathbf{A}' = \begin{bmatrix} 2 & 1 \\ 4 & 3 \end{bmatrix}
+$$
+
+**b) A + B:**
+
+$$
+\mathbf{A} + \mathbf{B} = \begin{bmatrix} 2+5 & 4+2 \\ 1+3 & 3+1 \end{bmatrix} = \begin{bmatrix} 7 & 6 \\ 4 & 4 \end{bmatrix}
+$$
+
+**c) A · B (matrix multiplication):**
+
+$$
+\mathbf{A} \cdot \mathbf{B} = \begin{bmatrix} 2(5)+4(3) & 2(2)+4(1) \\ 1(5)+3(3) & 1(2)+3(1) \end{bmatrix} = \begin{bmatrix} 22 & 8 \\ 14 & 5 \end{bmatrix}
+$$
+
+**d) A'A:**
+
+$$
+\mathbf{A}'\mathbf{A} = \begin{bmatrix} 2 & 1 \\ 4 & 3 \end{bmatrix} \begin{bmatrix} 2 & 4 \\ 1 & 3 \end{bmatrix} = \begin{bmatrix} 5 & 11 \\ 11 & 25 \end{bmatrix}
+$$
+
+**e) Verify in R:**
+
+```{r}
+#| label: ex1-2-verify
+
+A <- matrix(c(2, 1, 4, 3), nrow = 2, ncol = 2)
+B <- matrix(c(5, 3, 2, 1), nrow = 2, ncol = 2)
+
+print("A transpose:")
+print(t(A))
+
+print("A + B:")
+print(A + B)
+
+print("A * B:")
+print(A %*% B)
+
+print("A'A:")
+print(t(A) %*% A)
+```
+
+---
+
+## Exercise 1.3: Building Design Matrices
+
+### Solution
+
+**a) Broiler weights: 4 birds with weights 1.8, 2.1, 1.9, 2.0 kg**
+
+Model: $y_i = \mu + e_i$
+
+$$
+\mathbf{y} = \begin{bmatrix} 1.8 \\ 2.1 \\ 1.9 \\ 2.0 \end{bmatrix}, \quad
+\mathbf{X} = \begin{bmatrix} 1 \\ 1 \\ 1 \\ 1 \end{bmatrix} \quad (4 \times 1)
+$$
+
+**b) Beef steers: Simple linear regression**
+
+Model: $y_i = \beta_0 + \beta_1 x_i + e_i$
+
+Initial weights: 350, 360, 355, 365, 358
+
+$$
+\mathbf{X} = \begin{bmatrix}
+1 & 350 \\
+1 & 360 \\
+1 & 355 \\
+1 & 365 \\
+1 & 358
+\end{bmatrix} \quad (5 \times 2)
+$$
+
+The first column is for the intercept ($\beta_0$), the second column is for the slope ($\beta_1$).
+
+```{r}
+#| label: ex1-3-verify
+
+# Part a
+y_broiler <- c(1.8, 2.1, 1.9, 2.0)
+X_broiler <- matrix(1, nrow = 4, ncol = 1)
+print("Broiler design matrix:")
+print(X_broiler)
+
+# Part b
+initial_wt <- c(350, 360, 355, 365, 358)
+X_beef <- cbind(1, initial_wt)
+print("Beef steer design matrix:")
+print(X_beef)
+```
+
+---
+
+## Exercise 1.4: Egg Production Analysis
+
+### Solution
+
+**Data**: Daily egg production: 0.95, 0.88, 0.92, 0.85, 0.90, 0.93, 0.87, 0.89
+
+```{r}
+#| label: ex1-4-solution
+
+# a) Create y and X
+y <- c(0.95, 0.88, 0.92, 0.85, 0.90, 0.93, 0.87, 0.89)
+n <- length(y)
+X <- matrix(1, nrow = n, ncol = 1)
+
+# b) Compute X'X and X'y
+XtX <- t(X) %*% X
+Xty <- t(X) %*% y
+
+print("X'X:")
+print(XtX)
+print("X'y:")
+print(Xty)
+
+# c) Solve for mu_hat
+b <- solve(XtX) %*% Xty
+print(paste("Estimated mean eggs per hen:", round(b, 4)))
+
+# d) Fitted values and residuals
+y_hat <- X %*% b
+residuals <- y - y_hat
+
+print("Fitted values:")
+print(round(c(y_hat), 4))
+print("Residuals:")
+print(round(c(residuals), 4))
+
+# e) SSE and sigma^2
+SSE <- sum(residuals^2)
+sigma2_hat <- SSE / (n - 1)
+
+print(paste("SSE:", round(SSE, 6)))
+print(paste("Estimated variance:", round(sigma2_hat, 6)))
+
+# f) Standard error of mu_hat
+se_mu <- sqrt(sigma2_hat / n)
+print(paste("SE(mu_hat):", round(se_mu, 4)))
+
+# g) 95% Confidence interval
+t_crit <- qt(0.975, df = n - 1)
+CI_lower <- b - t_crit * se_mu
+CI_upper <- b + t_crit * se_mu
+
+print(paste("95% CI: [", round(CI_lower, 4), ",", round(CI_upper, 4), "]"))
+
+# h) Verify with lm()
+model <- lm(y ~ 1)
+print("Verification with lm():")
+print(summary(model))
+
+print(paste("Our estimate matches lm():", all.equal(c(b), coef(model)[[1]])))
+```
+
+**Interpretation**: The estimated mean egg production is `r round(b, 3)` eggs per hen per day, with a 95% confidence interval of [`r round(CI_lower, 3)`, `r round(CI_upper, 3)`]. This suggests the flock is performing at approximately 90% production rate, which is typical for hens in peak lay.
+
+---
+
+## Exercise 1.5: Sheep Fleece Weight
+
+### Solution
+
+```{r}
+#| label: ex1-5-solution
+
+# Data
+fleece_weight <- c(4.2, 4.8, 4.5, 4.1, 4.6, 4.9, 4.3, 4.7, 4.4, 4.5)
+
+# Define the estimate_mean function (from lecture)
+estimate_mean <- function(y) {
+  n <- length(y)
+  X <- matrix(1, nrow = n, ncol = 1)
+  XtX <- t(X) %*% X
+  Xty <- t(X) %*% y
+  b <- solve(XtX) %*% Xty
+  y_hat <- X %*% b
+  residuals <- y - y_hat
+  SSE <- sum(residuals^2)
+  sigma2_hat <- SSE / (n - 1)
+
+  return(list(
+    estimate = c(b),
+    fitted_values = c(y_hat),
+    residuals = c(residuals),
+    SSE = SSE,
+    sigma2 = sigma2_hat,
+    n = n
+  ))
+}
+
+# b) Analyze using our function
+results <- estimate_mean(fleece_weight)
+
+print("Analysis Results:")
+print(paste("Mean fleece weight:", round(results$estimate, 2), "kg"))
+print(paste("Standard deviation:", round(sqrt(results$sigma2), 2), "kg"))
+
+# c) Histogram with mean marked
+hist(fleece_weight,
+     breaks = 6,
+     main = "Distribution of Fleece Weights",
+     xlab = "Fleece Weight (kg)",
+     ylab = "Frequency",
+     col = "lightgreen",
+     border = "white")
+abline(v = results$estimate, col = "red", lwd = 2, lty = 2)
+legend("topright",
+       legend = paste("Mean =", round(results$estimate, 2), "kg"),
+       col = "red", lty = 2, lwd = 2)
+
+# d) Coefficient of variation
+CV <- 100 * sqrt(results$sigma2) / results$estimate
+print(paste("Coefficient of Variation:", round(CV, 2), "%"))
+
+# e) Interpretation
+cat("\nInterpretation:\n")
+cat("The average fleece weight for these Merino ewes is", round(results$estimate, 2), "kg.\n")
+cat("The coefficient of variation of", round(CV, 2), "% indicates moderate variability\n")
+cat("in fleece production within this flock, which is typical for Merino sheep.\n")
+cat("This variability suggests opportunity for genetic selection to improve uniformity.\n")
+```
+
+---
+
+## Exercise 1.6: Dairy Herd Practice Dataset
+
+### Solution
+
+```{r}
+#| label: ex1-6-solution
+
+# a) Read CSV file
+data_path <- "data/dairy_milk_practice.csv"
+if (file.exists(data_path)) {
+  dairy_data <- read.csv(data_path)
+
+  # b) Calculate mean three ways
+  milk_yield <- dairy_data$milk_yield
+
+  # Method 1: Built-in mean()
+  mean1 <- mean(milk_yield)
+
+  # Method 2: Matrix operations
+  n <- length(milk_yield)
+  X <- matrix(1, nrow = n, ncol = 1)
+  b <- solve(t(X) %*% X) %*% (t(X) %*% milk_yield)
+  mean2 <- c(b)
+
+  # Method 3: lm()
+  model <- lm(milk_yield ~ 1)
+  mean3 <- coef(model)[[1]]
+
+  # c) Verify all equal
+  print("Three methods of calculating mean:")
+  print(paste("Built-in mean():", round(mean1, 4)))
+  print(paste("Matrix operations:", round(mean2, 4)))
+  print(paste("lm() function:", round(mean3, 4)))
+
+  print(paste("All methods agree:",
+              all.equal(mean1, mean2) && all.equal(mean2, mean3)))
+
+  # d) Boxplot
+  boxplot(milk_yield,
+          main = "Milk Yield Distribution",
+          ylab = "Milk Yield (kg/day)",
+          col = "lightblue",
+          border = "darkblue")
+  abline(h = mean1, col = "red", lwd = 2, lty = 2)
+  legend("topright", legend = "Mean", col = "red", lty = 2, lwd = 2)
+
+  # e) Identify outliers
+  Q1 <- quantile(milk_yield, 0.25)
+  Q3 <- quantile(milk_yield, 0.75)
+  IQR_val <- Q3 - Q1
+  lower_fence <- Q1 - 1.5 * IQR_val
+  upper_fence <- Q3 + 1.5 * IQR_val
+
+  outliers <- milk_yield[milk_yield < lower_fence | milk_yield > upper_fence]
+
+  print(paste("Lower fence:", round(lower_fence, 2)))
+  print(paste("Upper fence:", round(upper_fence, 2)))
+
+  if (length(outliers) > 0) {
+    print("Potential outliers:")
+    print(outliers)
+  } else {
+    print("No outliers detected using 1.5 * IQR rule")
+  }
+} else {
+  print("Data file not found. Please check the path.")
+}
+```
+
+---
+
+## Exercise 1.7: Properties of the Sample Mean
+
+### Solution
+
+**a) Unbiasedness: Show $E(\hat{\mu}) = \mu$**
+
+**Proof:**
+
+$$
+\hat{\mu} = \frac{1}{n}\sum_{i=1}^{n} y_i
+$$
+
+Taking expectations:
+
+$$
+E(\hat{\mu}) = E\left(\frac{1}{n}\sum_{i=1}^{n} y_i\right) = \frac{1}{n}\sum_{i=1}^{n} E(y_i)
+$$
+
+Since the model is $y_i = \mu + e_i$ and $E(e_i) = 0$:
+
+$$
+E(y_i) = E(\mu + e_i) = \mu + E(e_i) = \mu + 0 = \mu
+$$
+
+Therefore:
+
+$$
+E(\hat{\mu}) = \frac{1}{n}\sum_{i=1}^{n} \mu = \frac{1}{n}(n\mu) = \mu \quad \checkmark
+$$
+
+The estimator is unbiased.
+
+**b) Variance: Show $Var(\hat{\mu}) = \frac{\sigma^2}{n}$**
+
+**Proof:**
+
+$$
+Var(\hat{\mu}) = Var\left(\frac{1}{n}\sum_{i=1}^{n} y_i\right) = \frac{1}{n^2} Var\left(\sum_{i=1}^{n} y_i\right)
+$$
+
+Since observations are independent:
+
+$$
+Var\left(\sum_{i=1}^{n} y_i\right) = \sum_{i=1}^{n} Var(y_i)
+$$
+
+Since $Var(y_i) = Var(\mu + e_i) = Var(e_i) = \sigma^2$:
+
+$$
+Var(\hat{\mu}) = \frac{1}{n^2}\sum_{i=1}^{n} \sigma^2 = \frac{1}{n^2}(n\sigma^2) = \frac{\sigma^2}{n} \quad \checkmark
+$$
+
+**c) Efficiency: Why does $Var(\hat{\mu})$ decrease as $n$ increases?**
+
+From part (b), $Var(\hat{\mu}) = \frac{\sigma^2}{n}$.
+
+As $n \to \infty$, $Var(\hat{\mu}) \to 0$.
+
+**Explanation**: With more observations, we average out more random errors, leading to a more precise estimate. This is the **law of large numbers** - larger samples give more information about the population mean, reducing uncertainty in our estimate.
+
+In practical terms: A dairy herd average based on 100 cows is more reliable than one based on 10 cows.
+
+---
+
+## Exercise 1.8: Sum of Residuals
+
+### Solution
+
+**Prove**: For a model with intercept, $\sum_{i=1}^{n} e_i = 0$
+
+**Proof:**
+
+**Step 1**: Normal equations for mean model:
+
+$$
+\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}
+$$
+
+**Step 2**: For the mean model, $\mathbf{X}$ is a column of ones:
+
+$$
+\mathbf{X}' = \begin{bmatrix} 1 & 1 & \cdots & 1 \end{bmatrix}
+$$
+
+**Step 3**: Therefore:
+
+$$
+\mathbf{X}'\mathbf{y} = \sum_{i=1}^{n} y_i
+$$
+
+and
+
+$$
+\mathbf{X}'\mathbf{X} = n
+$$
+
+**Step 4**: Normal equation becomes:
+
+$$
+n\hat{\mu} = \sum_{i=1}^{n} y_i
+$$
+
+**Step 5**: Residuals are defined as:
+
+$$
+e_i = y_i - \hat{\mu}
+$$
+
+**Step 6**: Sum of residuals:
+
+$$
+\sum_{i=1}^{n} e_i = \sum_{i=1}^{n}(y_i - \hat{\mu}) = \sum_{i=1}^{n} y_i - n\hat{\mu}
+$$
+
+**Step 7**: From Step 4, we know $n\hat{\mu} = \sum_{i=1}^{n} y_i$, so:
+
+$$
+\sum_{i=1}^{n} e_i = \sum_{i=1}^{n} y_i - \sum_{i=1}^{n} y_i = 0 \quad \checkmark
+$$
+
+**Geometric interpretation**: The fitted values are chosen so that positive and negative deviations balance out, ensuring the residuals sum to zero.
+
+---
+
+## Exercise 1.9: Matrix Form Equivalence
+
+### Solution
+
+**Show**: $\sum_{i=1}^{n}(y_i - \mu)^2 = (\mathbf{y} - \mathbf{X}\boldsymbol{\beta})'(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})$
+
+**Proof:**
+
+For the mean model:
+
+$$
+\mathbf{y} = \begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_n \end{bmatrix}, \quad
+\mathbf{X} = \begin{bmatrix} 1 \\ 1 \\ \vdots \\ 1 \end{bmatrix}, \quad
+\boldsymbol{\beta} = [\mu]
+$$
+
+**Step 1**: Compute $\mathbf{X}\boldsymbol{\beta}$:
+
+$$
+\mathbf{X}\boldsymbol{\beta} = \begin{bmatrix} 1 \\ 1 \\ \vdots \\ 1 \end{bmatrix} [\mu] = \begin{bmatrix} \mu \\ \mu \\ \vdots \\ \mu \end{bmatrix}
+$$
+
+**Step 2**: Compute $\mathbf{y} - \mathbf{X}\boldsymbol{\beta}$:
+
+$$
+\mathbf{y} - \mathbf{X}\boldsymbol{\beta} = \begin{bmatrix} y_1 - \mu \\ y_2 - \mu \\ \vdots \\ y_n - \mu \end{bmatrix}
+$$
+
+**Step 3**: Compute the squared norm:
+
+$$
+(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})'(\mathbf{y} - \mathbf{X}\boldsymbol{\beta}) = \begin{bmatrix} y_1 - \mu & y_2 - \mu & \cdots & y_n - \mu \end{bmatrix} \begin{bmatrix} y_1 - \mu \\ y_2 - \mu \\ \vdots \\ y_n - \mu \end{bmatrix}
+$$
+
+**Step 4**: This equals:
+
+$$
+= (y_1 - \mu)^2 + (y_2 - \mu)^2 + \cdots + (y_n - \mu)^2 = \sum_{i=1}^{n}(y_i - \mu)^2 \quad \checkmark
+$$
+
+**Conclusion**: The matrix form $(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})'(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})$ is equivalent to the summation form $\sum(y_i - \mu)^2$. This demonstrates that minimizing SSE in scalar form is identical to minimizing the matrix expression.
+
+---
+
+## Exercise 1.10: Weighted Mean
+
+### Solution
+
+**Data**: $y = [10, 12, 11]$ with weights $w = [5, 3, 8]$
+
+**a) Calculate weighted mean by hand:**
+
+$$
+\hat{\mu}_w = \frac{\sum w_i y_i}{\sum w_i} = \frac{5(10) + 3(12) + 8(11)}{5 + 3 + 8} = \frac{50 + 36 + 88}{16} = \frac{174}{16} = 10.875
+$$
+
+**b) Weighted least squares approach:**
+
+```{r}
+#| label: ex1-10-solution
+
+# Data
+y <- c(10, 12, 11)
+w <- c(5, 3, 8)
+
+# Design matrix
+X <- matrix(1, nrow = 3, ncol = 1)
+
+# Weight matrix
+W <- diag(w)
+print("Weight matrix W:")
+print(W)
+
+# Weighted normal equations: (X'WX)b = X'Wy
+XtWX <- t(X) %*% W %*% X
+XtWy <- t(X) %*% W %*% y
+
+print("X'WX:")
+print(XtWX)
+print("X'Wy:")
+print(XtWy)
+
+# Solve
+b_weighted <- solve(XtWX) %*% XtWy
+print(paste("Weighted mean (WLS):", b_weighted))
+
+# c) Compare
+mu_w_hand <- sum(w * y) / sum(w)
+print(paste("Weighted mean (hand calc):", mu_w_hand))
+print(paste("Methods match:", all.equal(c(b_weighted), mu_w_hand)))
+```
+
+**d) When to use weighted means in animal breeding:**
+
+Weighted means are used when:
+
+1. **Pen averages**: Animals are housed in pens of different sizes. Weight by pen size since larger pens provide more information.
+
+2. **Progeny means**: Bulls with different numbers of daughters. Weight by number of progeny - bulls with more daughters provide more reliable information.
+
+3. **Heterogeneous variances**: Some observations are more variable than others. Weight by inverse variance ($w_i = 1/\sigma_i^2$) to give more weight to more precise measurements.
+
+4. **Repeated records**: Animals with different numbers of lactations, litters, or measurements. Weight by number of records.
+
+**Example**: In a feed trial, Pen 1 has 20 pigs (average gain 0.85 kg/day) and Pen 2 has 5 pigs (average gain 0.92 kg/day). The weighted mean $(20 \times 0.85 + 5 \times 0.92)/25 = 0.86$ kg/day better represents the treatment effect than the unweighted mean $(0.85 + 0.92)/2 = 0.885$ kg/day.
+
+---
+
+## Exercise 1.11: Connection to BLUP
+
+### Solution
+
+**a) What does BLUP stand for?**
+
+**BLUP** stands for **Best Linear Unbiased Prediction**. It is a method for estimating random effects (such as breeding values) in mixed linear models.
+
+**b) How does BLUP extend fixed effects models?**
+
+Fixed effects models (like we're learning in Weeks 1-12) assume all parameters are **fixed unknown constants** to be estimated. The model is:
+
+$$
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}
+$$
+
+BLUP extends this by adding **random effects** - parameters that are themselves random variables from a distribution:
+
+$$
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{u} + \mathbf{e}
+$$
+
+Where:
+
+- $\boldsymbol{\beta}$ = fixed effects (estimated)
+- $\mathbf{u}$ = random effects with $\mathbf{u} \sim N(\mathbf{0}, \mathbf{G})$ (predicted)
+- $\mathbf{e}$ = errors with $\mathbf{e} \sim N(\mathbf{0}, \mathbf{R})$
+
+BLUP simultaneously:
+
+- Estimates fixed effects ($\hat{\boldsymbol{\beta}}$ are BLUE)
+- Predicts random effects ($\hat{\mathbf{u}}$ are BLUP)
+
+The key difference from ordinary least squares is that BLUP **shrinks** predictions toward the mean based on the amount of information available (number of progeny, genomic relationships, etc.). Animals with little information are shrunk more heavily.
+
+**c) Why is BLUP important in animal breeding?**
+
+BLUP is the foundation of modern genetic evaluation because it:
+
+1. **Accounts for relationships**: Uses pedigree information to connect related animals, borrowing strength across relatives
+
+2. **Handles unbalanced data**: Works with unequal family sizes, missing data, and different environments
+
+3. **Separates genetic from environmental effects**: Partitions variation into heritable (genetic) and non-heritable (environmental) components
+
+4. **Provides best predictions**: BLUP breeding values have minimum prediction error variance among all linear unbiased predictors
+
+5. **Enables genetic progress**: By accurately ranking animals' genetic merit, BLUP allows selection of superior parents
+
+**d) Example BLUP applications:**
+
+1. **Sire evaluation in dairy cattle**: Predict bulls' genetic merit for milk production using daughters' records across multiple herds and years. Accounts for:
+   - Herd-year-season effects (fixed)
+   - Sire breeding values (random)
+   - Relationships among bulls via pedigree
+
+2. **Genomic selection**: Predict breeding values using DNA markers (SNPs):
+   - Genotypes at thousands of loci
+   - Genomic relationship matrix captures inheritance
+   - Predictions possible at birth before performance records
+   - Accelerates genetic gain through shortened generation intervals
+
+BLUP revolutionized animal breeding when introduced by C.R. Henderson in the 1940s-1960s. Today, virtually all livestock genetic evaluations worldwide use BLUP or genomic BLUP (GBLUP) methods. Understanding fixed effects models (what we're learning now) provides the essential foundation for understanding BLUP.
+
+---
+
+**End of Week 1 Solutions**

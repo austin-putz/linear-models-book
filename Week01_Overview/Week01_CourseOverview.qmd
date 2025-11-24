@@ -1,0 +1,889 @@
+# Week 1: Course Overview & Computational Foundations {#sec-week01}
+
+## Learning Objectives
+
+By the end of this week, you will be able to:
+
+1. Understand the philosophy of building equations from first principles before using statistical software
+2. Set up your computational environment for matrix operations in R
+3. Connect linear models to animal breeding applications (EPDs, breeding values, BLUP)
+4. Perform basic matrix operations in R
+5. Express the sample mean as a simple linear model
+
+## Why Build Our Own Solvers?
+
+### The Black Box Problem
+
+Most students learn to analyze data by running commands like:
+
+```r
+model <- lm(y ~ x)
+summary(model)
+```
+
+While this approach gets results quickly, it creates several problems:
+
+- **Lack of understanding**: What is `lm()` actually doing?
+- **Limited flexibility**: Can't modify methods for special situations
+- **Difficulty debugging**: When results seem wrong, where do you look?
+- **Blind trust**: How do you know the software is correct?
+
+### Our Philosophy: Understanding Through Building
+
+In this course, we take a different approach:
+
+1. **Learn the mathematics** behind each method
+2. **Derive estimators** from first principles
+3. **Build solvers manually** using matrix operations
+4. **Verify our results** against established software
+5. **Then** use software with confidence and understanding
+
+::: {.callout-note}
+## Why This Matters for Animal Breeding
+
+In animal breeding, we work with:
+
+- **Large datasets** (thousands to millions of animals)
+- **Complex relationships** (pedigrees, genomic data)
+- **Special structures** (repeated records, incomplete data)
+- **Custom models** (not always available in standard software)
+
+Understanding how methods work allows you to:
+
+- Adapt methods for your specific problems
+- Recognize when software makes incorrect assumptions
+- Build custom solutions when needed
+- Communicate effectively with statisticians and programmers
+:::
+
+## Linear Models in Animal Breeding
+
+Before diving into the mathematics, let's see where linear models appear in animal breeding and genetics.
+
+### Best Linear Unbiased Prediction (BLUP)
+
+BLUP is the foundation of modern genetic evaluation. It estimates breeding values by solving a large system of linear equations called **mixed model equations (MME)**.
+
+For a simple sire model:
+
+$$
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\mathbf{u} + \mathbf{e}
+$$
+
+Where:
+
+- $\mathbf{y}$ = vector of observations (e.g., milk yields)
+- $\mathbf{X}$ = design matrix for fixed effects (e.g., herds, years)
+- $\boldsymbol{\beta}$ = vector of fixed effects
+- $\mathbf{Z}$ = incidence matrix relating observations to sires
+- $\mathbf{u}$ = vector of sire effects (breeding values)
+- $\mathbf{e}$ = vector of random errors
+
+We'll build toward this model throughout the course, starting with simpler fixed effects models.
+
+### Estimated Progeny Differences (EPDs)
+
+EPDs in beef cattle are predictions of genetic merit based on performance data. They come from solving linear models that account for:
+
+- Contemporary groups (fixed effects)
+- Genetic relationships (random effects)
+- Multiple traits (multivariate models)
+
+### Yield Deviations
+
+In dairy cattle, yield deviations adjust cow records for:
+
+- Herd-year-season effects
+- Age at calving
+- Days in milk
+- Previous lactations
+
+These adjustments use linear model equations.
+
+### Genomic Evaluations
+
+Modern genomic selection uses linear models relating:
+
+- Phenotypes (e.g., growth rate)
+- Genotypes (SNP markers)
+- Relationships (genomic relationship matrix)
+
+::: {.callout-important}
+## All These Methods Share a Common Foundation
+
+Every method listed above relies on:
+
+1. Expressing the problem as a linear model
+2. Building appropriate design matrices
+3. Solving systems of linear equations
+4. Understanding properties of estimators (BLUE, BLUP)
+
+**This course teaches you those fundamental skills.**
+:::
+
+## Setting Up Your Computing Environment
+
+### Installing R and RStudio
+
+If you haven't already:
+
+1. **Download R** from [https://cran.r-project.org/](https://cran.r-project.org/)
+2. **Download RStudio** from [https://posit.co/download/rstudio-desktop/](https://posit.co/download/rstudio-desktop/)
+3. **Install both** in that order (R first, then RStudio)
+
+### Required R Packages
+
+We'll use several R packages throughout the course. Install them now:
+
+```{r}
+#| label: setup-packages
+#| eval: false
+
+# Install required packages
+install.packages("MASS")      # For generalized inverse: ginv()
+install.packages("car")       # For VIF, Type III SS
+install.packages("emmeans")   # For adjusted means
+install.packages("multcomp")  # For multiple contrasts
+install.packages("lme4")      # For mixed models (Week 14)
+```
+
+Load the main package we'll use in Week 1:
+
+```{r}
+#| label: load-packages
+#| message: false
+
+library(MASS)  # For ginv() function
+```
+
+### Test Your Installation
+
+Run this simple test:
+
+```{r}
+#| label: test-installation
+
+# Create a simple matrix
+A <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+print(A)
+
+# Compute its inverse
+A_inv <- solve(A)
+print(A_inv)
+
+# Verify: A %*% A_inv should equal identity matrix
+I <- A %*% A_inv
+print(round(I, 10))  # Round to remove floating point errors
+```
+
+If this runs without errors and produces the identity matrix, you're ready to go!
+
+## Review of Matrix Operations
+
+Let's review the matrix operations we'll use throughout this course.
+
+### Creating Matrices in R
+
+```{r}
+#| label: create-matrices
+
+# Create a vector
+y <- c(25, 28, 26, 30, 27)
+print(y)
+
+# Create a matrix by specifying elements
+X <- matrix(c(1, 1, 1, 1, 1), nrow = 5, ncol = 1)
+print(X)
+
+# Create a matrix using cbind (column bind)
+X2 <- matrix(c(1, 1, 1, 1, 1,
+               25, 28, 26, 30, 27), nrow = 5, ncol = 2)
+print(X2)
+
+# Check dimensions
+dim(y)   # Actually a vector, shown as NULL
+dim(X)   # 5 rows, 1 column
+dim(X2)  # 5 rows, 2 columns
+```
+
+### Matrix Transpose
+
+The transpose of a matrix swaps rows and columns.
+
+Notation: $\mathbf{X}'$ or $\mathbf{X}^\top$
+
+```{r}
+#| label: transpose
+
+X <- matrix(c(1, 2, 3, 4, 5, 6), nrow = 2, ncol = 3)
+print("Original matrix X (2x3):")
+print(X)
+
+X_transpose <- t(X)
+print("Transposed matrix X' (3x2):")
+print(X_transpose)
+```
+
+### Matrix Multiplication
+
+Matrix multiplication follows the rule: $(n \times k)$ matrix times $(k \times m)$ matrix equals $(n \times m)$ matrix.
+
+The number of columns in the first matrix must equal the number of rows in the second matrix.
+
+```{r}
+#| label: matrix-multiplication
+
+# Example 1: Vector times matrix
+A <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+v <- c(5, 6)
+
+# v is 1x2 (row vector), A is 2x2
+# Result should be 1x2
+result1 <- v %*% A
+print(result1)
+
+# Example 2: Matrix times vector
+# A is 2x2, v as column vector is 2x1
+# Result should be 2x1
+result2 <- A %*% v
+print(result2)
+
+# Example 3: Matrix times matrix
+B <- matrix(c(1, 0, 0, 1), nrow = 2, ncol = 2)
+result3 <- A %*% B
+print(result3)
+```
+
+::: {.callout-tip}
+## Matrix Multiplication in R
+
+In R, use `%*%` for matrix multiplication, NOT `*`.
+
+- `A * B` performs element-wise multiplication
+- `A %*% B` performs matrix multiplication
+:::
+
+### Matrix Addition
+
+Matrices of the same dimensions can be added element-wise.
+
+```{r}
+#| label: matrix-addition
+
+A <- matrix(c(1, 2, 3, 4), nrow = 2, ncol = 2)
+B <- matrix(c(5, 6, 7, 8), nrow = 2, ncol = 2)
+
+C <- A + B
+print(C)
+```
+
+### Identity Matrix
+
+The identity matrix $\mathbf{I}$ is a square matrix with 1's on the diagonal and 0's elsewhere.
+
+Property: $\mathbf{A}\mathbf{I} = \mathbf{I}\mathbf{A} = \mathbf{A}$
+
+```{r}
+#| label: identity-matrix
+
+# Create 3x3 identity matrix
+I3 <- diag(3)
+print(I3)
+
+# Verify property
+A <- matrix(c(1, 2, 3, 4, 5, 6, 7, 8, 9), nrow = 3, ncol = 3)
+print("A * I equals A:")
+print(A %*% I3)
+```
+
+## The Sample Mean as a Linear Model
+
+Let's start with the simplest possible linear model: estimating a sample mean.
+
+### The Statistical Model
+
+Suppose we have $n$ observations: $y_1, y_2, \ldots, y_n$.
+
+We can write this as:
+
+$$
+y_i = \mu + e_i, \quad i = 1, 2, \ldots, n
+$$ {#eq-mean-model}
+
+Where:
+
+- $y_i$ = observation $i$ (scalar)
+- $\mu$ = population mean (scalar, unknown parameter to estimate)
+- $e_i$ = random error for observation $i$ (scalar)
+
+### Assumptions
+
+We assume:
+
+1. $E(e_i) = 0$ (errors have mean zero)
+2. $Var(e_i) = \sigma^2$ (constant variance)
+3. $Cov(e_i, e_j) = 0$ for $i \neq j$ (errors are independent)
+
+### Matrix Form
+
+We can write this model in matrix form:
+
+$$
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}
+$$ {#eq-matrix-form}
+
+Where:
+
+- $\mathbf{y}$ is an $n \times 1$ vector of observations: $\mathbf{y} = \begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_n \end{bmatrix}$
+
+- $\mathbf{X}$ is an $n \times 1$ design matrix of ones: $\mathbf{X} = \begin{bmatrix} 1 \\ 1 \\ \vdots \\ 1 \end{bmatrix}$
+
+- $\boldsymbol{\beta}$ is a $1 \times 1$ vector (scalar) containing $\mu$: $\boldsymbol{\beta} = [\mu]$
+
+- $\mathbf{e}$ is an $n \times 1$ vector of errors: $\mathbf{e} = \begin{bmatrix} e_1 \\ e_2 \\ \vdots \\ e_n \end{bmatrix}$
+
+### Least Squares Estimator
+
+The least squares estimator minimizes the sum of squared errors:
+
+$$
+SSE = \sum_{i=1}^{n} e_i^2 = \sum_{i=1}^{n} (y_i - \mu)^2
+$$
+
+Taking the derivative with respect to $\mu$ and setting equal to zero:
+
+$$
+\frac{\partial SSE}{\partial \mu} = -2\sum_{i=1}^{n}(y_i - \mu) = 0
+$$
+
+Solving:
+
+$$
+\sum_{i=1}^{n}y_i = n\mu
+$$
+
+$$
+\hat{\mu} = \frac{1}{n}\sum_{i=1}^{n}y_i = \bar{y}
+$$ {#eq-mean-estimate}
+
+The least squares estimate of $\mu$ is simply the sample mean!
+
+### Using the Normal Equations
+
+The general form of the **normal equations** is:
+
+$$
+\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}
+$$ {#eq-normal-equations}
+
+Where $\mathbf{b}$ is our estimate of $\boldsymbol{\beta}$.
+
+For our mean model:
+
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix} 1 & 1 & \cdots & 1 \end{bmatrix} \begin{bmatrix} 1 \\ 1 \\ \vdots \\ 1 \end{bmatrix} = n
+$$
+
+This is a $1 \times 1$ matrix (scalar) equal to $n$.
+
+$$
+\mathbf{X}'\mathbf{y} = \begin{bmatrix} 1 & 1 & \cdots & 1 \end{bmatrix} \begin{bmatrix} y_1 \\ y_2 \\ \vdots \\ y_n \end{bmatrix} = \sum_{i=1}^{n} y_i
+$$
+
+The normal equation becomes:
+
+$$
+n \cdot b = \sum_{i=1}^{n} y_i
+$$
+
+Solving:
+
+$$
+b = \frac{1}{n}\sum_{i=1}^{n} y_i = \bar{y}
+$$
+
+Same result!
+
+### Solution Using Matrix Inverse
+
+The general solution to the normal equations (when $\mathbf{X}'\mathbf{X}$ is invertible) is:
+
+$$
+\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}
+$$ {#eq-ls-solution}
+
+For our mean model:
+
+$$
+(\mathbf{X}'\mathbf{X})^{-1} = n^{-1} = \frac{1}{n}
+$$
+
+Therefore:
+
+$$
+b = \frac{1}{n} \sum_{i=1}^{n} y_i = \bar{y}
+$$
+
+::: {.callout-note}
+## NOTATION ESTABLISHED
+
+This is Week 1, where we establish notation used throughout all 15 weeks:
+
+**Vectors and Matrices:**
+
+- $\mathbf{y}$ = response/observation vector (lowercase bold)
+- $\mathbf{X}$ = design matrix (uppercase bold)
+- $\boldsymbol{\beta}$ = parameter vector (Greek lowercase bold)
+- $\mathbf{b}$ = estimate vector (lowercase bold)
+- $\mathbf{e}$ = error/residual vector (lowercase bold)
+- $\mathbf{I}$ = identity matrix (uppercase bold)
+
+**Operators:**
+
+- $\mathbf{A}'$ or $\mathbf{A}^\top$ = transpose
+- $\mathbf{A}^{-1}$ = matrix inverse
+- $\mathbf{A}^{-}$ = generalized inverse (introduced Week 2)
+
+**Scalars:**
+
+- $n$ = sample size
+- $p$ = number of parameters
+- $\sigma^2$ = variance
+
+**Statistical Quantities:**
+
+- $SSE$ = sum of squares for error
+- $SST$ = total sum of squares
+- $SSM$ = model sum of squares
+
+This notation will be maintained consistently. Any extensions will be clearly marked.
+:::
+
+## Small Numerical Example: Dairy Milk Yield
+
+Let's work through a complete example calculating the mean milk yield for 5 Holstein cows.
+
+### Data
+
+Daily milk yield (kg/day) for 5 cows:
+
+```{r}
+#| label: example-data
+
+y <- c(25, 28, 26, 30, 27)
+n <- length(y)
+
+print(paste("Observations:", paste(y, collapse = ", ")))
+print(paste("Sample size n =", n))
+```
+
+### Model
+
+$$
+y_i = \mu + e_i, \quad i = 1, 2, 3, 4, 5
+$$
+
+We want to estimate $\mu$ (the mean milk yield).
+
+### Design Matrix
+
+```{r}
+#| label: design-matrix
+
+X <- matrix(1, nrow = n, ncol = 1)
+print("Design matrix X:")
+print(X)
+print(paste("Dimensions:", nrow(X), "x", ncol(X)))
+```
+
+### Compute X'X
+
+```{r}
+#| label: compute-xtx
+
+XtX <- t(X) %*% X
+print("X'X:")
+print(XtX)
+```
+
+As expected, $\mathbf{X}'\mathbf{X} = n = 5$.
+
+### Compute X'y
+
+```{r}
+#| label: compute-xty
+
+Xty <- t(X) %*% y
+print("X'y:")
+print(Xty)
+```
+
+This equals $\sum y_i = 25 + 28 + 26 + 30 + 27 = 136$.
+
+### Solve Normal Equations
+
+$$
+\mathbf{X}'\mathbf{X} \mathbf{b} = \mathbf{X}'\mathbf{y}
+$$
+$$
+5b = 136
+$$
+$$
+b = \frac{136}{5} = 27.2
+$$
+
+```{r}
+#| label: solve-normal-eqns
+
+# Method 1: Using matrix inverse
+XtX_inv <- solve(XtX)  # Inverse of X'X
+b <- XtX_inv %*% Xty
+print("Estimate of mu:")
+print(b)
+
+# Method 2: Direct calculation
+b_direct <- sum(y) / n
+print("Direct calculation (sample mean):")
+print(b_direct)
+```
+
+Both methods give $\hat{\mu} = 27.2$ kg/day.
+
+### Fitted Values and Residuals
+
+```{r}
+#| label: fitted-residuals
+
+# Fitted values: y_hat = X * b
+y_hat <- X %*% b
+print("Fitted values:")
+print(y_hat)
+
+# Residuals: e = y - y_hat
+residuals <- y - y_hat
+print("Residuals:")
+print(residuals)
+
+# Check: sum of residuals should be zero
+print(paste("Sum of residuals:", sum(residuals)))
+```
+
+Each fitted value is $\hat{y}_i = \hat{\mu} = 27.2$.
+
+The residuals are: $e_i = y_i - 27.2$.
+
+::: {.callout-tip}
+## Property of Least Squares
+
+For any model with an intercept, the sum of residuals equals zero (within rounding error):
+
+$$
+\sum_{i=1}^{n} e_i = 0
+$$
+:::
+
+### Sum of Squares
+
+```{r}
+#| label: sum-squares
+
+# Total sum of squares
+y_bar <- mean(y)
+SST <- sum((y - y_bar)^2)
+print(paste("Total SS:", SST))
+
+# Sum of squares for error
+SSE <- sum(residuals^2)
+print(paste("Error SS:", SSE))
+
+# Alternative calculation
+SSE_alt <- t(residuals) %*% residuals
+print(paste("Error SS (matrix form):", SSE_alt))
+```
+
+### Verify Against lm()
+
+Let's verify our hand calculations match R's `lm()` function:
+
+```{r}
+#| label: verify-lm
+
+# Fit using lm()
+model <- lm(y ~ 1)  # Model with intercept only
+summary(model)
+
+# Compare our estimate to lm()
+print("Our estimate:")
+print(b)
+print("lm() estimate:")
+print(coef(model))
+
+# Are they equal?
+print(paste("Match:", all.equal(c(b), coef(model))))
+```
+
+Perfect match!
+
+## R Implementation: Building Our First Solver
+
+Let's create a reusable function to compute the mean using the linear model approach:
+
+```{r}
+#| label: mean-solver-function
+
+# Function to estimate mean using linear model framework
+estimate_mean <- function(y) {
+
+  # Sample size
+  n <- length(y)
+
+  # Design matrix (column of ones)
+  X <- matrix(1, nrow = n, ncol = 1)
+
+  # Compute X'X
+  XtX <- t(X) %*% X
+
+  # Compute X'y
+  Xty <- t(X) %*% y
+
+  # Solve normal equations: b = (X'X)^-1 X'y
+  b <- solve(XtX) %*% Xty
+
+  # Compute fitted values
+  y_hat <- X %*% b
+
+  # Compute residuals
+  residuals <- y - y_hat
+
+  # Compute SSE
+  SSE <- sum(residuals^2)
+
+  # Compute variance estimate
+  # sigma^2 = SSE / (n - p) where p = 1
+  sigma2_hat <- SSE / (n - 1)
+
+  # Return results as list
+  results <- list(
+    estimate = c(b),
+    fitted_values = c(y_hat),
+    residuals = c(residuals),
+    SSE = SSE,
+    sigma2 = sigma2_hat,
+    n = n
+  )
+
+  return(results)
+}
+
+# Test our function
+test_data <- c(25, 28, 26, 30, 27)
+results <- estimate_mean(test_data)
+
+print("Results from our custom function:")
+print(results)
+```
+
+This function computes everything using matrix operations, just as we'll do for more complex models in later weeks.
+
+## Realistic Livestock Application
+
+Let's apply our method to a larger dairy dataset.
+
+### Scenario
+
+A dairy researcher collects morning milk yield data from 30 Holstein cows to estimate the herd average production level. The data represents cows in similar stages of lactation (60-90 days in milk) under the same management system.
+
+### Generate Realistic Data
+
+```{r}
+#| label: realistic-example
+
+# Set seed for reproducibility
+set.seed(123)
+
+# Generate realistic milk yield data (kg/day)
+# Mean around 27 kg, SD around 4 kg (typical for Holsteins)
+n <- 30
+true_mean <- 27
+true_sd <- 4
+
+milk_yield <- round(rnorm(n, mean = true_mean, sd = true_sd), 1)
+
+# Ensure no negative values (biologically impossible)
+milk_yield[milk_yield < 0] <- abs(milk_yield[milk_yield < 0])
+
+print("Milk yield data (kg/day):")
+print(milk_yield)
+```
+
+### Exploratory Analysis
+
+```{r}
+#| label: exploratory-plot
+#| fig-cap: "Distribution of milk yield for 30 Holstein cows"
+#| fig-width: 8
+#| fig-height: 5
+
+# Summary statistics
+summary(milk_yield)
+
+# Standard deviation
+sd(milk_yield)
+
+# Histogram
+hist(milk_yield,
+     breaks = 10,
+     main = "Distribution of Milk Yield",
+     xlab = "Milk Yield (kg/day)",
+     ylab = "Frequency",
+     col = "lightblue",
+     border = "white")
+abline(v = mean(milk_yield), col = "red", lwd = 2, lty = 2)
+legend("topright", legend = "Sample Mean", col = "red", lty = 2, lwd = 2)
+```
+
+### Estimate Mean Using Our Method
+
+```{r}
+#| label: estimate-large-sample
+
+# Use our custom function
+results_large <- estimate_mean(milk_yield)
+
+print("Estimated mean milk yield:")
+print(results_large$estimate)
+
+print("Estimated variance:")
+print(results_large$sigma2)
+
+print("Standard error of the mean:")
+se_mean <- sqrt(results_large$sigma2 / results_large$n)
+print(se_mean)
+```
+
+### 95% Confidence Interval
+
+```{r}
+#| label: confidence-interval
+
+# Degrees of freedom
+df <- n - 1
+
+# Critical t-value (two-tailed, alpha = 0.05)
+t_crit <- qt(0.975, df)
+
+# Confidence interval
+lower <- results_large$estimate - t_crit * se_mean
+upper <- results_large$estimate + t_crit * se_mean
+
+print(paste("95% CI: [", round(lower, 2), ",", round(upper, 2), "]"))
+```
+
+### Interpretation
+
+The estimated mean milk yield is `r round(results_large$estimate, 2)` kg/day with a 95% confidence interval of [`r round(lower, 2)`, `r round(upper, 2)`] kg/day. This represents the average production level for this group of Holstein cows under these management conditions.
+
+### Compare with lm()
+
+```{r}
+#| label: verify-large-sample
+
+model_large <- lm(milk_yield ~ 1)
+summary(model_large)
+
+# Compare estimates
+print("Our estimate vs lm():")
+print(c(results_large$estimate, coef(model_large)))
+
+# Check equality
+all.equal(results_large$estimate, coef(model_large)[[1]])
+```
+
+Perfect agreement!
+
+## Connection to Breeding Applications
+
+### How This Relates to Genetic Evaluation
+
+This simple example introduces concepts we'll build on:
+
+1. **Design matrices**: We constructed $\mathbf{X}$ from data structure
+2. **Normal equations**: We solved $\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$
+3. **Estimation**: We obtained BLUE (Best Linear Unbiased Estimator)
+4. **Variance**: We estimated $\sigma^2$ from residuals
+
+In genetic evaluation:
+
+- $\mathbf{X}$ includes multiple fixed effects (herd, year, age, etc.)
+- $\mathbf{Z}$ relates observations to breeding values
+- Normal equations become **mixed model equations**
+- We estimate both fixed effects and predict breeding values
+
+### Preview: Contemporary Groups
+
+In real breeding programs, we don't estimate a single overall mean. Instead, we estimate means for **contemporary groups** - animals raised together under similar conditions.
+
+For example:
+
+- Herd-Year-Season groups in dairy
+- Pen-Sex-Diet groups in swine
+- Flock-Year-Management groups in sheep
+
+Each group gets its own parameter in the design matrix. We'll learn how to build these matrices in Week 3.
+
+## Summary
+
+This week we:
+
+1. Established the course philosophy: **understand through building**
+2. Connected linear models to animal breeding applications
+3. Set up our computing environment
+4. Reviewed essential matrix operations
+5. Expressed the sample mean as a linear model
+6. Derived the least squares estimator using:
+   - Calculus (minimizing SSE)
+   - Normal equations ($\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$)
+   - Matrix inverse ($\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$)
+7. Implemented a solver function in R
+8. Verified results against `lm()`
+9. Applied the method to realistic dairy data
+
+### Key Takeaways
+
+- The sample mean is a special case of a linear model
+- Matrix notation provides a unified framework
+- Building solvers manually deepens understanding
+- The methods scale from simple means to complex breeding value prediction
+
+### Looking Ahead
+
+**Next week (Week 2)**, we'll dive deeper into linear algebra:
+
+- Matrix rank and linear independence
+- Regular and generalized inverses
+- Solving systems of equations
+- Properties critical for understanding estimability
+
+This foundation will enable us to handle more complex models in subsequent weeks.
+
+## Additional Resources
+
+### R Documentation
+
+- `?matrix` - Creating matrices
+- `?solve` - Matrix inverse
+- `?lm` - Linear models
+
+### Recommended Reading
+
+- @searle1971 - Classic text on linear models
+- @searle2006 - Updated edition with modern examples
+- @henderson1984 - Application to animal breeding
+
+### Practice Dataset
+
+A CSV file with dairy milk yield data is available in the `data/` subdirectory for additional practice.
+
+---
+
+**Next**: [Week 2: Linear Algebra Essentials](../Week02_LinearAlgebra/Week02_LinearAlgebra.qmd)

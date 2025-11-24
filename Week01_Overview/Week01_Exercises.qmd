@@ -1,0 +1,170 @@
+# Week 1 Exercises {#sec-week01-exercises}
+
+## Computational Problems
+
+### Exercise 1.1: Hand Calculation of Sample Mean
+
+Body weights (kg) of 6 market-ready pigs:
+
+```
+115, 118, 121, 116, 119, 123
+```
+
+Using the linear model framework:
+
+a) Write out the design matrix $\mathbf{X}$ (show all elements)
+b) Compute $\mathbf{X}'\mathbf{X}$ by hand
+c) Compute $\mathbf{X}'\mathbf{y}$ by hand
+d) Solve the normal equation to find $\hat{\mu}$
+e) Calculate each residual $e_i = y_i - \hat{\mu}$
+f) Verify that $\sum e_i = 0$
+g) Compute $SSE = \sum e_i^2$
+
+### Exercise 1.2: Matrix Operations Practice
+
+Given matrices:
+
+$$
+\mathbf{A} = \begin{bmatrix} 2 & 4 \\ 1 & 3 \end{bmatrix}, \quad
+\mathbf{B} = \begin{bmatrix} 5 & 2 \\ 3 & 1 \end{bmatrix}
+$$
+
+Compute by hand (show all steps):
+
+a) $\mathbf{A}'$ (transpose of A)
+b) $\mathbf{A} + \mathbf{B}$
+c) $\mathbf{A} \cdot \mathbf{B}$ (matrix multiplication)
+d) $\mathbf{A}' \mathbf{A}$
+e) Verify your answers in R
+
+### Exercise 1.3: Building Design Matrices
+
+For each scenario, write out the complete design matrix $\mathbf{X}$:
+
+a) **Broiler weights**: 4 birds with weights 1.8, 2.1, 1.9, 2.0 kg
+
+   Model: $y_i = \mu + e_i$
+
+b) **Beef steers**: 5 animals with model $y_i = \beta_0 + \beta_1 x_i + e_i$ where:
+
+   - $y$ = weight gain (kg)
+   - $x$ = initial weight (kg): 350, 360, 355, 365, 358
+
+## Applied Problems
+
+### Exercise 1.4: Egg Production Analysis
+
+A poultry researcher measures daily egg production (eggs per hen) for 8 laying hens:
+
+```
+0.95, 0.88, 0.92, 0.85, 0.90, 0.93, 0.87, 0.89
+```
+
+Using R:
+
+a) Create the observation vector $\mathbf{y}$ and design matrix $\mathbf{X}$
+b) Compute $\mathbf{X}'\mathbf{X}$ and $\mathbf{X}'\mathbf{y}$
+c) Solve for $\hat{\mu}$ using matrix operations
+d) Compute fitted values and residuals
+e) Calculate $SSE$ and $\hat{\sigma}^2$
+f) Find the standard error of $\hat{\mu}$: $SE(\hat{\mu}) = \sqrt{\hat{\sigma}^2/n}$
+g) Construct a 95% confidence interval for $\mu$
+h) Verify your results using `lm()`
+
+### Exercise 1.5: Sheep Fleece Weight
+
+A sheep breeder weighs fleece from 10 Merino ewes (kg):
+
+```
+4.2, 4.8, 4.5, 4.1, 4.6, 4.9, 4.3, 4.7, 4.4, 4.5
+```
+
+a) Load the data into R
+b) Use the `estimate_mean()` function from the lecture notes to analyze the data
+c) Create a histogram of the data with the estimated mean marked
+d) Calculate the coefficient of variation: $CV = 100 \times \frac{\sqrt{\hat{\sigma}^2}}{\hat{\mu}}$
+e) Interpret the results in the context of fleece production
+
+### Exercise 1.6: Dairy Herd Practice Dataset
+
+Use the dataset `dairy_milk_practice.csv` in the `data/` folder.
+
+a) Read the CSV file into R using `read.csv()`
+b) Calculate the mean milk yield using:
+   - Built-in `mean()` function
+   - Matrix operations (as shown in lecture)
+   - The `lm()` function
+c) Verify all three methods give the same answer
+d) Create a boxplot of the data
+e) Identify any potential outliers (values more than 1.5 IQR from quartiles)
+
+## Theoretical Problems
+
+### Exercise 1.7: Properties of the Sample Mean
+
+Prove the following properties of the least squares estimator of the mean:
+
+a) **Unbiasedness**: Show that $E(\hat{\mu}) = \mu$
+
+   Hint: $E(\hat{\mu}) = E\left(\frac{1}{n}\sum y_i\right)$, use $E(y_i) = \mu$
+
+b) **Variance**: Show that $Var(\hat{\mu}) = \frac{\sigma^2}{n}$
+
+   Hint: $Var(\hat{\mu}) = Var\left(\frac{1}{n}\sum y_i\right)$, use $Var(y_i) = \sigma^2$ and independence
+
+c) **Efficiency**: Explain why $Var(\hat{\mu})$ decreases as $n$ increases
+
+### Exercise 1.8: Sum of Residuals
+
+For a model with an intercept (like $y_i = \mu + e_i$), prove that $\sum_{i=1}^{n} e_i = 0$.
+
+**Steps**:
+
+a) Write the normal equations: $\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$
+b) Expand for the mean model
+c) Show that this implies $\sum y_i = n\hat{\mu}$
+d) Use the definition $e_i = y_i - \hat{\mu}$ to show $\sum e_i = 0$
+
+### Exercise 1.9: Matrix Form Equivalence
+
+Show that minimizing $SSE = \sum_{i=1}^{n}(y_i - \mu)^2$ is equivalent to minimizing $(\ mathbf{y} - \mathbf{X}\boldsymbol{\beta})'(\mathbf{y} - \mathbf{X}\boldsymbol{\beta})$ for the mean model.
+
+**Hint**: Expand the matrix expression and show it equals $\sum (y_i - \mu)^2$.
+
+## Challenge Problems
+
+### Exercise 1.10: Weighted Mean
+
+Sometimes observations have different **weights** (e.g., pen averages with different pen sizes).
+
+Consider observations: $y = [10, 12, 11]$ with weights $w = [5, 3, 8]$ (e.g., pen sizes).
+
+The weighted mean is: $\hat{\mu}_w = \frac{\sum w_i y_i}{\sum w_i}$
+
+a) Calculate the weighted mean by hand
+b) Express this as a linear model with weighted least squares:
+   - Create matrix $\mathbf{W} = diag(w_1, w_2, w_3)$
+   - Solve: $\mathbf{b} = (\mathbf{X}'\mathbf{W}\mathbf{X})^{-1}\mathbf{X}'\mathbf{W}\mathbf{y}$
+c) Verify both methods give the same answer
+d) When would you use weighted means in animal breeding?
+
+### Exercise 1.11: Connection to BLUP
+
+Research and briefly explain (2-3 paragraphs):
+
+a) What does BLUP stand for?
+b) How does BLUP extend the fixed effects models we're learning?
+c) Why is BLUP important in animal breeding?
+d) Give one example of a BLUP application (e.g., sire evaluation, genomic selection)
+
+---
+
+## Submission Guidelines
+
+- Show all work for hand calculations
+- Include R code for computational problems
+- Comment your code clearly
+- Verify answers where possible
+- Write clear interpretations for applied problems
+
+Solutions are provided in Appendix E and in `Week01_Solutions.qmd`.

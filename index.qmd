@@ -1,0 +1,163 @@
+# Welcome {.unnumbered}
+
+Welcome to **Linear Models for Animal Breeding and Genetics**, a comprehensive graduate-level textbook designed to provide deep understanding of linear models from first principles.
+
+## About This Book
+
+This textbook takes a unique, hands-on approach to teaching linear models by focusing on building and solving equations manually before using statistical software. You will learn to construct your own least squares solvers and develop an intuitive understanding of the mathematics underlying genetic evaluation and statistical analysis in animal breeding.
+
+### Target Audience
+
+This course is designed for graduate students in:
+
+- Animal Breeding and Genetics
+- Quantitative Genetics
+- Animal Science
+- Related fields requiring deep statistical knowledge
+
+### Prerequisites
+
+Students should have completed:
+
+- Basic statistics (inference, hypothesis testing, probability distributions)
+- Elementary linear algebra (helpful but will be reviewed)
+- Basic R programming (will be taught as needed)
+
+### Course Philosophy
+
+Rather than treating statistical software as a "black box," this course emphasizes:
+
+- Building design matrices from raw data
+- Solving normal equations manually using matrix algebra
+- Understanding why methods work, not just how to run them
+- Verifying custom solutions against established software
+- Connecting mathematical theory to practical breeding applications
+
+## What You Will Learn
+
+By the end of this 15-week course, you will be able to:
+
+1. **Construct linear models** from first principles for livestock data
+2. **Build and manipulate design matrices** for various experimental designs
+3. **Derive and implement** least squares estimators manually
+4. **Understand deeply** the Gauss-Markov theorem and BLUE properties
+5. **Handle complex models** including ANOVA, ANCOVA, and factorial designs
+6. **Diagnose model problems** using residual analysis and influence measures
+7. **Work with unbalanced data** and non-full rank design matrices
+8. **Apply contrasts** and test complex hypotheses
+9. **Build custom solvers** in R that match professional statistical software
+10. **Prepare for mixed models** and Best Linear Unbiased Prediction (BLUP)
+
+## Course Structure
+
+The textbook is organized into 15 weekly chapters, progressing from foundational concepts to advanced topics:
+
+### Part I: Foundations (Weeks 1-3)
+Building the computational and mathematical foundation, including matrix algebra essentials and design matrix construction.
+
+### Part II: Core Regression Theory (Weeks 4-6)
+Simple and multiple regression, least squares theory, the Gauss-Markov theorem, and variance estimation.
+
+### Part III: Analysis of Variance (Weeks 7-10)
+One-way and two-way ANOVA, contrasts, estimable functions, factorial models, and analysis of covariance.
+
+### Part IV: Diagnostics and Advanced Topics (Weeks 11-14)
+Model diagnostics, non-full rank models, unbalanced data, generalized inverses, polynomial regression, weighted least squares, and mixed model previews.
+
+### Part V: Integration (Week 15)
+Capstone project bringing together all course concepts in a comprehensive livestock data analysis.
+
+## Key Features
+
+### Real Livestock Examples
+
+Every chapter includes examples from real animal breeding contexts:
+
+- Dairy cattle (milk production, lactation curves)
+- Beef cattle (growth traits, carcass quality)
+- Swine (litter size, feed efficiency, growth rate)
+- Poultry (egg production, meat yield, feed conversion)
+- Sheep (fleece weight, lamb weaning weights)
+- And more...
+
+### Hand-Calculable Examples
+
+Each chapter presents small numerical examples (n = 5-10 observations) that can be worked through by hand, showing every arithmetic step.
+
+### R Implementation
+
+All examples include:
+
+- Manual matrix operations in R
+- Custom solver implementations
+- Verification against `lm()` and other R functions
+- Heavily commented code for learning
+
+### Exercises with Complete Solutions
+
+Each chapter provides 5-7 exercises covering:
+
+- Computational problems (hand calculations)
+- Applied problems (real datasets)
+- Theoretical problems (proofs and derivations)
+
+Full solutions are provided in Appendix E.
+
+## Notation Conventions
+
+This textbook maintains consistent notation throughout all 15 weeks. The complete notation reference is available in Appendix A, but here are the key conventions:
+
+- **Vectors**: lowercase bold (e.g., $\mathbf{y}$, $\mathbf{e}$, $\boldsymbol{\beta}$)
+- **Matrices**: uppercase bold (e.g., $\mathbf{X}$, $\mathbf{H}$, $\mathbf{I}$)
+- **Scalars**: italic (e.g., $n$, $p$, $\sigma^2$)
+- **Transpose**: prime notation ($\mathbf{X}'$) or superscript T ($\mathbf{X}^\top$)
+- **Inverse**: superscript -1 ($\mathbf{X}^{-1}$)
+- **Generalized inverse**: superscript - ($\mathbf{X}^{-}$)
+
+Any notation changes or extensions will be clearly marked with callout boxes.
+
+## Using This Book
+
+### For Students
+
+- Work through examples with paper and pencil first
+- Type and run all R code yourself (don't just read it)
+- Attempt exercises before looking at solutions
+- Build your own solver functions incrementally
+- Connect every concept to livestock breeding applications
+
+### For Instructors
+
+This textbook can be used for:
+
+- A full semester (15 weeks) graduate course
+- A shorter intensive course (covering selected chapters)
+- Self-study with guided examples
+- A foundation before teaching mixed models and BLUP
+
+## Software Requirements
+
+All code in this book uses:
+
+- **R** (version 4.0 or higher recommended)
+- **RStudio** (recommended but not required)
+- **R packages**: `MASS`, `car`, `emmeans`, `lme4`, `multcomp`
+
+Installation instructions are provided in Week 1.
+
+## Acknowledgments
+
+This textbook builds on decades of foundational work in linear models and animal breeding, particularly the contributions of:
+
+- C.R. Henderson (mixed model equations and BLUP)
+- Shayle Searle (linear models theory)
+- D.S. Falconer (quantitative genetics)
+- And many others cited throughout this text
+
+## Let's Begin
+
+Ready to dive deep into linear models? Start with [Week 1: Course Overview & Computational Foundations](Week01_Overview/Week01_CourseOverview.qmd).
+
+---
+
+*This textbook is designed to transform you from a software user into someone who understands the mathematics, can build the tools, and can apply them confidently to animal breeding problems.*

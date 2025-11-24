@@ -1,0 +1,96 @@
+project:
+  type: book
+  output-dir: _book
+
+book:
+  title: "Linear Models for Animal Breeding and Genetics"
+  subtitle: "A Graduate-Level Textbook"
+  author: "Austin Putz"
+  date: today
+
+  chapters:
+    - index.qmd
+
+    - part: "Foundations"
+      chapters:
+        - Week01_Overview/Week01_CourseOverview.qmd
+        - Week02_LinearAlgebra/Week02_LinearAlgebra.qmd
+        - Week03_DesignMatrix/Week03_DesignMatrix.qmd
+
+    - part: "Core Regression Theory"
+      chapters:
+        - Week04_SimpleRegression/Week04_SimpleRegression.qmd
+        - Week05_LeastSquares/Week05_LeastSquares.qmd
+        - Week06_MultipleRegression/Week06_MultipleRegression.qmd
+
+    - part: "Analysis of Variance"
+      chapters:
+        - Week07_ANOVA_OneWay/Week07_ANOVA_OneWay.qmd
+        - Week08_Contrasts/Week08_Contrasts.qmd
+        - Week09_TwoWayANOVA/Week09_TwoWayANOVA.qmd
+        - Week10_ANCOVA/Week10_ANCOVA.qmd
+
+    - part: "Diagnostics and Advanced Topics"
+      chapters:
+        - Week11_Diagnostics/Week11_Diagnostics.qmd
+        - Week12_NonFullRank/Week12_NonFullRank.qmd
+        - Week13_SpecialTopics1/Week13_SpecialTopics1.qmd
+        - Week14_SpecialTopics2/Week14_SpecialTopics2.qmd
+
+    - part: "Integration"
+      chapters:
+        - Week15_Capstone/Week15_Capstone.qmd
+
+    - part: "Appendices"
+      chapters:
+        - Appendices/AppendixA_Notation.qmd
+        - Appendices/AppendixB_MatrixAlgebra.qmd
+        - Appendices/AppendixC_RFunctions.qmd
+        - Appendices/AppendixD_Datasets.qmd
+        - Appendices/AppendixE_Solutions.qmd
+
+  sidebar:
+    style: "floating"
+    search: true
+    collapse-level: 2
+
+  page-navigation: true
+
+  repo-url: https://github.com/austinputz/LinearModels
+  repo-actions: [edit, issue]
+
+bibliography: references.bib
+csl: apa.csl
+
+format:
+  html:
+    theme:
+      light: flatly
+      dark: darkly
+    css: styles.css
+    toc: true
+    toc-depth: 3
+    toc-expand: 2
+    number-sections: true
+    number-depth: 3
+    code-fold: false
+    code-copy: true
+    code-tools: true
+    code-link: true
+    fig-width: 8
+    fig-height: 6
+    fig-align: center
+    df-print: kable
+    highlight-style: github
+    html-math-method: mathjax
+    link-external-newwindow: true
+    smooth-scroll: true
+
+execute:
+  freeze: auto
+  warning: false
+  message: false
+  echo: true
+  cache: false
+
+editor: visual

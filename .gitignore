@@ -1,0 +1,39 @@
+# Quarto output
+_book/
+_site/
+*.html
+.quarto/
+
+# R files
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# R package development
+*.tar.gz
+*.Rcheck/
+
+# Mac OS
+.DS_Store
+
+# Temporary files
+*~
+*.swp
+*.swo
+.*.sw?
+
+# Log files
+*.log
+
+# Cache
+*_cache/
+*_files/
+
+# IDE
+.vscode/
+.idea/
+
+# Output files that shouldn't be tracked
+*.pdf

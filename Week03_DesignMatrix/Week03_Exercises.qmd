@@ -1,0 +1,246 @@
+---
+title: "Week 3 Exercises: Building the Design Matrix Framework"
+format:
+  html:
+    toc: true
+    number-sections: true
+    code-fold: show
+---
+
+# Week 3 Exercises
+
+These exercises will help you practice constructing design matrices, understanding coding schemes, and working with the general linear model framework.
+
+## Exercise 1: Manual Design Matrix Construction (Computational)
+
+Consider a small dairy study with 8 cows from 3 breeds:
+
+```
+Cow ID  | Breed    | Milk Yield (kg/day)
+--------|----------|--------------------
+1       | Holstein | 32
+2       | Holstein | 35
+3       | Holstein | 33
+4       | Jersey   | 24
+5       | Jersey   | 26
+6       | Guernsey | 28
+7       | Guernsey | 30
+8       | Guernsey | 29
+```
+
+### Part A
+Construct the **cell means model** design matrix $\mathbf{X}$ by hand. Label the columns and write out the complete $8 \times 3$ matrix.
+
+### Part B
+Construct the **effects model** design matrix $\mathbf{X}$ by hand using reference cell coding (Guernsey as reference). Write out the complete $8 \times 3$ matrix.
+
+### Part C
+For the cell means model, compute $\mathbf{X}'\mathbf{X}$ and $\mathbf{X}'\mathbf{y}$ by hand. What do you notice about the structure of $\mathbf{X}'\mathbf{X}$?
+
+### Part D
+What is the rank of each design matrix? Are they full rank? Explain why or why not.
+
+---
+
+## Exercise 2: Coding Schemes and Parameter Interpretation (Conceptual)
+
+For a swine growth study, 15 pigs are assigned to 3 different diets (5 pigs per diet). Average daily gain (ADG, kg/day) is measured.
+
+### Part A
+Write out the cell means model in both matrix form ($\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}$) and scalar form ($y_{ij} = ...$). Define all terms and state the dimensions of each matrix/vector.
+
+### Part B
+Write out the effects model with sum-to-zero constraint ($\sum_{i=1}^3 \alpha_i = 0$). How many parameters are estimable without constraints? With the constraint?
+
+### Part C
+Suppose the estimated group means are: Diet 1 = 0.85 kg/day, Diet 2 = 0.92 kg/day, Diet 3 = 0.88 kg/day.
+
+Using **reference cell coding** with Diet 1 as reference, what are the estimated parameters $\hat{\mu}$, $\hat{\alpha}_2$, and $\hat{\alpha}_3$?
+
+### Part D
+Using **sum-to-zero constraint**, what are the estimated parameters $\hat{\mu}$, $\hat{\alpha}_1$, $\hat{\alpha}_2$, and $\hat{\alpha}_3$? (Recall: $\hat{\mu}$ = overall mean when using sum-to-zero constraint)
+
+---
+
+## Exercise 3: Building Design Matrices in R (Applied)
+
+Use R to analyze the following dataset on lamb birth weights:
+
+```{r}
+#| label: ex3-data
+#| eval: false
+
+# Lamb birth weight data
+lamb_data <- data.frame(
+  lamb_id = 1:12,
+  sex = c("Male", "Male", "Female", "Female", "Male", "Female",
+          "Male", "Female", "Male", "Female", "Male", "Female"),
+  birth_wt_kg = c(4.2, 4.5, 3.8, 3.9, 4.3, 3.7,
+                  4.4, 4.0, 4.1, 3.8, 4.6, 3.9)
+)
+```
+
+### Part A
+Create the cell means design matrix using `model.matrix()`. Print the matrix and verify its dimensions and rank.
+
+### Part B
+Create the effects model design matrix using `model.matrix()`. Which sex is used as the reference? Print the matrix.
+
+### Part C
+Manually solve the normal equations for the cell means model:
+1. Compute $\mathbf{X}'\mathbf{X}$
+2. Compute $\mathbf{X}'\mathbf{y}$
+3. Solve for $\hat{\boldsymbol{\beta}}$
+4. Interpret the estimates
+
+### Part D
+Fit the same model using `lm()` and verify your manual calculation matches R's output.
+
+---
+
+## Exercise 4: ANCOVA Design Matrix (Applied)
+
+Consider an egg production study with 3 layer strains. Egg production (eggs/month) is measured, and body weight (kg) is included as a covariate:
+
+```{r}
+#| label: ex4-data
+#| eval: false
+
+egg_data <- data.frame(
+  strain = rep(c("A", "B", "C"), each = 4),
+  body_weight_kg = c(1.8, 1.9, 2.0, 1.7,
+                     1.9, 2.1, 2.0, 1.8,
+                     2.2, 2.3, 2.1, 2.0),
+  eggs_per_month = c(22, 24, 25, 21,
+                     23, 26, 25, 22,
+                     25, 28, 26, 24)
+)
+```
+
+### Part A
+Create the ANCOVA design matrix with strain and **centered** body weight as predictors. What are the dimensions? What is the rank?
+
+### Part B
+Why do we center the body weight covariate? What changes in the interpretation of the intercept when we center vs. not center?
+
+### Part C
+Fit the ANCOVA model using `lm()`. Interpret each estimated coefficient in the context of egg production.
+
+---
+
+## Exercise 5: Model Assumptions (Theoretical)
+
+### Part A
+State the three Gauss-Markov assumptions for the linear model $\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}$. Write each assumption in both words and mathematical notation.
+
+### Part B
+Explain the difference between the assumptions needed for the Gauss-Markov theorem (BLUE property) and the assumptions needed for valid t-tests and F-tests.
+
+### Part C
+For each of the following scenarios, identify which assumption is violated and suggest an appropriate remedy:
+
+1. Residuals increase in variance as fitted values increase
+2. Observations are taken sequentially over time, and consecutive residuals are correlated
+3. The response variable has a strong right skew
+4. The relationship between Y and X is curved, not linear
+
+---
+
+## Exercise 6: Rank and Estimability (Theoretical)
+
+Consider a genetics study with 4 sires, each with a different number of progeny:
+
+| Sire | Number of Progeny |
+|------|-------------------|
+| 1    | 8                 |
+| 2    | 5                 |
+| 3    | 10                |
+| 4    | 3                 |
+
+Total n = 26 observations.
+
+### Part A
+For the cell means model $y_{ij} = \mu_i + e_{ij}$ (where $i$ = sire, $j$ = progeny), what is the dimension of the design matrix $\mathbf{X}$? What is its rank?
+
+### Part B
+For the effects model $y_{ij} = \mu + s_i + e_{ij}$ (where $s_i$ is the sire effect), how many parameters are in the model? Is the design matrix full rank? Why or why not?
+
+### Part C
+In the effects model without constraints, which of the following are estimable? Justify your answers.
+
+1. $\mu$ (overall mean)
+2. $s_1$ (sire 1 effect)
+3. $s_1 - s_2$ (difference between sire 1 and sire 2)
+4. $\frac{s_1 + s_2 + s_3 + s_4}{4}$ (average sire effect)
+
+### Part D
+If we apply the constraint $\sum_{i=1}^4 s_i = 0$, does this change which functions are estimable? Does it change the fitted values $\hat{\mathbf{y}}$?
+
+---
+
+## Exercise 7: Comprehensive Problem (Applied/Synthesis)
+
+A beef cattle study compares average daily gain (ADG) across 3 breeds with initial weight as a covariate:
+
+```{r}
+#| label: ex7-data
+#| eval: false
+
+beef_data <- data.frame(
+  animal_id = 1:15,
+  breed = rep(c("Angus", "Hereford", "Charolais"), each = 5),
+  initial_weight_kg = c(245, 250, 240, 255, 248,
+                        238, 242, 245, 240, 235,
+                        265, 270, 268, 275, 262),
+  adg_kg_per_day = c(1.45, 1.52, 1.40, 1.55, 1.48,
+                     1.38, 1.42, 1.46, 1.40, 1.35,
+                     1.62, 1.68, 1.65, 1.72, 1.60)
+)
+```
+
+### Part A
+Fit three models:
+1. Cell means model (breed only, no intercept)
+2. Effects model (breed with intercept)
+3. ANCOVA model (breed + centered initial weight)
+
+For each model, report the design matrix dimensions, rank, and parameter estimates.
+
+### Part B
+Compare the three models:
+- Do all three give the same fitted values for the breed-only models (models 1 and 2)?
+- How does adding initial weight (model 3) change the breed effect estimates?
+- Which model do you think is most appropriate? Why?
+
+### Part C
+For the ANCOVA model (model 3):
+- Interpret the coefficient for initial weight
+- Test whether initial weight is a significant predictor (you'll learn formal testing next week, but you can examine the t-statistic and p-value from `summary()`)
+- Compute adjusted breed means (marginal means at the average initial weight)
+
+### Part D
+Write a function `build_cell_means_matrix()` that takes a factor variable and returns the cell means design matrix. Test it on the breed variable.
+
+---
+
+## Additional Challenge (Optional)
+
+**Challenge**: Prove that for the cell means model with balanced data (equal $n_i$ in each group), the least squares estimates $\hat{\mu}_i$ equal the group means $\bar{y}_{i\cdot}$.
+
+*Hint*: Start with the normal equations $\mathbf{X}'\mathbf{X}\hat{\boldsymbol{\beta}} = \mathbf{X}'\mathbf{y}$ and note the special structure of $\mathbf{X}'\mathbf{X}$ for the cell means model.
+
+---
+
+## Submission Notes
+
+For computational problems:
+- Show all R code
+- Include output
+- Verify calculations manually where requested
+
+For theoretical problems:
+- Provide clear explanations
+- Use mathematical notation appropriately
+- Justify your reasoning
+
+**Solutions are provided in Week03_Solutions.qmd**

@@ -1,0 +1,822 @@
+---
+title: "Week 3 Solutions: Building the Design Matrix Framework"
+format:
+  html:
+    toc: true
+    number-sections: true
+    code-fold: show
+---
+
+# Week 3 Exercise Solutions
+
+Complete solutions with detailed explanations for all Week 3 exercises.
+
+## Solution 1: Manual Design Matrix Construction
+
+### Part A: Cell Means Design Matrix
+
+The cell means model is: $y_{ij} = \mu_i + e_{ij}$ where $i \in \{$Holstein, Jersey, Guernsey$\}$
+
+Design matrix $\mathbf{X}$ (8 × 3):
+
+$$
+\mathbf{X}_{\text{cell}} = \begin{bmatrix}
+1 & 0 & 0 \\
+1 & 0 & 0 \\
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 1 \\
+0 & 0 & 1 \\
+0 & 0 & 1
+\end{bmatrix}
+$$
+
+Columns: [Holstein, Jersey, Guernsey]
+
+**Explanation**: Each row represents one cow. The entry is 1 in the column corresponding to that cow's breed, and 0 elsewhere.
+
+### Part B: Effects Model Design Matrix (Reference Cell Coding)
+
+The effects model is: $y_{ij} = \mu + \alpha_i + e_{ij}$ with Guernsey as reference ($\alpha_{\text{Guernsey}} = 0$)
+
+Design matrix $\mathbf{X}$ (8 × 3):
+
+$$
+\mathbf{X}_{\text{effects}} = \begin{bmatrix}
+1 & 1 & 0 \\
+1 & 1 & 0 \\
+1 & 1 & 0 \\
+1 & 0 & 1 \\
+1 & 0 & 1 \\
+1 & 0 & 0 \\
+1 & 0 & 0 \\
+1 & 0 & 0
+\end{bmatrix}
+$$
+
+Columns: [Intercept, Holstein, Jersey]
+
+**Interpretation**:
+- Column 1: All 1's (intercept)
+- Column 2: 1 if Holstein, 0 otherwise
+- Column 3: 1 if Jersey, 0 otherwise
+- Guernsey cows have 0's in both breed columns (reference group)
+
+### Part C: Normal Equations for Cell Means Model
+
+Response vector:
+$$
+\mathbf{y} = \begin{bmatrix} 32 \\ 35 \\ 33 \\ 24 \\ 26 \\ 28 \\ 30 \\ 29 \end{bmatrix}
+$$
+
+Compute $\mathbf{X}'\mathbf{X}$:
+
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix}
+3 & 0 & 0 \\
+0 & 2 & 0 \\
+0 & 0 & 3
+\end{bmatrix}
+$$
+
+**Observation**: $\mathbf{X}'\mathbf{X}$ is **diagonal**! Each diagonal element is the sample size for that group.
+
+Compute $\mathbf{X}'\mathbf{y}$:
+
+$$
+\mathbf{X}'\mathbf{y} = \begin{bmatrix}
+32 + 35 + 33 \\
+24 + 26 \\
+28 + 30 + 29
+\end{bmatrix} = \begin{bmatrix}
+100 \\
+50 \\
+87
+\end{bmatrix}
+$$
+
+Each element is the sum of observations for that group.
+
+### Part D: Rank Analysis
+
+**Cell Means Matrix**:
+- Dimensions: 8 × 3
+- Rank: 3
+- **Full rank?** YES (rank = number of columns)
+- Each column is linearly independent
+- All three breed means can be uniquely estimated
+
+**Effects Model Matrix**:
+- Dimensions: 8 × 3
+- Rank: 3
+- **Full rank?** YES (rank = number of columns)
+- With reference cell coding, we dropped one breed column, making the matrix full rank
+
+**Key Point**: The full effects model (with all 4 parameters: $\mu$, $\alpha_{\text{Holstein}}$, $\alpha_{\text{Jersey}}$, $\alpha_{\text{Guernsey}}$) would have rank 3 < 4, but reference cell coding makes it full rank by setting one $\alpha$ to zero.
+
+---
+
+## Solution 2: Coding Schemes and Parameter Interpretation
+
+### Part A: Cell Means Model
+
+**Matrix form**:
+$$
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}
+$$
+
+where:
+- $\mathbf{y}$: (15 × 1) vector of ADG observations
+- $\mathbf{X}$: (15 × 3) design matrix with one column per diet
+- $\boldsymbol{\beta} = [\mu_1, \mu_2, \mu_3]'$: (3 × 1) vector of diet means
+- $\mathbf{e}$: (15 × 1) vector of errors
+
+**Scalar form**:
+$$
+y_{ij} = \mu_i + e_{ij}
+$$
+
+where:
+- $i = 1, 2, 3$ (diet)
+- $j = 1, ..., 5$ (pig within diet)
+- $\mu_i$ = mean ADG for diet $i$
+- $e_{ij}$ = random error for pig $j$ in diet $i$
+
+### Part B: Effects Model with Sum-to-Zero Constraint
+
+**Model**:
+$$
+y_{ij} = \mu + \alpha_i + e_{ij}
+$$
+
+with constraint: $\sum_{i=1}^3 \alpha_i = 0$
+
+**Without constraint**:
+- 4 parameters: $\mu$, $\alpha_1$, $\alpha_2$, $\alpha_3$
+- Only 3 are estimable (rank = 3)
+- **Not identifiable** without a constraint
+
+**With sum-to-zero constraint**:
+- Still 4 parameters, but constraint eliminates 1 degree of freedom
+- All 3 $\alpha_i$ can be expressed given any 2 and the constraint
+- $\mu$ represents the overall mean
+- Each $\alpha_i$ represents deviation from overall mean
+- **3 independent parameters** are estimable
+
+### Part C: Reference Cell Coding Estimates
+
+Given means: Diet 1 = 0.85, Diet 2 = 0.92, Diet 3 = 0.88
+
+With Diet 1 as reference:
+
+- $\hat{\mu} = 0.85$ (Diet 1 mean, the reference)
+- $\hat{\alpha}_2 = 0.92 - 0.85 = 0.07$ (Diet 2 vs. Diet 1 difference)
+- $\hat{\alpha}_3 = 0.88 - 0.85 = 0.03$ (Diet 3 vs. Diet 1 difference)
+
+### Part D: Sum-to-Zero Constraint Estimates
+
+Overall mean: $\hat{\mu} = \frac{0.85 + 0.92 + 0.88}{3} = \frac{2.65}{3} = 0.8833$
+
+Effects (deviations from overall mean):
+- $\hat{\alpha}_1 = 0.85 - 0.8833 = -0.0333$
+- $\hat{\alpha}_2 = 0.92 - 0.8833 = +0.0367$
+- $\hat{\alpha}_3 = 0.88 - 0.8833 = -0.0033$
+
+**Verify constraint**: $-0.0333 + 0.0367 + (-0.0033) = 0.0001 \approx 0$ ✓ (rounding error)
+
+---
+
+## Solution 3: Building Design Matrices in R
+
+### Part A: Cell Means Design Matrix
+
+```{r}
+#| label: sol3a
+
+# Lamb birth weight data
+lamb_data <- data.frame(
+  lamb_id = 1:12,
+  sex = c("Male", "Male", "Female", "Female", "Male", "Female",
+          "Male", "Female", "Male", "Female", "Male", "Female"),
+  birth_wt_kg = c(4.2, 4.5, 3.8, 3.9, 4.3, 3.7,
+                  4.4, 4.0, 4.1, 3.8, 4.6, 3.9)
+)
+
+# Cell means model
+X_cell <- model.matrix(~ sex - 1, data = lamb_data)
+print(X_cell)
+
+# Check dimensions and rank
+cat("\nDimensions:", nrow(X_cell), "×", ncol(X_cell), "\n")
+cat("Rank:", qr(X_cell)$rank, "\n")
+cat("Full rank?", qr(X_cell)$rank == ncol(X_cell), "\n")
+```
+
+**Verification**:
+- Dimensions: 12 × 2 ✓
+- Rank: 2 ✓
+- Full rank: YES ✓
+
+### Part B: Effects Model Design Matrix
+
+```{r}
+#| label: sol3b
+
+# Effects model (reference cell coding)
+X_effects <- model.matrix(~ sex, data = lamb_data)
+print(X_effects)
+
+# Check which sex is reference
+cat("\nReference sex:", levels(factor(lamb_data$sex))[1], "\n")
+```
+
+**Reference**: Female (alphabetically first in R by default)
+
+Matrix interpretation:
+- Column 1: Intercept (all 1's)
+- Column 2: sexMale (1 if Male, 0 if Female)
+
+### Part C: Manual Solution of Normal Equations
+
+```{r}
+#| label: sol3c
+
+# Setup
+y <- lamb_data$birth_wt_kg
+
+# 1. Compute X'X
+XtX_cell <- t(X_cell) %*% X_cell
+cat("X'X:\n")
+print(XtX_cell)
+
+# 2. Compute X'y
+Xty_cell <- t(X_cell) %*% y
+cat("\nX'y:\n")
+print(Xty_cell)
+
+# 3. Solve for beta
+beta_hat <- solve(XtX_cell) %*% Xty_cell
+cat("\nParameter estimates:\n")
+print(beta_hat)
+
+# 4. Interpretation
+cat("\nInterpretation:\n")
+cat("Female mean:", beta_hat[1], "kg\n")
+cat("Male mean:", beta_hat[2], "kg\n")
+cat("Difference (Male - Female):", beta_hat[2] - beta_hat[1], "kg\n")
+```
+
+**Solution**:
+- $\hat{\mu}_{\text{Female}} = \frac{3.8 + 3.9 + 3.7 + 4.0 + 3.8 + 3.9}{6} = 3.85$ kg
+- $\hat{\mu}_{\text{Male}} = \frac{4.2 + 4.5 + 4.3 + 4.4 + 4.1 + 4.6}{6} = 4.35$ kg
+
+Male lambs are heavier at birth by an average of 0.5 kg.
+
+### Part D: Verification with lm()
+
+```{r}
+#| label: sol3d
+
+# Fit using lm()
+fit_cell <- lm(birth_wt_kg ~ sex - 1, data = lamb_data)
+cat("lm() coefficients:\n")
+print(coef(fit_cell))
+
+# Compare with manual calculation
+cat("\nManual calculation:\n")
+print(beta_hat)
+
+cat("\nDo they match?", all.equal(as.vector(beta_hat), coef(fit_cell)), "\n")
+```
+
+**Verification**: Perfect match! ✓
+
+---
+
+## Solution 4: ANCOVA Design Matrix
+
+### Part A: ANCOVA Design Matrix
+
+```{r}
+#| label: sol4a
+
+egg_data <- data.frame(
+  strain = rep(c("A", "B", "C"), each = 4),
+  body_weight_kg = c(1.8, 1.9, 2.0, 1.7,
+                     1.9, 2.1, 2.0, 1.8,
+                     2.2, 2.3, 2.1, 2.0),
+  eggs_per_month = c(22, 24, 25, 21,
+                     23, 26, 25, 22,
+                     25, 28, 26, 24)
+)
+
+# Center body weight
+egg_data$bw_centered <- egg_data$body_weight_kg - mean(egg_data$body_weight_kg)
+
+# ANCOVA design matrix
+X_ancova <- model.matrix(~ strain + bw_centered, data = egg_data)
+
+cat("ANCOVA Design Matrix (first 6 rows):\n")
+print(head(X_ancova))
+
+cat("\nDimensions:", nrow(X_ancova), "×", ncol(X_ancova), "\n")
+cat("Rank:", qr(X_ancova)$rank, "\n")
+```
+
+**Results**:
+- Dimensions: 12 × 4
+  - Column 1: Intercept
+  - Column 2: Strain B indicator
+  - Column 3: Strain C indicator
+  - Column 4: Centered body weight (continuous)
+- Rank: 4 (full rank)
+
+### Part B: Why Center the Covariate?
+
+**Without centering**:
+- Intercept = expected eggs when body weight = 0 kg
+- **Problem**: 0 kg is nonsensical and far outside the data range
+- Interpretation is not meaningful
+
+**With centering**:
+- Intercept = expected eggs at the **mean** body weight for the reference strain
+- This is within the data range and biologically meaningful
+- Makes strain effects directly interpretable as adjusted means
+
+**What changes**:
+- Only the intercept changes
+- Slope for body weight remains the same
+- Fitted values remain the same
+- $R^2$, residuals, all other statistics unchanged
+
+### Part C: Fit and Interpret ANCOVA Model
+
+```{r}
+#| label: sol4c
+
+# Fit ANCOVA model
+fit_ancova <- lm(eggs_per_month ~ strain + bw_centered, data = egg_data)
+
+cat("ANCOVA Model Summary:\n")
+summary(fit_ancova)
+
+# Extract coefficients
+coefs <- coef(fit_ancova)
+
+cat("\n=== Interpretation ===\n")
+cat("Intercept:", round(coefs[1], 2), "\n")
+cat("  → Expected eggs for Strain A at average body weight\n\n")
+
+cat("strainB:", round(coefs[2], 2), "\n")
+cat("  → Strain B produces", round(coefs[2], 2), "more eggs than Strain A (adjusted for body weight)\n\n")
+
+cat("strainC:", round(coefs[3], 2), "\n")
+cat("  → Strain C produces", round(coefs[3], 2), "more eggs than Strain A (adjusted for body weight)\n\n")
+
+cat("bw_centered:", round(coefs[4], 2), "\n")
+cat("  → For each 1 kg increase in body weight, egg production increases by",
+    round(coefs[4], 2), "eggs/month (holding strain constant)\n")
+```
+
+**Interpretation**:
+- Heavier hens produce more eggs (positive slope for body weight)
+- Strain effects are adjusted for body weight differences between strains
+- This gives a "fair" comparison of strains, controlling for size
+
+---
+
+## Solution 5: Model Assumptions
+
+### Part A: Three Gauss-Markov Assumptions
+
+**Assumption 1: Linearity**
+- **Words**: The expected value of the response is a linear function of the predictors
+- **Math**: $E(\mathbf{y}) = \mathbf{X}\boldsymbol{\beta}$ or equivalently $E(\mathbf{e}) = \mathbf{0}$
+
+**Assumption 2: Homoscedasticity (Constant Variance)**
+- **Words**: All errors have the same variance
+- **Math**: $\text{Var}(e_i) = \sigma^2$ for all $i = 1, ..., n$
+
+**Assumption 3: Independence**
+- **Words**: Errors are uncorrelated with each other
+- **Math**: $\text{Cov}(e_i, e_j) = 0$ for all $i \neq j$
+
+**Combined**: $\text{Var}(\mathbf{e}) = \sigma^2\mathbf{I}$
+
+### Part B: BLUE vs. Valid Inference
+
+**For Gauss-Markov Theorem (BLUE)**:
+- Only need assumptions 1-3 above
+- Guarantees OLS is Best Linear Unbiased Estimator
+- **NO normality required**
+
+**For valid t-tests and F-tests**:
+- Need all three Gauss-Markov assumptions PLUS
+- **Normality**: $\mathbf{e} \sim N(\mathbf{0}, \sigma^2\mathbf{I})$
+- Normality is needed for exact distributions of test statistics
+- For large samples, Central Limit Theorem provides approximate normality
+
+**Summary Table**:
+
+| Property | Gauss-Markov Only | + Normality |
+|----------|-------------------|-------------|
+| $\hat{\boldsymbol{\beta}}$ is unbiased | ✓ | ✓ |
+| $\hat{\boldsymbol{\beta}}$ has minimum variance among linear unbiased estimators | ✓ | ✓ |
+| Exact t-tests valid | ✗ | ✓ |
+| Exact F-tests valid | ✗ | ✓ |
+| Confidence intervals have stated coverage | ✗ | ✓ |
+
+### Part C: Violations and Remedies
+
+**Scenario 1: Residuals increase in variance as fitted values increase**
+
+- **Assumption violated**: Homoscedasticity (constant variance)
+- **Problem**: Called heteroscedasticity
+- **Consequences**: OLS estimates still unbiased but inefficient; standard errors and test statistics incorrect
+- **Remedies**:
+  1. **Transformation**: Try log(y) or sqrt(y) to stabilize variance
+  2. **Weighted Least Squares (WLS)**: Weight observations inversely proportional to variance
+  3. **Robust standard errors**: Use heteroscedasticity-consistent SEs
+
+**Scenario 2: Sequential observations are correlated**
+
+- **Assumption violated**: Independence
+- **Problem**: Called autocorrelation or serial correlation
+- **Consequences**: OLS estimates still unbiased but inefficient; standard errors and test statistics incorrect (usually SEs underestimated)
+- **Remedies**:
+  1. **Include time lags**: Add lagged values as predictors
+  2. **Generalized Least Squares (GLS)**: Model the correlation structure
+  3. **Time series models**: AR, ARIMA, etc.
+  4. **Mixed models**: Include random effects for time
+
+**Scenario 3: Response variable has strong right skew**
+
+- **Assumption violated**: Normality (for inference)
+- **Problem**: Distribution is non-normal
+- **Consequences**: OLS still BLUE, but t-tests/F-tests may not be valid; confidence intervals may have incorrect coverage
+- **Remedies**:
+  1. **Log transformation**: log(y) often makes right-skewed data more normal
+  2. **Larger sample size**: CLT provides approximate normality
+  3. **Bootstrap methods**: Non-parametric inference
+  4. **Generalized Linear Models (GLM)**: Use appropriate distribution (e.g., Gamma)
+
+**Scenario 4: Y-X relationship is curved, not linear**
+
+- **Assumption violated**: Linearity
+- **Problem**: Model misspecification
+- **Consequences**: Biased estimates, poor predictions, systematic residual patterns
+- **Remedies**:
+  1. **Polynomial terms**: Add $x^2$, $x^3$, etc.
+  2. **Transformation**: Try log(x) or sqrt(x)
+  3. **Splines**: Piecewise polynomials for flexible curves
+  4. **Non-linear models**: If theory suggests specific non-linear form
+
+---
+
+## Solution 6: Rank and Estimability
+
+### Part A: Cell Means Model Dimensions
+
+Model: $y_{ij} = \mu_i + e_{ij}$
+
+- **Dimension of $\mathbf{X}$**: 26 × 4
+  - 26 rows (one per progeny)
+  - 4 columns (one per sire)
+- **Rank**: 4
+- **Full rank**: YES (rank = number of columns)
+
+Each sire mean $\mu_i$ is uniquely estimable.
+
+### Part B: Effects Model Rank
+
+Model: $y_{ij} = \mu + s_i + e_{ij}$
+
+- **Number of parameters**: 5 ($\mu$ and four $s_i$)
+- **Rank of $\mathbf{X}$**: 4 (not 5)
+- **Full rank**: NO (rank < number of parameters)
+
+**Why not full rank?**
+The intercept column (all 1's) equals the sum of the four sire indicator columns:
+
+$$
+\begin{bmatrix} 1 \\ 1 \\ \vdots \\ 1 \end{bmatrix} = \begin{bmatrix} \text{sire1} \\ \text{indicator} \end{bmatrix} + \begin{bmatrix} \text{sire2} \\ \text{indicator} \end{bmatrix} + \begin{bmatrix} \text{sire3} \\ \text{indicator} \end{bmatrix} + \begin{bmatrix} \text{sire4} \\ \text{indicator} \end{bmatrix}
+$$
+
+The columns are **linearly dependent**, so the matrix is rank deficient.
+
+### Part C: Estimability
+
+**1. $\mu$ (overall mean)**
+- **NOT estimable** without constraints
+- Confounded with sire effects
+
+**2. $s_1$ (sire 1 effect)**
+- **NOT estimable** without constraints
+- Can't separate overall mean from individual sire effect
+
+**3. $s_1 - s_2$ (difference between sire 1 and sire 2)**
+- **YES, estimable!**
+- Contrasts (differences) are always estimable
+- Equals (mean of sire 1 progeny) - (mean of sire 2 progeny)
+
+**4. $\frac{s_1 + s_2 + s_3 + s_4}{4}$ (average sire effect)**
+- **NOT estimable** (in the effects model)
+- Under sum-to-zero constraint: $\sum s_i = 0$, so average = 0
+- But without constraint, this involves non-estimable individual $s_i$ terms
+
+**General Rule**: A function $c'\boldsymbol{\beta}$ is estimable if and only if $c'$ is in the row space of $\mathbf{X}$.
+
+For contrasts (where coefficients sum to zero): $\sum c_j = 0$ → estimable
+
+### Part D: Effect of Constraints
+
+**Does constraint change estimability?**
+- **NO**: Functions that were estimable remain estimable
+- Contrasts like $s_1 - s_2$ are still estimable
+- Constraint just provides unique solutions for individual parameters
+
+**Does constraint change fitted values?**
+- **NO**: $\hat{\mathbf{y}} = \mathbf{X}\hat{\boldsymbol{\beta}}$ is identical regardless of which generalized inverse or constraint is used
+- Estimable functions give the same estimates
+- Only non-estimable functions (like individual $s_i$) change
+
+**Key Insight**: Constraints are computational devices to achieve unique solutions, not changes to the statistical model.
+
+---
+
+## Solution 7: Comprehensive Problem
+
+### Part A: Fit Three Models
+
+```{r}
+#| label: sol7a
+
+beef_data <- data.frame(
+  animal_id = 1:15,
+  breed = rep(c("Angus", "Hereford", "Charolais"), each = 5),
+  initial_weight_kg = c(245, 250, 240, 255, 248,
+                        238, 242, 245, 240, 235,
+                        265, 270, 268, 275, 262),
+  adg_kg_per_day = c(1.45, 1.52, 1.40, 1.55, 1.48,
+                     1.38, 1.42, 1.46, 1.40, 1.35,
+                     1.62, 1.68, 1.65, 1.72, 1.60)
+)
+
+# Model 1: Cell means
+model1 <- lm(adg_kg_per_day ~ breed - 1, data = beef_data)
+X1 <- model.matrix(model1)
+
+cat("=== Model 1: Cell Means ===\n")
+cat("Design matrix dimensions:", nrow(X1), "×", ncol(X1), "\n")
+cat("Rank:", qr(X1)$rank, "\n")
+cat("Parameter estimates:\n")
+print(coef(model1))
+
+# Model 2: Effects model
+model2 <- lm(adg_kg_per_day ~ breed, data = beef_data)
+X2 <- model.matrix(model2)
+
+cat("\n=== Model 2: Effects Model ===\n")
+cat("Design matrix dimensions:", nrow(X2), "×", ncol(X2), "\n")
+cat("Rank:", qr(X2)$rank, "\n")
+cat("Parameter estimates:\n")
+print(coef(model2))
+
+# Model 3: ANCOVA
+beef_data$init_wt_centered <- beef_data$initial_weight_kg - mean(beef_data$initial_weight_kg)
+model3 <- lm(adg_kg_per_day ~ breed + init_wt_centered, data = beef_data)
+X3 <- model.matrix(model3)
+
+cat("\n=== Model 3: ANCOVA ===\n")
+cat("Design matrix dimensions:", nrow(X3), "×", ncol(X3), "\n")
+cat("Rank:", qr(X3)$rank, "\n")
+cat("Parameter estimates:\n")
+print(coef(model3))
+```
+
+**Summary Table**:
+
+| Model | Dimensions | Rank | Parameters |
+|-------|------------|------|------------|
+| 1 (Cell means) | 15 × 3 | 3 | 3 breed means |
+| 2 (Effects) | 15 × 3 | 3 | Intercept + 2 breed effects |
+| 3 (ANCOVA) | 15 × 4 | 4 | Intercept + 2 breed effects + weight slope |
+
+### Part B: Model Comparison
+
+```{r}
+#| label: sol7b
+
+# Compare fitted values for Models 1 and 2
+fitted1 <- fitted(model1)
+fitted2 <- fitted(model2)
+
+cat("Do Models 1 and 2 give same fitted values?\n")
+cat(all.equal(fitted1, fitted2), "\n")
+
+# Compare breed effect estimates
+cat("\n=== Breed Means (unadjusted) ===\n")
+print(coef(model1))
+
+cat("\n=== Breed Effects (ANCOVA-adjusted) ===\n")
+# Reconstruct adjusted means for model 3
+# At mean initial weight, the adjusted means are:
+adjusted_means <- c(
+  Angus = coef(model3)[1],
+  Charolais = coef(model3)[1] + coef(model3)[2],
+  Hereford = coef(model3)[1] + coef(model3)[3]
+)
+print(adjusted_means)
+
+cat("\n=== Change Due to Initial Weight Adjustment ===\n")
+unadjusted <- coef(model1)
+change <- adjusted_means - unadjusted
+print(change)
+
+cat("\n=== Which Model is Most Appropriate? ===\n")
+cat("Let's check if initial weight is significant:\n")
+summary(model3)$coefficients
+```
+
+**Analysis**:
+
+1. **Models 1 and 2 give identical fitted values**: YES ✓
+   - Different parameterizations, same predictions
+
+2. **Effect of adding initial weight**:
+   - Breeds that are initially heavier show larger ADG (positive correlation)
+   - When we adjust for initial weight:
+     - Angus adjusted mean changes by ~0.01 kg/day
+     - Charolais changes more (they're heavier on average)
+     - Hereford changes (they're lighter on average)
+   - Adjusted means give "fairer" comparison at same initial weight
+
+3. **Most appropriate model**:
+```{r}
+#| label: sol7b-cont
+
+# Check significance of initial weight
+summary_m3 <- summary(model3)
+init_wt_pval <- summary_m3$coefficients["init_wt_centered", "Pr(>|t|)"]
+
+cat("P-value for initial weight:", init_wt_pval, "\n")
+
+if (init_wt_pval < 0.05) {
+  cat("\nInitial weight is SIGNIFICANT → Use Model 3 (ANCOVA)\n")
+  cat("Accounting for initial weight improves the model and gives adjusted breed comparisons.\n")
+} else {
+  cat("\nInitial weight is NOT significant → Model 1 or 2 sufficient\n")
+}
+
+# Compare R-squared
+cat("\nR² comparison:\n")
+cat("Model 1/2 (breed only):", summary(model1)$r.squared, "\n")
+cat("Model 3 (breed + weight):", summary(model3)$r.squared, "\n")
+```
+
+**Conclusion**: If initial weight is significant (p < 0.05), use ANCOVA model. It explains more variation and provides adjusted breed effects.
+
+### Part C: ANCOVA Model Interpretation
+
+```{r}
+#| label: sol7c
+
+cat("=== ANCOVA Model (Model 3) Detailed Interpretation ===\n\n")
+
+# Coefficients
+coefs_m3 <- coef(model3)
+summary_m3 <- summary(model3)
+
+# 1. Initial weight coefficient
+cat("1. Initial Weight Coefficient:", round(coefs_m3[4], 4), "\n")
+cat("   Interpretation: For each 1 kg increase in initial weight,\n")
+cat("   ADG increases by", round(coefs_m3[4], 4), "kg/day, holding breed constant.\n")
+
+# 2. Test significance
+init_wt_t <- summary_m3$coefficients["init_wt_centered", "t value"]
+init_wt_p <- summary_m3$coefficients["init_wt_centered", "Pr(>|t|)"]
+
+cat("\n2. Significance Test for Initial Weight:\n")
+cat("   t-statistic:", round(init_wt_t, 2), "\n")
+cat("   p-value:", format(init_wt_p, digits=4), "\n")
+
+if (init_wt_p < 0.001) {
+  cat("   Conclusion: HIGHLY SIGNIFICANT (p < 0.001)\n")
+} else if (init_wt_p < 0.05) {
+  cat("   Conclusion: SIGNIFICANT (p < 0.05)\n")
+} else {
+  cat("   Conclusion: NOT SIGNIFICANT (p >= 0.05)\n")
+}
+
+# 3. Adjusted breed means (marginal means at average initial weight)
+cat("\n3. Adjusted Breed Means (at average initial weight):\n")
+library(emmeans)
+emm <- emmeans(model3, "breed")
+print(summary(emm))
+
+cat("\n   These are the 'fair' breed comparisons,\n")
+cat("   adjusted to the same initial weight.\n")
+```
+
+### Part D: Custom Function
+
+```{r}
+#| label: sol7d
+
+# Function to build cell means design matrix
+build_cell_means_matrix <- function(factor_var) {
+  # Convert to factor if not already
+  if (!is.factor(factor_var)) {
+    factor_var <- as.factor(factor_var)
+  }
+
+  # Get levels
+  lvls <- levels(factor_var)
+  n <- length(factor_var)
+  p <- length(lvls)
+
+  # Initialize matrix
+  X <- matrix(0, nrow = n, ncol = p)
+  colnames(X) <- lvls
+
+  # Fill in indicators
+  for (i in 1:p) {
+    X[factor_var == lvls[i], i] <- 1
+  }
+
+  return(X)
+}
+
+# Test on breed variable
+cat("=== Testing Custom Function ===\n")
+X_custom <- build_cell_means_matrix(beef_data$breed)
+
+cat("Custom design matrix (first 8 rows):\n")
+print(head(X_custom, 8))
+
+cat("\nDimensions:", nrow(X_custom), "×", ncol(X_custom), "\n")
+cat("Rank:", qr(X_custom)$rank, "\n")
+
+# Verify against model.matrix()
+X_builtin <- model.matrix(~ breed - 1, data = beef_data)
+
+cat("\nDoes custom function match model.matrix()?\n")
+cat(all.equal(X_custom, X_builtin, check.attributes = FALSE), "\n")
+```
+
+---
+
+## Additional Challenge Solution
+
+**Prove**: For cell means model with balanced data ($n_i = n$ for all groups), $\hat{\mu}_i = \bar{y}_{i\cdot}$
+
+**Proof**:
+
+For the cell means model $y_{ij} = \mu_i + e_{ij}$, the design matrix $\mathbf{X}$ has one column per group with indicator variables.
+
+Normal equations: $\mathbf{X}'\mathbf{X}\hat{\boldsymbol{\beta}} = \mathbf{X}'\mathbf{y}$
+
+**Step 1**: Structure of $\mathbf{X}'\mathbf{X}$
+
+With balanced data (n observations per group, g groups):
+
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix}
+n & 0 & 0 & \cdots & 0 \\
+0 & n & 0 & \cdots & 0 \\
+0 & 0 & n & \cdots & 0 \\
+\vdots & \vdots & \vdots & \ddots & \vdots \\
+0 & 0 & 0 & \cdots & n
+\end{bmatrix} = n\mathbf{I}_g
+$$
+
+This is a diagonal matrix with $n$ on the diagonal.
+
+**Step 2**: Structure of $\mathbf{X}'\mathbf{y}$
+
+$$
+(\mathbf{X}'\mathbf{y})_i = \sum_{j=1}^{n} y_{ij} = n\bar{y}_{i\cdot}
+$$
+
+The $i$-th element is the sum of observations in group $i$.
+
+**Step 3**: Solve for $\hat{\boldsymbol{\beta}}$
+
+$$
+\hat{\boldsymbol{\beta}} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y} = (n\mathbf{I}_g)^{-1} \mathbf{X}'\mathbf{y} = \frac{1}{n}\mathbf{X}'\mathbf{y}
+$$
+
+Therefore:
+
+$$
+\hat{\mu}_i = \frac{1}{n}(\mathbf{X}'\mathbf{y})_i = \frac{1}{n}\sum_{j=1}^{n} y_{ij} = \bar{y}_{i\cdot}
+$$
+
+**Conclusion**: The least squares estimate of each group mean is simply the sample mean for that group. QED. ∎
+
+**Note**: This result also holds for unbalanced data, but $\mathbf{X}'\mathbf{X}$ is diagonal with different $n_i$ on the diagonal, giving $\hat{\mu}_i = \frac{1}{n_i}\sum_{j=1}^{n_i} y_{ij} = \bar{y}_{i\cdot}$.
+
+---
+
+**End of Solutions**

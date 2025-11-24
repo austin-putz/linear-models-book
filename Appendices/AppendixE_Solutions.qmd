@@ -1,0 +1,18 @@
+# Appendix E: Solutions to Selected Exercises {#sec-appendix-e .unnumbered}
+
+## Coming Soon
+
+This appendix will provide comprehensive solutions to exercises from all 15 weeks.
+
+**Currently Available:**
+- [Week 1 Solutions](../Week01_Overview/Week01_Solutions.qmd)
+- [Week 2 Solutions](../Week02_LinearAlgebra/Week02_Solutions.qmd)
+
+**Under Development:**
+- Weeks 3-15 solutions
+
+Each solution includes:
+- Complete worked calculations
+- R code verification
+- Biological interpretation
+- Common mistakes to avoid

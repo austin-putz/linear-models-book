@@ -1,0 +1,7 @@
+# Week 13: Special Topics I {#sec-week13}
+
+## Coming Soon
+Content under development for handling unbalanced data, types of g-inverses, and constraint systems.
+
+**Previous**: [Week 12: Non-Full Rank Models](../Week12_NonFullRank/Week12_NonFullRank.qmd)
+**Next**: [Week 14: Special Topics II](../Week14_SpecialTopics2/Week14_SpecialTopics2.qmd)

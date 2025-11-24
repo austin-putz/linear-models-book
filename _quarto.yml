@@ -60,7 +60,6 @@ book:
   repo-actions: [edit, issue]
 
 bibliography: references.bib
-csl: apa.csl
 
 format:
   html:

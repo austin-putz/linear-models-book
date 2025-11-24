@@ -1,0 +1,27 @@
+# Week 5: Least Squares Theory {#sec-week05}
+
+## Learning Objectives
+
+By the end of this week, you will be able to:
+
+1. Understand why least squares estimates are "best"
+2. Prove properties of LS estimators (unbiasedness, minimum variance)
+3. Derive distributions of estimates and test statistics
+4. Compute and interpret variance estimates
+
+## Coming Soon
+
+This chapter is under development. The complete content will include:
+
+- Least squares criterion and derivation
+- Gauss-Markov Theorem (BLUE properties)
+- Projection matrices and geometry
+- Sum of squares decomposition
+- Variance estimation and distribution theory
+- Small example: Dairy fat vs protein
+- Realistic application: Lamb weaning weights
+- R implementation and exercises
+
+**Previous**: [Week 4: Simple Regression](../Week04_SimpleRegression/Week04_SimpleRegression.qmd)
+
+**Next**: [Week 6: Multiple Regression](../Week06_MultipleRegression/Week06_MultipleRegression.qmd)

@@ -1,0 +1,15 @@
+# Appendix C: R Functions Reference {#sec-appendix-c .unnumbered}
+
+## Coming Soon
+
+This appendix will provide a comprehensive guide to R functions used in this course:
+
+- Matrix operations: `matrix()`, `t()`, `%*%`, `solve()`
+- Linear models: `lm()`, `anova()`, `coef()`, `residuals()`
+- Matrix properties: `qr()$rank`, `det()`, `eigen()`
+- Generalized inverse: `ginv()` (MASS package)
+- Contrasts: `emmeans`, `multcomp` packages
+- Diagnostics: `plot()`, `hatvalues()`, `cooks.distance()`
+- And more...
+
+Each function will include syntax, examples, and livestock applications.

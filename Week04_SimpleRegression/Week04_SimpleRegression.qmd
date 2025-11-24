@@ -1,0 +1,25 @@
+# Week 4: Simple Linear Regression {#sec-week04}
+
+## Learning Objectives
+
+By the end of this week, you will be able to:
+
+1. Derive least squares estimates for simple linear regression
+2. Interpret slope and intercept parameters
+3. Make predictions and compute residuals
+4. Understand the geometry of least squares
+
+## Coming Soon
+
+This chapter is under development. The complete content will include:
+
+- Model: yᵢ = β₀ + β₁xᵢ + eᵢ
+- Normal equations and solutions
+- Fitted values and residuals
+- Small example: Broiler weight vs age
+- Realistic application: Dairy lactation curves
+- R implementation and exercises
+
+**Previous**: [Week 3: Design Matrix](../Week03_DesignMatrix/Week03_DesignMatrix.qmd)
+
+**Next**: [Week 5: Least Squares Theory](../Week05_LeastSquares/Week05_LeastSquares.qmd)

@@ -1,0 +1,7 @@
+# Week 14: Special Topics II {#sec-week14}
+
+## Coming Soon
+Content under development for polynomial regression, weighted least squares, and mixed model preview.
+
+**Previous**: [Week 13: Special Topics I](../Week13_SpecialTopics1/Week13_SpecialTopics1.qmd)
+**Next**: [Week 15: Capstone Project](../Week15_Capstone/Week15_Capstone.qmd)

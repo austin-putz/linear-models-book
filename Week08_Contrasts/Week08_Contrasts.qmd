@@ -1,0 +1,7 @@
+# Week 8: Contrasts and Estimable Functions {#sec-week08}
+
+## Coming Soon
+Content under development for contrasts, estimable functions, and hypothesis testing.
+
+**Previous**: [Week 7: One-Way ANOVA](../Week07_ANOVA_OneWay/Week07_ANOVA_OneWay.qmd)
+**Next**: [Week 9: Two-Way ANOVA](../Week09_TwoWayANOVA/Week09_TwoWayANOVA.qmd)

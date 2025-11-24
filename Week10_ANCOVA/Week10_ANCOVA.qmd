@@ -1,0 +1,7 @@
+# Week 10: Analysis of Covariance (ANCOVA) {#sec-week10}
+
+## Coming Soon
+Content under development for ANCOVA, adjusted means, and homogeneity of slopes.
+
+**Previous**: [Week 9: Two-Way ANOVA](../Week09_TwoWayANOVA/Week09_TwoWayANOVA.qmd)
+**Next**: [Week 11: Model Diagnostics](../Week11_Diagnostics/Week11_Diagnostics.qmd)

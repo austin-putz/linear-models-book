@@ -1,0 +1,17 @@
+# Appendix D: Datasets Description {#sec-appendix-d .unnumbered}
+
+## Coming Soon
+
+This appendix will describe all datasets used in the course:
+
+- Data structure and variables
+- Source and collection methods
+- Appropriate analyses
+- Access information (CSV files in `/Datasets` folder)
+
+Datasets span various livestock species:
+- Dairy cattle (milk yield, lactation curves)
+- Beef cattle (growth, carcass traits)
+- Swine (litter size, growth rate)
+- Poultry (egg production, meat yield)
+- Sheep (fleece weight, lamb growth)

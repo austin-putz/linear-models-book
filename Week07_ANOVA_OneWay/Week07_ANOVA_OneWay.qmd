@@ -1,0 +1,27 @@
+# Week 7: Analysis of Variance (One-Way) {#sec-week07}
+
+## Learning Objectives
+
+By the end of this week, you will be able to:
+
+1. Express ANOVA as a linear model
+2. Construct design matrices for categorical predictors
+3. Partition total variation into model and error components
+4. Conduct F-tests for treatment effects
+
+## Coming Soon
+
+This chapter is under development. The complete content will include:
+
+- One-way ANOVA as a linear model
+- Cell means vs. effects models
+- Sum of squares partitioning
+- ANOVA tables and F-tests
+- Connection to regression with dummy variables
+- Small example: Milk yield across breeds
+- Realistic application: ADG in beef steers
+- R implementation and exercises
+
+**Previous**: [Week 6: Multiple Regression](../Week06_MultipleRegression/Week06_MultipleRegression.qmd)
+
+**Next**: [Week 8: Contrasts](../Week08_Contrasts/Week08_Contrasts.qmd)

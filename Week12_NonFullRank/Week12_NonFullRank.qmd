@@ -1,0 +1,7 @@
+# Week 12: Unequal Subclass Numbers & Non-Full Rank Models {#sec-week12}
+
+## Coming Soon
+Content under development for unbalanced data, rank deficiency, and generalized inverses.
+
+**Previous**: [Week 11: Model Diagnostics](../Week11_Diagnostics/Week11_Diagnostics.qmd)
+**Next**: [Week 13: Special Topics I](../Week13_SpecialTopics1/Week13_SpecialTopics1.qmd)

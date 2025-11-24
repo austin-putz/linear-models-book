@@ -1,0 +1,6 @@
+# Week 15: Capstone Project {#sec-week15}
+
+## Coming Soon
+Content under development for the comprehensive capstone project integrating all course concepts.
+
+**Previous**: [Week 14: Special Topics II](../Week14_SpecialTopics2/Week14_SpecialTopics2.qmd)

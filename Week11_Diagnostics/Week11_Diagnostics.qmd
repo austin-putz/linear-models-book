@@ -1,0 +1,7 @@
+# Week 11: Model Diagnostics {#sec-week11}
+
+## Coming Soon
+Content under development for residual analysis, outliers, influence measures, and transformations.
+
+**Previous**: [Week 10: ANCOVA](../Week10_ANCOVA/Week10_ANCOVA.qmd)
+**Next**: [Week 12: Non-Full Rank Models](../Week12_NonFullRank/Week12_NonFullRank.qmd)

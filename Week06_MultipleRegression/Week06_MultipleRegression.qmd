@@ -1,0 +1,28 @@
+# Week 6: Multiple Regression {#sec-week06}
+
+## Learning Objectives
+
+By the end of this week, you will be able to:
+
+1. Extend simple regression to multiple predictors
+2. Interpret partial regression coefficients
+3. Understand collinearity and its consequences
+4. Compare sequential vs. partial sums of squares
+
+## Coming Soon
+
+This chapter is under development. The complete content will include:
+
+- Multiple regression model
+- Interpretation of partial coefficients
+- R² and adjusted R²
+- Sequential vs. partial SS
+- F-tests and t-tests
+- Collinearity and VIF
+- Small example: Lamb weaning weight prediction
+- Realistic application: Beef carcass marbling
+- R implementation and exercises
+
+**Previous**: [Week 5: Least Squares Theory](../Week05_LeastSquares/Week05_LeastSquares.qmd)
+
+**Next**: [Week 7: One-Way ANOVA](../Week07_ANOVA_OneWay/Week07_ANOVA_OneWay.qmd)

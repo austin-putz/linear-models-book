@@ -1,0 +1,67 @@
+# Appendix A: Notation Quick Reference {#sec-appendix-a .unnumbered}
+
+## Vector and Matrix Notation
+
+| Symbol | Description | Dimensions |
+|--------|-------------|------------|
+| $\mathbf{y}$ | Response/observation vector | $n \times 1$ |
+| $\mathbf{X}$ | Design/incidence matrix | $n \times p$ |
+| $\boldsymbol{\beta}$ | Parameter vector (fixed effects) | $p \times 1$ |
+| $\mathbf{b}$ | Estimate vector | $p \times 1$ |
+| $\mathbf{e}$ | Error/residual vector | $n \times 1$ |
+| $\mathbf{I}$ | Identity matrix | $n \times n$ |
+| $\mathbf{H}$ | Hat matrix (projection) | $n \times n$ |
+| $\mathbf{C}$ | Contrast matrix | $q \times p$ |
+
+## Matrix Operators
+
+| Operator | Description |
+|----------|-------------|
+| $\mathbf{A}'$ or $\mathbf{A}^\top$ | Transpose of $\mathbf{A}$ |
+| $\mathbf{A}^{-1}$ | Regular inverse of $\mathbf{A}$ |
+| $\mathbf{A}^{-}$ | Generalized inverse of $\mathbf{A}$ |
+| $\mathbf{A}^{+}$ | Moore-Penrose inverse |
+| $r(\mathbf{A})$ | Rank of $\mathbf{A}$ |
+| $tr(\mathbf{A})$ | Trace of $\mathbf{A}$ |
+| $\det(\mathbf{A})$ or $|\mathbf{A}|$ | Determinant of $\mathbf{A}$ |
+
+## Scalars and Parameters
+
+| Symbol | Description |
+|--------|-------------|
+| $n$ | Sample size |
+| $p$ | Number of parameters |
+| $\sigma^2$ | Variance |
+| $\mu$ | Population mean |
+| $\alpha_i$ | Treatment effect for group $i$ |
+
+## Statistical Quantities
+
+| Abbreviation | Full Name | Formula |
+|--------------|-----------|---------|
+| SSE | Sum of Squares Error | $\mathbf{e}'\mathbf{e}$ |
+| SST | Total Sum of Squares | $\sum(y_i - \bar{y})^2$ |
+| SSM | Model Sum of Squares | $SST - SSE$ |
+| MSE | Mean Square Error | $SSE/(n-p)$ |
+| MSM | Mean Square Model | $SSM/(p-1)$ |
+| $R^2$ | Coefficient of Determination | $1 - SSE/SST$ |
+| df | Degrees of Freedom | Various |
+
+## Mixed Model Extensions (Week 14)
+
+| Symbol | Description | Dimensions |
+|--------|-------------|------------|
+| $\mathbf{u}$ | Random effects vector | $q \times 1$ |
+| $\mathbf{Z}$ | Incidence matrix for random effects | $n \times q$ |
+| $\mathbf{G}$ | Variance-covariance for random effects | $q \times q$ |
+| $\mathbf{R}$ | Variance-covariance for residuals | $n \times n$ |
+
+## Notation Conventions
+
+- **Vectors**: lowercase bold ($\mathbf{v}$, $\mathbf{y}$)
+- **Matrices**: uppercase bold ($\mathbf{A}$, $\mathbf{X}$)
+- **Greek parameters**: bold ($\boldsymbol{\beta}$, $\boldsymbol{\alpha}$)
+- **Scalars**: italic ($n$, $\sigma^2$)
+- **Estimates**: hat notation ($\hat{\beta}$, $\hat{\sigma}^2$)
+
+This notation is established in Week 1 and maintained consistently throughout all 15 weeks.

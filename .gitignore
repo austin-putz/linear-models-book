@@ -37,3 +37,6 @@ _site/
 
 # Output files that shouldn't be tracked
 *.pdf
+
+/.quarto/
+**/*.quarto_ipynb

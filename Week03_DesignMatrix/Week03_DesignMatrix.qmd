@@ -1,0 +1,25 @@
+# Week 3: Building the Design Matrix Framework {#sec-week03}
+
+## Learning Objectives
+
+By the end of this week, you will be able to:
+
+1. Construct design matrices from raw data
+2. Understand different coding schemes (cell means, reference cell)
+3. Write the general linear model in matrix form
+4. State and interpret model assumptions
+
+## Coming Soon
+
+This chapter is under development. The complete content will include:
+
+- From raw data to matrix representation
+- The general linear model: **y = Xβ + e**
+- Building X for continuous and categorical predictors
+- Coding schemes (cell means, effects, reference cell)
+- Model assumptions (Gauss-Markov conditions)
+- Small numerical example: Litter size across breeds
+- Realistic application: Broiler body weight by sex
+- R implementation and exercises
+
+**Next**: [Week 4: Simple Linear Regression](../Week04_SimpleRegression/Week04_SimpleRegression.qmd)

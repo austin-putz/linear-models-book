@@ -1,0 +1,16 @@
+# Appendix B: Matrix Algebra Review {#sec-appendix-b .unnumbered}
+
+## Coming Soon
+
+This appendix will provide a comprehensive review of:
+
+- Matrix operations (addition, multiplication, transpose)
+- Matrix properties (rank, determinant, trace)
+- Matrix inverses (regular and generalized)
+- Eigenvalues and eigenvectors
+- Positive definite matrices
+- Useful matrix identities and formulas
+
+**Key Resources:**
+- Week 2 covers essential matrix algebra for this course
+- @searle1971 provides comprehensive treatment

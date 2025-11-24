@@ -1,0 +1,7 @@
+# Week 9: Two-Way ANOVA and Factorial Models {#sec-week09}
+
+## Coming Soon
+Content under development for two-way ANOVA, interactions, and factorial designs.
+
+**Previous**: [Week 8: Contrasts](../Week08_Contrasts/Week08_Contrasts.qmd)
+**Next**: [Week 10: ANCOVA](../Week10_ANCOVA/Week10_ANCOVA.qmd)

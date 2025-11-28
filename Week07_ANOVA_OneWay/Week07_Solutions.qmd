@@ -1,0 +1,985 @@
+---
+title: "Week 7 Solutions: One-Way ANOVA"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+---
+
+# Week 7 Solutions: Analysis of Variance (One-Way)
+
+Complete worked solutions for all Week 7 exercises.
+
+---
+
+## Solution 1: Egg Production Across Layer Strains
+
+### Part A: Construct y and X
+
+**Response vector y** (12×1):
+$$\mathbf{y} = \begin{bmatrix}
+280 \\ 285 \\ 278 \\ 282 \\
+265 \\ 270 \\ 268 \\ 267 \\
+290 \\ 295 \\ 288 \\ 292
+\end{bmatrix}$$
+
+**Design matrix X** (12×3) for cell means model:
+$$\mathbf{X} = \begin{bmatrix}
+1 & 0 & 0 \\
+1 & 0 & 0 \\
+1 & 0 & 0 \\
+1 & 0 & 0 \\
+0 & 1 & 0 \\
+0 & 1 & 0 \\
+0 & 1 & 0 \\
+0 & 1 & 0 \\
+0 & 0 & 1 \\
+0 & 0 & 1 \\
+0 & 0 & 1 \\
+0 & 0 & 1
+\end{bmatrix}$$
+
+Each column represents one strain (A, B, C). Observations 1-4 are Strain A, 5-8 are Strain B, 9-12 are Strain C.
+
+### Part B: Compute X′X and X′y
+
+**X′X** (3×3):
+$$\mathbf{X}'\mathbf{X} = \begin{bmatrix}
+4 & 0 & 0 \\
+0 & 4 & 0 \\
+0 & 0 & 4
+\end{bmatrix} = 4\mathbf{I}_3$$
+
+✓ **Verified**: Diagonal matrix because balanced design!
+
+**X′y** (3×1):
+$$\mathbf{X}'\mathbf{y} = \begin{bmatrix}
+280 + 285 + 278 + 282 \\
+265 + 270 + 268 + 267 \\
+290 + 295 + 288 + 292
+\end{bmatrix} = \begin{bmatrix}
+1125 \\
+1070 \\
+1165
+\end{bmatrix}$$
+
+These are the group sums.
+
+### Part C: Solve normal equations
+
+$$\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y} = \frac{1}{4}\mathbf{I}_3 \begin{bmatrix} 1125 \\ 1070 \\ 1165 \end{bmatrix} = \begin{bmatrix} 281.25 \\ 267.50 \\ 291.25 \end{bmatrix}$$
+
+**Interpretation**: These estimates are the **sample means** for each strain:
+- $b_1 = 281.25$ eggs/year = mean for Strain A
+- $b_2 = 267.50$ eggs/year = mean for Strain B
+- $b_3 = 291.25$ eggs/year = mean for Strain C
+
+### Part D: Calculate sum of squares
+
+**Grand mean**:
+$$\bar{y}_{..} = \frac{1125 + 1070 + 1165}{12} = \frac{3360}{12} = 280.00$$
+
+**Group means** (from Part C):
+- $\bar{y}_{1.} = 281.25$
+- $\bar{y}_{2.} = 267.50$
+- $\bar{y}_{3.} = 291.25$
+
+**SST**:
+\begin{align}
+\text{SST} &= \sum_{i,j} (y_{ij} - \bar{y}_{..})^2 \\
+&= (280-280)^2 + (285-280)^2 + (278-280)^2 + (282-280)^2 \\
+&\quad + (265-280)^2 + (270-280)^2 + (268-280)^2 + (267-280)^2 \\
+&\quad + (290-280)^2 + (295-280)^2 + (288-280)^2 + (292-280)^2 \\
+&= 0 + 25 + 4 + 4 + 225 + 100 + 144 + 169 + 100 + 225 + 64 + 144 \\
+&= 1204
+\end{align}
+
+**SS(Strains)**:
+\begin{align}
+\text{SS(Strains)} &= \sum_i n_i(\bar{y}_{i.} - \bar{y}_{..})^2 \\
+&= 4(281.25 - 280)^2 + 4(267.50 - 280)^2 + 4(291.25 - 280)^2 \\
+&= 4(1.5625) + 4(156.25) + 4(126.5625) \\
+&= 6.25 + 625 + 506.25 \\
+&= 1137.5
+\end{align}
+
+**SSE**:
+\begin{align}
+\text{SSE} &= \sum_{i,j} (y_{ij} - \bar{y}_{i.})^2 \\
+&= [(280-281.25)^2 + (285-281.25)^2 + (278-281.25)^2 + (282-281.25)^2] \\
+&\quad + [(265-267.5)^2 + (270-267.5)^2 + (268-267.5)^2 + (267-267.5)^2] \\
+&\quad + [(290-291.25)^2 + (295-291.25)^2 + (288-291.25)^2 + (292-291.25)^2] \\
+&= [1.5625 + 14.0625 + 10.5625 + 0.5625] \\
+&\quad + [6.25 + 6.25 + 0.25 + 0.25] \\
+&\quad + [1.5625 + 14.0625 + 10.5625 + 0.5625] \\
+&= 26.75 + 13 + 26.75 \\
+&= 66.5
+\end{align}
+
+**Verification**:
+$$\text{SST} = 1204 = 1137.5 + 66.5 = \text{SS(Strains)} + \text{SSE} \quad \checkmark$$
+
+### Part E: ANOVA table
+
+| Source   | df  | SS      | MS       | F      | p-value  |
+|----------|-----|---------|----------|--------|----------|
+| Strains  | 2   | 1137.5  | 568.75   | 76.97  | < 0.0001 |
+| Error    | 9   | 66.5    | 7.389    | —      | —        |
+| Total    | 11  | 1204.0  | —        | —      | —        |
+
+**Calculations**:
+- df(Strains) = g - 1 = 3 - 1 = 2
+- df(Error) = n - g = 12 - 3 = 9
+- MSM = 1137.5 / 2 = 568.75
+- MSE = 66.5 / 9 = 7.389
+- F = 568.75 / 7.389 = 76.97
+
+```{r}
+#| label: sol1-f-test
+# p-value
+F_stat <- 76.97
+df1 <- 2
+df2 <- 9
+p_value <- 1 - pf(F_stat, df1, df2)
+cat(sprintf("p-value = %.6f\n", p_value))
+```
+
+### Part F: Hypothesis test and interpretation
+
+**Test**: $H_0: \mu_1 = \mu_2 = \mu_3$ at $\alpha = 0.05$
+
+**Decision**: F = 76.97, p < 0.0001 < 0.05 → **Reject** $H_0$
+
+**Conclusion**: There is extremely strong evidence that the three layer strains differ significantly in annual egg production.
+
+**Biological interpretation**:
+- **Strain C** (291.25 eggs/year) has the highest production
+- **Strain B** (267.50 eggs/year) has the lowest production
+- Difference: 291.25 - 267.50 = **23.75 eggs/year** (~9% increase)
+- Over a flock of 10,000 hens, this is 237,500 additional eggs per year!
+
+**Recommendation**: Strain C is clearly superior for egg production. Further investigation needed to determine which specific pairs differ (Strain C vs. A? A vs. B?).
+
+---
+
+## Solution 2: Design Matrix Properties
+
+### Part A: Construct X matrix
+
+For groups with n = [3, 4, 5, 4], the design matrix X (16×4):
+
+$$\mathbf{X} = \begin{bmatrix}
+1 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 1 & 0 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 1 & 0 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1 \\
+0 & 0 & 0 & 1
+\end{bmatrix}$$
+
+Rows 1-3: Group 1, Rows 4-7: Group 2, Rows 8-12: Group 3, Rows 13-16: Group 4.
+
+### Part B: Compute X′X
+
+$$\mathbf{X}'\mathbf{X} = \begin{bmatrix}
+3 & 0 & 0 & 0 \\
+0 & 4 & 0 & 0 \\
+0 & 0 & 5 & 0 \\
+0 & 0 & 0 & 4
+\end{bmatrix}$$
+
+✓ **Diagonal matrix** with diagonal elements = [3, 4, 5, 4] = sample sizes $n_i$.
+
+**Relationship**: The $(i,i)$ element of **X′X** equals $n_i$ (sample size of group $i$).
+
+### Part C: Prove X is always full rank
+
+**Proof**:
+
+To show rank(**X**) = g, we prove the columns of **X** are linearly independent.
+
+Suppose $\mathbf{c}_1 \mathbf{x}_1 + \mathbf{c}_2 \mathbf{x}_2 + \cdots + \mathbf{c}_g \mathbf{x}_g = \mathbf{0}$
+
+where $\mathbf{x}_i$ is the $i$-th column of **X** and we want to show $\mathbf{c}_i = 0$ for all $i$.
+
+The $i$-th column $\mathbf{x}_i$ has 1s in rows corresponding to group $i$ observations, and 0s elsewhere.
+
+Consider the rows corresponding to group 1:
+- In these rows, only $\mathbf{x}_1$ has non-zero entries (all 1s)
+- All other columns have 0s
+
+The linear combination in group 1 rows gives: $c_1 \cdot 1 = 0$, so $c_1 = 0$.
+
+Similarly for group 2 rows: $c_2 = 0$, and so on for all groups.
+
+Therefore, $c_1 = c_2 = \cdots = c_g = 0$, proving linear independence.
+
+Since the columns are linearly independent, **rank(X) = g** (full column rank).
+
+**Key insight**: As long as each group has $n_i \geq 1$ observation, its column has at least one "1" entry that doesn't overlap with other columns, ensuring independence. $\blacksquare$
+
+### Part D: Why cell means avoids rank deficiency
+
+**Explanation**:
+
+The **cell means model** avoids rank deficiency because:
+
+1. **Each column is independent**: Column $i$ represents ONLY group $i$. There's no overlap or redundancy between columns.
+
+2. **No intercept column**: Unlike the effects model, there's no column of all 1s that could be expressed as a sum of other columns.
+
+3. **Diagonal X′X**: For any design (balanced or unbalanced), **X′X** is diagonal. This immediately implies:
+   - All eigenvalues are positive (the diagonal elements $n_i > 0$)
+   - The matrix is invertible
+   - Unique solutions exist
+
+4. **Direct parameterization**: Each parameter $\mu_i$ directly represents group $i$ mean. There's a one-to-one correspondence between parameters and groups.
+
+**Contrast with effects model**: The effects model $y_{ij} = \mu + \alpha_i + e_{ij}$ has:
+- An intercept column (all 1s)
+- Group indicator columns
+- The intercept = sum of group columns → rank deficiency
+- Requires constraints (e.g., $\sum \alpha_i = 0$) for unique solutions
+
+**Conclusion**: The cell means model's structure guarantees **X′X** is always invertible, making it computationally simpler and avoiding estimability issues.
+
+---
+
+## Solution 3: Sum of Squares Decomposition
+
+### Part A: Prove SST = SS(Treatments) + SSE
+
+**Proof**:
+
+Start with the fundamental identity:
+$$y_{ij} - \bar{y}_{..} = (\bar{y}_{i.} - \bar{y}_{..}) + (y_{ij} - \bar{y}_{i.})$$
+
+This says: (total deviation) = (between-group deviation) + (within-group deviation).
+
+Square both sides:
+$$(y_{ij} - \bar{y}_{..})^2 = (\bar{y}_{i.} - \bar{y}_{..})^2 + (y_{ij} - \bar{y}_{i.})^2 + 2(\bar{y}_{i.} - \bar{y}_{..})(y_{ij} - \bar{y}_{i.})$$
+
+Sum over all $i = 1, \ldots, g$ and $j = 1, \ldots, n_i$:
+$$\sum_i \sum_j (y_{ij} - \bar{y}_{..})^2 = \sum_i \sum_j (\bar{y}_{i.} - \bar{y}_{..})^2 + \sum_i \sum_j (y_{ij} - \bar{y}_{i.})^2 + 2\sum_i \sum_j (\bar{y}_{i.} - \bar{y}_{..})(y_{ij} - \bar{y}_{i.})$$
+
+**Term 1** (left side):
+$$\sum_i \sum_j (y_{ij} - \bar{y}_{..})^2 = \text{SST}$$
+
+**Term 2** (right side, first part):
+Within group $i$, $(\bar{y}_{i.} - \bar{y}_{..})$ is constant:
+$$\sum_j (\bar{y}_{i.} - \bar{y}_{..})^2 = n_i(\bar{y}_{i.} - \bar{y}_{..})^2$$
+
+Summing over all groups:
+$$\sum_i n_i(\bar{y}_{i.} - \bar{y}_{..})^2 = \text{SS(Treatments)}$$
+
+**Term 3** (right side, second part):
+$$\sum_i \sum_j (y_{ij} - \bar{y}_{i.})^2 = \text{SSE}$$
+
+**Term 4** (cross-product):
+$$\sum_i \sum_j (\bar{y}_{i.} - \bar{y}_{..})(y_{ij} - \bar{y}_{i.}) = \sum_i (\bar{y}_{i.} - \bar{y}_{..}) \sum_j (y_{ij} - \bar{y}_{i.})$$
+
+But $\sum_j (y_{ij} - \bar{y}_{i.}) = 0$ (see Part B), so the entire cross-product term vanishes!
+
+Therefore:
+$$\text{SST} = \text{SS(Treatments)} + \text{SSE} \quad \blacksquare$$
+
+### Part B: Sum of residuals within group is zero
+
+**Proof**:
+$$\sum_{j=1}^{n_i} (y_{ij} - \bar{y}_{i.}) = \sum_{j=1}^{n_i} y_{ij} - \sum_{j=1}^{n_i} \bar{y}_{i.}$$
+
+Since $\bar{y}_{i.}$ is constant within group $i$:
+$$= \sum_{j=1}^{n_i} y_{ij} - n_i \bar{y}_{i.}$$
+
+But by definition, $\bar{y}_{i.} = \frac{1}{n_i}\sum_{j=1}^{n_i} y_{ij}$, so:
+$$= \sum_{j=1}^{n_i} y_{ij} - n_i \cdot \frac{1}{n_i}\sum_{j=1}^{n_i} y_{ij} = \sum_{j=1}^{n_i} y_{ij} - \sum_{j=1}^{n_i} y_{ij} = 0 \quad \blacksquare$$
+
+**Overall sum**: Since the sum of residuals is zero within each group, the overall sum across all groups is also zero:
+$$\sum_i \sum_j (y_{ij} - \bar{y}_{i.}) = \sum_i 0 = 0$$
+
+### Part C: SSE in matrix form
+
+**Matrix form**: $\text{SSE} = \mathbf{e}'\mathbf{e}$
+
+where $\mathbf{e} = \mathbf{y} - \hat{\mathbf{y}}$ are the residuals.
+
+**Alternative form**:
+\begin{align}
+\text{SSE} &= \mathbf{e}'\mathbf{e} \\
+&= (\mathbf{y} - \mathbf{X}\mathbf{b})'(\mathbf{y} - \mathbf{X}\mathbf{b}) \\
+&= \mathbf{y}'\mathbf{y} - \mathbf{y}'\mathbf{X}\mathbf{b} - \mathbf{b}'\mathbf{X}'\mathbf{y} + \mathbf{b}'\mathbf{X}'\mathbf{X}\mathbf{b}
+\end{align}
+
+Since $\mathbf{b}'\mathbf{X}'\mathbf{y}$ is a scalar, it equals its transpose: $\mathbf{b}'\mathbf{X}'\mathbf{y} = (\mathbf{b}'\mathbf{X}'\mathbf{y})' = \mathbf{y}'\mathbf{X}\mathbf{b}$
+
+Also, from normal equations: $\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$, so $\mathbf{b}'\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{b}'\mathbf{X}'\mathbf{y}$
+
+Therefore:
+$$\text{SSE} = \mathbf{y}'\mathbf{y} - 2\mathbf{b}'\mathbf{X}'\mathbf{y} + \mathbf{b}'\mathbf{X}'\mathbf{y} = \mathbf{y}'\mathbf{y} - \mathbf{b}'\mathbf{X}'\mathbf{y} \quad \blacksquare$$
+
+### Part D: Degrees of freedom partition
+
+**Proof**:
+$$\text{df(Total)} = n - 1$$
+$$\text{df(Model)} = g - 1$$
+$$\text{df(Error)} = n - g$$
+
+Check:
+$$(g - 1) + (n - g) = g - 1 + n - g = n - 1 \quad \checkmark$$
+
+**Interpretation**:
+
+- **df(Total) = n - 1**: We have $n$ observations. Estimating 1 parameter (grand mean $\bar{y}_{..}$) leaves $n-1$ degrees of freedom.
+
+- **df(Treatments) = g - 1**: We estimate $g$ group means, but they're constrained to have a specific grand mean. This uses $g-1$ independent parameters. Equivalently: $g$ groups minus 1 constraint (the overall mean) = $g-1$ df.
+
+- **df(Error) = n - g**: After estimating $g$ group means, we have $n$ observations minus $g$ estimated parameters = $n-g$ residual df. Within each group $i$, we have $n_i - 1$ degrees of freedom, and summing: $\sum_i (n_i - 1) = n - g$.
+
+---
+
+## Solution 4: Swine Litter Size Comparison
+
+### Part A: Summary statistics
+
+```{r}
+#| label: sol4-load-data
+# Load data
+litter_data <- read.csv("data/litter_size_genetics.csv")
+
+# Summary by line
+library(dplyr)
+summary_stats <- litter_data %>%
+  group_by(genetic_line) %>%
+  summarise(
+    n = n(),
+    mean = mean(litter_size),
+    sd = sd(litter_size),
+    min = min(litter_size),
+    max = max(litter_size)
+  )
+
+print(summary_stats)
+```
+
+**Observations**:
+- All lines have n=8 (balanced design)
+- Mean litter sizes range from ~10.2 to ~12.3 piglets
+- LineC has highest mean, LineB has lowest
+- Standard deviations similar across lines (~1.2)
+
+### Part B: Boxplot and outlier check
+
+```{r}
+#| label: sol4-boxplot
+#| fig-width: 8
+#| fig-height: 6
+
+boxplot(litter_size ~ genetic_line, data = litter_data,
+        main = "Litter Size by Genetic Line",
+        xlab = "Genetic Line",
+        ylab = "Litter Size (piglets born alive)",
+        col = c("lightblue", "lightgreen", "lightyellow", "lightpink"))
+
+# Add grand mean line
+abline(h = mean(litter_data$litter_size), lty = 2, col = "red")
+```
+
+**Outlier assessment**: No obvious outliers. All observations appear within reasonable biological range (8-14 piglets). Distributions are relatively symmetric.
+
+### Part C: Fit ANOVA three ways
+
+```{r}
+#| label: sol4-three-methods
+# Method 1: Custom function (from lecture)
+source("../helper_functions.R")  # Assumes functions saved
+fit1 <- anova_oneway(litter_data$litter_size, litter_data$genetic_line)
+
+# Method 2: Base R lm() with cell means
+fit2 <- lm(litter_size ~ genetic_line - 1, data = litter_data)
+
+# Method 3: Base R aov()
+fit3 <- aov(litter_size ~ genetic_line, data = litter_data)
+
+cat("Method 1 (Custom function):\n")
+print(fit1$anova_table)
+
+cat("\nMethod 2 (lm with cell means):\n")
+print(anova(fit2))
+
+cat("\nMethod 3 (aov):\n")
+print(summary(fit3))
+
+# Verify F-statistics match
+cat("\nF-statistics:\n")
+cat(sprintf("Method 1: F = %.4f\n", fit1$anova_table$F[1]))
+cat(sprintf("Method 2: F = %.4f\n", anova(fit2)$`F value`[1]))
+cat(sprintf("Method 3: F = %.4f\n", summary(fit3)[[1]]$`F value`[1]))
+```
+
+✓ **All three methods produce identical ANOVA tables!**
+
+### Part D: ANOVA table and hypothesis test
+
+From any of the three methods:
+
+| Source        | df | SS      | MS     | F     | p-value |
+|---------------|----|---------|--------|-------|---------|
+| Genetic Line  | 3  | 53.34   | 17.78  | 13.48 | < 0.001 |
+| Error         | 28 | 36.88   | 1.32   | —     | —       |
+| Total         | 31 | 90.22   | —      | —     | —       |
+
+**Test**: $H_0:$ All four genetic lines have equal mean litter size at $\alpha = 0.05$
+
+**Decision**: F = 13.48, p < 0.001 << 0.05 → **Reject** $H_0$
+
+**Conclusion**: There is very strong evidence that genetic lines differ significantly in litter size.
+
+### Part E: Breeding program interpretation
+
+```{r}
+#| label: sol4-means
+# Group means
+group_means <- tapply(litter_data$litter_size, litter_data$genetic_line, mean)
+print(group_means)
+
+# Best vs worst
+best_line <- names(which.max(group_means))
+worst_line <- names(which.min(group_means))
+difference <- group_means[best_line] - group_means[worst_line]
+
+cat(sprintf("\nBest line: %s (%.2f piglets)\n", best_line, group_means[best_line]))
+cat(sprintf("Worst line: %s (%.2f piglets)\n", worst_line, group_means[worst_line]))
+cat(sprintf("Difference: %.2f piglets per litter\n", difference))
+
+# Economic value
+value_per_piglet <- 50  # dollars
+litters <- 100
+total_value_diff <- difference * value_per_piglet * litters
+cat(sprintf("\nOver %d litters: $%.0f additional revenue\n", litters, total_value_diff))
+```
+
+**Results**:
+- **LineC** has highest mean (≈12.3 piglets)
+- **LineB** has lowest mean (≈10.2 piglets)
+- **Difference**: ~2.1 piglets per litter
+- **Economic impact**: At $50/piglet × 100 litters = **$10,500 additional revenue**
+
+This is substantial! Genetic selection for litter size can have major economic impact.
+
+### Part F: Recommendation
+
+**Recommendation**: **Select LineC** for superior prolificacy.
+
+**Additional considerations**:
+1. **Piglet survival**: Do larger litters have lower survival rates?
+2. **Sow body condition**: Can sows maintain body weight with larger litters?
+3. **Milk production**: Is milk production adequate for larger litters?
+4. **Growth rate**: Do piglets from larger litters grow slower (competition for milk)?
+5. **Other traits**: LineC's performance on growth rate, feed efficiency, carcass quality
+6. **Genetic correlations**: Is high litter size negatively correlated with other important traits?
+
+**Balanced approach**: Ideally use **selection index** that weights litter size with other economically important traits rather than selecting on litter size alone.
+
+---
+
+## Solution 5: Balanced vs. Unbalanced Designs
+
+### Part A: Three advantages of balanced designs
+
+**Advantage 1: Simplicity of X′X**
+- **X′X** is diagonal (cell means model)
+- Inverse is trivial: just invert diagonal elements
+- **Why it matters**: Simpler computation, easier to verify calculations by hand, less rounding error
+
+**Advantage 2: Equal precision for all estimates**
+- All group means have same standard error: SE($\bar{y}_{i.}$) = $\sqrt{MSE/n}$ (constant $n$)
+- **Why it matters**: Fair comparisons between all groups, no group has unfair advantage/disadvantage in statistical power
+
+**Advantage 3: Orthogonality (extends to factorial designs)**
+- Effects of different factors are uncorrelated
+- Type I, II, III SS are identical
+- **Why it matters**: Interpretation is unambiguous, order of terms in model doesn't matter, easier to explain results
+
+**Bonus advantage**: Statistical power is maximized for detecting differences when sample sizes are equal (for fixed total $n$).
+
+### Part B: Why X′X is diagonal (balanced case)
+
+**Explanation**:
+
+In the cell means model, column $i$ of **X** has:
+- 1s in rows corresponding to group $i$
+- 0s in all other rows
+
+For the $(i,j)$ element of **X′X**:
+$$(X'X)_{ij} = \mathbf{x}_i' \mathbf{x}_j = \sum_{k=1}^n X_{ki} X_{kj}$$
+
+**Case 1**: $i = j$ (diagonal elements)
+$$(\mathbf{X}'\mathbf{X})_{ii} = \sum_{k=1}^n X_{ki}^2 = \sum_{k \text{ in group } i} 1^2 = n_i$$
+
+**Case 2**: $i \neq j$ (off-diagonal elements)
+
+Since columns $i$ and $j$ represent different groups, there's **no row** where both $X_{ki} = 1$ AND $X_{kj} = 1$. Each row belongs to exactly one group!
+
+Therefore:
+$$(\mathbf{X}'\mathbf{X})_{ij} = \sum_{k=1}^n X_{ki} X_{kj} = 0$$
+
+Result: **X′X** is diagonal with diagonal elements = $[n_1, n_2, \ldots, n_g]$.
+
+**What changes with unbalanced data?**
+
+The structure remains diagonal, but diagonal elements are now unequal: $n_1 \neq n_2 \neq \cdots \neq n_g$.
+
+This affects:
+- Precision of estimates (groups with smaller $n_i$ have larger SE)
+- Interpretation of results (must account for unequal precision)
+
+### Part C: Unbalanced data properties
+
+**Q1: Is X′X still diagonal for cell means model?**
+
+✓ **Yes!** The same argument from Part B applies. Columns representing different groups have no overlap, so off-diagonal elements remain zero.
+
+$$\mathbf{X}'\mathbf{X} = \text{diag}(n_1, n_2, \ldots, n_g)$$
+
+**Q2: Effect of unequal sample size on precision?**
+
+The variance of the $i$-th group mean estimate is:
+$$\text{Var}(\bar{y}_{i.}) = \text{Var}\left(\frac{1}{n_i}\sum_j y_{ij}\right) = \frac{\sigma^2}{n_i}$$
+
+Standard error:
+$$\text{SE}(\bar{y}_{i.}) = \sqrt{\frac{MSE}{n_i}}$$
+
+**Impact**: Groups with smaller $n_i$ have **larger** standard errors (less precise estimates). This is unavoidable—less data means less precision.
+
+**Q3: Relationship to X′X diagonal elements?**
+
+The diagonal elements of $(\mathbf{X}'\mathbf{X})^{-1}$ are $[1/n_1, 1/n_2, \ldots, 1/n_g]$.
+
+Variance of estimates:
+$$\text{Var}(\mathbf{b}) = (\mathbf{X}'\mathbf{X})^{-1} \sigma^2 = \text{diag}(\sigma^2/n_1, \sigma^2/n_2, \ldots, \sigma^2/n_g)$$
+
+**Direct relationship**: Precision is inversely proportional to the reciprocals of the **X′X** diagonal elements.
+
+### Part D: Unbalanced designs in practice
+
+**Q1: Can we conduct valid ANOVA with unbalanced data?**
+
+✓ **Yes!** The F-test is still valid. Parameter estimates are still unbiased. Normal equations still have solutions (for cell means model).
+
+**Q2: Complications in interpretation?**
+
+1. **Unequal precision**: Some means estimated more precisely than others
+2. **Power differences**: Harder to detect differences involving small groups
+3. **Type I/II/III SS confusion** (in multi-factor designs): Different SS types give different results
+4. **Why unbalanced?**: Must consider whether missingness is random or systematic (potential bias)
+
+**Q3: Strategies to minimize impact?**
+
+**Design phase** (before data collection):
+1. **Oversample**: Collect more observations than needed, anticipating losses
+2. **Equal allocation**: Randomize equal numbers to each group
+3. **Monitor closely**: Track sample sizes during experiment, replace lost units if possible
+4. **Blocking**: Use blocks to maintain balance within strata
+
+**Analysis phase** (after data collected):
+5. **Use appropriate methods**: Cell means model, correct df calculations
+6. **Report precision**: Include SE for each group mean, confidence intervals
+7. **Account for missing data mechanism**: If non-random, use appropriate models (not covered in Week 7)
+8. **Don't delete data**: Use all available data; don't discard groups to "rebalance"
+
+**Best practice**: Balanced designs are ideal, but unbalanced data can be analyzed correctly with proper methods and careful interpretation.
+
+---
+
+## Solution 6: Unbalanced Swine Growth Study
+
+### Part A: Design matrix structure
+
+**X matrix** (29×4) for cell means model:
+
+```
+Rows 1-8 (LineA):   [1, 0, 0, 0]
+Rows 9-14 (LineB):  [0, 1, 0, 0]
+Rows 15-24 (LineC): [0, 0, 1, 0]
+Rows 25-29 (LineD): [0, 0, 0, 1]
+```
+
+First 3 rows explicitly:
+$$\begin{bmatrix}
+1 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 \\
+1 & 0 & 0 & 0 \\
+\vdots & \vdots & \vdots & \vdots
+\end{bmatrix}$$
+
+### Part B: Compute X′X
+
+```{r}
+#| label: sol6-xtx
+# Load data
+swine_unbal <- read.csv("data/swine_growth_unbalanced.csv")
+
+# Construct design matrix
+X_unbal <- model.matrix(~ genetic_line - 1, data = swine_unbal)
+
+# Compute X'X
+XtX_unbal <- t(X_unbal) %*% X_unbal
+cat("X'X matrix:\n")
+print(XtX_unbal)
+```
+
+Result:
+$$\mathbf{X}'\mathbf{X} = \begin{bmatrix}
+8 & 0 & 0 & 0 \\
+0 & 6 & 0 & 0 \\
+0 & 0 & 10 & 0 \\
+0 & 0 & 0 & 5
+\end{bmatrix}$$
+
+✓ **Diagonal** but with **different** elements: [8, 6, 10, 5] = sample sizes for each line.
+
+**What they represent**: The $(i,i)$ element equals $n_i$ (sample size of group $i$).
+
+### Part C: Solve normal equations
+
+```{r}
+#| label: sol6-solve
+y_unbal <- swine_unbal$ADG
+
+# X'y
+Xty_unbal <- t(X_unbal) %*% y_unbal
+
+# Solve
+b_unbal <- solve(XtX_unbal) %*% Xty_unbal
+
+cat("Parameter estimates:\n")
+print(b_unbal)
+
+# Verify with simple means
+cat("\nVerification (simple arithmetic means):\n")
+simple_means <- tapply(y_unbal, swine_unbal$genetic_line, mean)
+print(simple_means)
+
+cat("\nDifference (should be ≈ 0):\n")
+print(b_unbal - simple_means)
+```
+
+✓ **Verified**: Estimates match simple arithmetic means exactly!
+
+### Part D: Complete ANOVA
+
+```{r}
+#| label: sol6-anova
+# Using custom function
+fit_unbal <- anova_oneway(swine_unbal$ADG, swine_unbal$genetic_line)
+print(fit_unbal)
+```
+
+**ANOVA Table**:
+
+| Source        | df | SS     | MS     | F     | p-value |
+|---------------|----|--------|--------|-------|---------|
+| Genetic Line  | 3  | 0.0685 | 0.0228 | 9.95  | 0.0002  |
+| Error         | 25 | 0.0573 | 0.0023 | —     | —       |
+| Total         | 28 | 0.1258 | —      | —     | —       |
+
+**Test**: $H_0:$ All lines have equal mean ADG
+
+**Decision**: F = 9.95, p = 0.0002 < 0.05 → **Reject** $H_0$
+
+**Conclusion**: Strong evidence that genetic lines differ in ADG.
+
+### Part E: Compare with balanced design
+
+```{r}
+#| label: sol6-precision
+# MSE
+MSE_unbal <- fit_unbal$MSE
+
+# Standard errors for each group mean
+se_by_group <- sqrt(MSE_unbal / fit_unbal$group_sizes)
+
+cat("Standard Errors by Group:\n")
+print(data.frame(
+  Line = names(se_by_group),
+  n = fit_unbal$group_sizes,
+  SE = se_by_group
+))
+
+cat("\nLeast precise estimate: LineD (n=5)\n")
+cat("Most precise estimate: LineC (n=10)\n")
+cat("\nTo improve balance, prioritize adding observations to LineD and LineB.\n")
+```
+
+**Results**:
+- **LineD** (n=5) has highest SE (least precise)
+- **LineC** (n=10) has lowest SE (most precise)
+- SE ratio: LineD/LineC = $\sqrt{10/5} = \sqrt{2} \approx 1.41$
+
+**Priority for adding observations**: LineD first (smallest n), then LineB (n=6), to approach balanced design.
+
+### Part F: Practical implications
+
+**Q1: Does unbalanced design affect ability to detect differences?**
+
+**Answer**: Yes, but not drastically in this case.
+- The F-test is still valid and powerful (we detected significant differences)
+- Groups with smaller $n$ contribute less information to overall test
+- If LineD had a large true effect but small $n$, we'd have less power to detect it
+
+**Q2: Are estimates still unbiased?**
+
+✓ **Yes!** Unbiased estimation doesn't require balanced data.
+$$E(\bar{y}_{i.}) = \mu_i \quad \text{for all } i$$
+
+The estimates are unbiased regardless of $n_i$ values.
+
+**Q3: Cautions in interpretation?**
+
+1. **Precision varies**: Don't treat all group means as equally reliable
+2. **Why unbalanced?**: If animals died due to disease, low ADG might be **caused** by animals dying (survivor bias). Need to check mortality rates by line.
+3. **Confidence intervals**: Use individual CIs accounting for different $n_i$, not a single global CI
+4. **Multiple comparisons**: Unequal sample sizes affect power of pairwise tests differently
+
+**Best practice**:
+- Report sample sizes prominently
+- Include SE or CI for each group mean
+- Investigate reasons for imbalance
+- Consider sensitivity analysis (e.g., what if missing animals had low/high ADG?)
+
+---
+
+## Solution 7: ANOVA as Regression
+
+### Part A: Explain "ANOVA is regression with categorical predictors"
+
+**Explanation**:
+
+ANOVA and regression are **the same model**: $\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}$
+
+**What's the same**:
+1. **Model form**: Linear combination of predictors plus error
+2. **Normal equations**: $\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$
+3. **Least squares solution**: $\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$
+4. **Sum of squares decomposition**: SST = SSM + SSE
+5. **F-test**: Tests overall significance using F = MSM/MSE
+6. **Assumptions**: Same Gauss-Markov conditions
+
+**What's different**:
+1. **Predictor type**:
+   - Regression: continuous (age, weight, temperature)
+   - ANOVA: categorical (breed, diet, treatment)
+2. **Design matrix X**:
+   - Regression: real numbers
+   - ANOVA: 0s and 1s (indicator/dummy variables)
+3. **Parameter interpretation**:
+   - Regression: slopes (rate of change)
+   - ANOVA: group means or effects (level differences)
+
+**Key insight**: The type of predictor (continuous vs. categorical) doesn't change the underlying mathematics. Both use least squares, both solve normal equations, both partition variation the same way. This is the power of the **unified linear model framework**.
+
+### Part B: Fit both models to egg data
+
+```{r}
+#| label: sol7-two-models
+# Data from Exercise 1
+strain <- rep(c("A", "B", "C"), each=4)
+eggs <- c(280, 285, 278, 282, 265, 270, 268, 267, 290, 295, 288, 292)
+
+# Model 1: Cell means (no intercept)
+fit_cell <- lm(eggs ~ strain - 1)
+coef_cell <- coef(fit_cell)
+
+# Model 2: Effects (with intercept, uses reference cell coding)
+fit_effects <- lm(eggs ~ strain)
+coef_effects <- coef(fit_effects)
+
+cat("Cell means model coefficients:\n")
+print(coef_cell)
+
+cat("\nEffects model coefficients:\n")
+print(coef_effects)
+```
+
+**Interpretation**:
+
+**Cell means model**:
+- strainA = 281.25 (mean of A)
+- strainB = 267.50 (mean of B)
+- strainC = 291.25 (mean of C)
+
+**Effects model** (R uses reference cell coding by default, not sum-to-zero):
+- (Intercept) = 281.25 (mean of reference group A)
+- strainB = -13.75 (B's deviation from A: 267.50 - 281.25)
+- strainC = 10.00 (C's deviation from A: 291.25 - 281.25)
+
+**Relationship**:
+- Cell means: directly estimates each mean
+- Reference coding: estimates reference mean + deviations from reference
+- Sum-to-zero coding (not shown): estimates grand mean + deviations from grand mean
+
+All are equivalent parameterizations of the same model!
+
+### Part C: Demonstrate equivalence
+
+```{r}
+#| label: sol7-equivalence
+# Fitted values
+fitted_cell <- fitted(fit_cell)
+fitted_effects <- fitted(fit_effects)
+
+# Residuals
+resid_cell <- residuals(fit_cell)
+resid_effects <- residuals(fit_effects)
+
+# SSE
+SSE_cell <- sum(resid_cell^2)
+SSE_effects <- sum(resid_effects^2)
+
+# F-tests
+F_cell <- summary(fit_cell)$fstatistic[1]
+F_effects <- anova(fit_effects)$`F value`[1]
+
+cat("Fitted values identical?\n")
+cat("Max difference:", max(abs(fitted_cell - fitted_effects)), "\n\n")
+
+cat("Residuals identical?\n")
+cat("Max difference:", max(abs(resid_cell - resid_effects)), "\n\n")
+
+cat("SSE comparison:\n")
+cat(sprintf("Cell means: %.6f\n", SSE_cell))
+cat(sprintf("Effects: %.6f\n", SSE_effects))
+cat(sprintf("Difference: %.10e\n\n", SSE_cell - SSE_effects))
+
+cat("F-test comparison:\n")
+cat(sprintf("Cell means: F = %.4f\n", F_cell))
+cat(sprintf("Effects: F = %.4f\n", F_effects))
+```
+
+✓ **All identical** (within numerical precision):
+- Fitted values: exact match
+- Residuals: exact match
+- SSE: exact match
+- F-statistic: exact match
+
+**Conclusion**: Different parameterizations, identical fit!
+
+### Part D: Compare design matrices
+
+```{r}
+#| label: sol7-design-matrices
+# Design matrices
+X_cell <- model.matrix(~ strain - 1)
+X_effects <- model.matrix(~ strain)
+
+cat("Cell means design matrix (first 6 rows):\n")
+print(head(X_cell))
+
+cat("\nEffects model design matrix (first 6 rows):\n")
+print(head(X_effects))
+
+cat("\nDimensions:\n")
+cat("Cell means: ", nrow(X_cell), "×", ncol(X_cell), "\n")
+cat("Effects: ", nrow(X_effects), "×", ncol(X_effects), "\n")
+```
+
+**Differences**:
+
+**Cell means X** (12×3):
+- 3 columns (one per strain)
+- All 0s and 1s
+- Each row has exactly one 1
+
+**Effects X** (12×3):
+- Column 1: all 1s (intercept)
+- Columns 2-3: indicators for strains B and C (strain A is reference)
+- Strain A rows: [1, 0, 0]
+- Strain B rows: [1, 1, 0]
+- Strain C rows: [1, 0, 1]
+
+**Preference**: **Cell means model** for interpretation because:
+1. Direct interpretation (parameters = means)
+2. Always full rank (no constraint needed)
+3. Symmetric treatment of all groups
+4. No arbitrary "reference" group choice
+
+### Part E: Broader context of general linear model
+
+**Discussion**:
+
+The **general linear model** y = Xβ + e is an incredibly powerful framework that unifies:
+
+**Week 4 - Simple Linear Regression**:
+- X is n×2: [1, x] (intercept + one continuous predictor)
+- β = [β₀, β₁]′ (intercept + slope)
+- Interpretation: how y changes with x
+
+**Week 6 - Multiple Regression**:
+- X is n×p: [1, x₁, x₂, ..., xₚ₋₁] (intercept + p-1 continuous predictors)
+- β = [β₀, β₁, ..., βₚ₋₁]′
+- Interpretation: partial effects holding others constant
+
+**Week 7 - One-Way ANOVA**:
+- X is n×g: [indicators for g groups] (0s and 1s)
+- β = [μ₁, ..., μ_g]′ (cell means) or [μ, α₁, ..., α_g]′ (effects)
+- Interpretation: group means or deviations
+
+**Week 9 - Two-Way ANOVA** (future):
+- X includes indicators for multiple factors
+- β includes main effects and interactions
+- Interpretation: effects of multiple categorical factors
+
+**Week 10 - ANCOVA** (future):
+- X includes BOTH continuous and categorical variables
+- β includes both slopes and group effects
+- Interpretation: group comparisons adjusted for covariates
+
+**Key insight**:
+
+**Same normal equations**: $\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$
+
+**Same solution**: $\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$ (when full rank)
+
+**Same SS decomposition**: SST = SSM + SSE
+
+**Same F-test**: F = MSM/MSE
+
+**Same assumptions**: Gauss-Markov conditions
+
+The beauty is that **one mathematical framework** handles all these seemingly different problems. We don't need separate theory for regression vs. ANOVA vs. ANCOVA. We just need:
+1. Know how to construct the appropriate design matrix **X**
+2. Apply the same least squares machinery
+3. Interpret parameters appropriately for the context
+
+This is why linear models are so fundamental in statistics—and why understanding the matrix framework gives you tremendous flexibility and power!
+
+---
+
+## Summary
+
+These solutions demonstrate:
+
+✓ **Computational proficiency**: Hand calculations match R output
+✓ **Theoretical understanding**: Proofs show why decompositions work
+✓ **Applied skills**: Biological interpretation of livestock data
+✓ **Conceptual integration**: ANOVA fits within broader linear model framework
+
+**Key takeaway**: ANOVA is not a separate method—it's regression with categorical predictors, analyzed using the same least squares theory we've built over Weeks 1-7.
+
+---
+
+**Return to**: [Week 7 Exercises](Week07_Exercises.qmd)
+
+**Main Lecture**: [Week 7: One-Way ANOVA](Week07_ANOVA_OneWay.qmd)

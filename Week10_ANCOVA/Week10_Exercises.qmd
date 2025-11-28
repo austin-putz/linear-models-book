@@ -1,0 +1,659 @@
+---
+title: "Week 10 Exercises: Analysis of Covariance (ANCOVA)"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+bibliography: ../references.bib
+---
+
+# Overview
+
+These exercises are designed to reinforce the ANCOVA concepts covered in Week 10. The problems progress from hand calculations to applied data analysis to theoretical understanding.
+
+**Problem Types**:
+
+- **Computational (Problems 1-3)**: Hand calculations to build intuition
+- **Applied (Problems 4-6)**: Analyze real datasets using R
+- **Theoretical (Problem 7)**: Prove properties of ANCOVA estimators
+
+**Datasets**: All datasets referenced in applied problems are available in the `data/` subdirectory.
+
+**Solutions**: Complete solutions are provided in `Week10_Solutions.qmd`.
+
+---
+
+# Problem 1: Hand Calculation of ANCOVA (Small Dataset)
+
+A swine nutritionist conducted a feeding trial to compare four different feed additives on piglet weaning weight (kg). Since initial birth weight affects weaning weight, the researcher wants to adjust for this covariate.
+
+## Data
+
+The data from 12 piglets (3 per additive) are shown below:
+
+| Piglet | Additive | Birth Weight (kg) | Weaning Weight (kg) |
+|--------|----------|-------------------|---------------------|
+| 1      | A        | 1.4               | 6.2                 |
+| 2      | A        | 1.6               | 6.8                 |
+| 3      | A        | 1.5               | 6.5                 |
+| 4      | B        | 1.3               | 6.0                 |
+| 5      | B        | 1.5               | 6.4                 |
+| 6      | B        | 1.4               | 6.2                 |
+| 7      | C        | 1.6               | 7.0                 |
+| 8      | C        | 1.8               | 7.4                 |
+| 9      | C        | 1.7               | 7.2                 |
+| 10     | D        | 1.5               | 6.6                 |
+| 11     | D        | 1.7               | 7.0                 |
+| 12     | D        | 1.6               | 6.8                 |
+
+## Tasks
+
+**a.** Compute the overall mean for weaning weight ($\bar{y}_{..}$) and birth weight ($\bar{x}_{..}$).
+
+**b.** Compute the treatment means for weaning weight ($\bar{y}_{i.}$) and birth weight ($\bar{x}_{i.}$) for each additive (i = A, B, C, D).
+
+**c.** Construct the design matrix **X** for the ANCOVA model using cell means coding for treatments and centered birth weight as the covariate. Show the dimensions explicitly.
+
+**d.** Compute **X'X** and **X'y** by hand (you may use a calculator).
+
+**e.** Solve the normal equations to obtain the parameter estimates: $\hat{\mu}_A$, $\hat{\mu}_B$, $\hat{\mu}_C$, $\hat{\mu}_D$, and $\hat{\beta}$ (the covariate slope).
+
+**f.** Compute the adjusted treatment means using the formula:
+$$\bar{y}_{i}^* = \bar{y}_{i.} - \hat{\beta}(\bar{x}_{i.} - \bar{x}_{..})$$
+
+**g.** Interpret the results: Which additive produces the highest adjusted weaning weight? How do the adjusted means differ from the unadjusted means?
+
+---
+
+# Problem 2: Computing Adjusted Means from Summary Statistics
+
+A beef cattle researcher compared carcass marbling scores across three breeds. The data were analyzed, and you have the following summary statistics:
+
+## Summary Statistics
+
+| Breed      | n   | Mean Marbling | Mean Age (days) |
+|------------|-----|---------------|-----------------|
+| Angus      | 15  | 5.8           | 420             |
+| Hereford   | 12  | 5.2           | 440             |
+| Charolais  | 18  | 4.9           | 410             |
+
+**Overall means**: $\bar{y}_{..} = 5.27$, $\bar{x}_{..} = 421.33$ days
+
+**ANCOVA results**: The estimated covariate slope is $\hat{\beta} = 0.025$ (marbling units per day of age).
+
+## Tasks
+
+**a.** Compute the adjusted marbling score mean for each breed using the formula:
+$$\bar{y}_{i}^* = \bar{y}_{i.} - \hat{\beta}(\bar{x}_{i.} - \bar{x}_{..})$$
+
+**b.** How do the adjusted means compare to the unadjusted means? Which breed shows the largest change?
+
+**c.** Explain biologically why the adjustment changed the breed rankings. What does this tell you about the relationship between age and marbling in this study?
+
+**d.** If you wanted to compare breeds at a common age of 430 days (rather than at the overall mean age), how would you modify the adjustment formula? Compute the adjusted means at 430 days.
+
+---
+
+# Problem 3: Testing Homogeneity of Slopes
+
+A poultry scientist studied feed conversion ratio (FCR) across four diets, with initial body weight as a covariate. Before conducting ANCOVA, the researcher wants to test whether the assumption of parallel slopes (homogeneity of slopes) is valid.
+
+## Given Information
+
+From the analysis, you have the following sums of squares:
+
+- **SSE (parallel slopes model)**: SSE₁ = 2.45 with df₁ = 36
+- **SSE (separate slopes model)**: SSE₂ = 2.10 with df₂ = 32
+
+The study had 40 birds total, with 4 diets (g = 4 groups).
+
+## Tasks
+
+**a.** State the null hypothesis (H₀) and alternative hypothesis (Hₐ) for testing homogeneity of slopes.
+
+**b.** Compute the F-statistic for testing homogeneity of slopes using:
+$$F = \frac{(SSE_1 - SSE_2) / (df_1 - df_2)}{SSE_2 / df_2}$$
+
+**c.** Determine the degrees of freedom for the F-test: numerator df = ? and denominator df = ?
+
+**d.** Using α = 0.05, the critical value for F(3, 32) is approximately 2.90. What is your decision regarding the null hypothesis?
+
+**e.** What are the practical implications of your decision for the ANCOVA analysis? Can the researcher proceed with standard ANCOVA, or should a different approach be used?
+
+**f.** If the homogeneity of slopes assumption is violated, what alternative analysis strategies could the researcher consider?
+
+---
+
+# Problem 4: Layer Hen Egg Production Analysis
+
+## Background
+
+A poultry breeding company wants to compare egg production across three layer strains (Leghorn, RhodeIsland, Sussex) while accounting for differences in hen body weight. Heavier hens may lay fewer eggs due to energy partitioning, so body weight should be included as a covariate.
+
+## Dataset
+
+The data are available in `data/layer_egg_bodyweight.csv` with the following variables:
+
+- `hen_id`: Unique hen identifier (1-30)
+- `strain`: Layer strain (Leghorn, RhodeIsland, Sussex)
+- `body_weight_kg`: Hen body weight in kilograms
+- `eggs_month`: Number of eggs laid in a 30-day period
+
+Load the data:
+
+```{r}
+#| eval: false
+layers <- read.csv("data/layer_egg_bodyweight.csv")
+```
+
+## Tasks
+
+**a. Exploratory Analysis**
+
+1. Compute summary statistics (mean, SD) for egg production and body weight by strain
+2. Create a scatter plot of egg production vs. body weight, with points colored by strain
+3. Add separate regression lines for each strain to the plot
+4. Does there appear to be a relationship between body weight and egg production? Does the relationship look similar across strains?
+
+**b. Test Homogeneity of Slopes**
+
+1. Fit two models:
+   - Model 1: Parallel slopes (standard ANCOVA)
+   - Model 2: Separate slopes (include strain × body_weight interaction)
+2. Use an F-test to compare the models
+3. State your conclusion: Can you proceed with standard ANCOVA?
+
+**c. Fit ANCOVA Model**
+
+1. Fit the ANCOVA model: `eggs_month ~ strain + body_weight`
+2. Report the ANOVA table
+3. Test H₀: No strain effect (after adjusting for body weight)
+4. Test H₀: No body weight effect
+5. Interpret the covariate slope: What is the expected change in egg production for each 1 kg increase in body weight?
+
+**d. Compute Adjusted Means**
+
+1. Calculate the adjusted strain means (LSMeans) at the overall mean body weight
+2. Compute standard errors for the adjusted means
+3. Create a table comparing unadjusted means vs. adjusted means
+4. Which strain has the highest adjusted egg production?
+
+**e. Post-hoc Comparisons**
+
+1. Test the following contrasts (adjusted for body weight):
+   - Leghorn vs. RhodeIsland
+   - Leghorn vs. Sussex
+   - RhodeIsland vs. Sussex
+2. Use Bonferroni correction for multiple comparisons (α = 0.05/3 = 0.0167)
+3. Which pairwise differences are statistically significant?
+
+**f. Model Diagnostics**
+
+1. Create residual plots to check ANCOVA assumptions:
+   - Residuals vs. fitted values
+   - Normal Q-Q plot
+   - Residuals vs. body weight (covariate)
+2. Identify any potential outliers (studentized residuals > 3 in absolute value)
+3. Are the ANCOVA assumptions reasonably satisfied?
+
+**g. Biological Interpretation**
+
+Write a brief paragraph (4-6 sentences) interpreting the results for a poultry breeding manager. Address:
+
+- Which strain performs best after accounting for body weight differences?
+- Is body weight an important factor to consider?
+- What are the practical implications for strain selection?
+
+---
+
+# Problem 5: Beef Cattle Feedlot Performance Analysis
+
+## Background
+
+A beef cattle nutritionist conducted a feedlot trial comparing five different rations on average daily gain (ADG). Since initial weight at feedlot entry affects growth rate, the researcher wants to adjust ration means for initial weight differences.
+
+This example demonstrates all three purposes of ANCOVA:
+
+1. **Increased precision**: Initial weight explains variation in ADG
+2. **Adjustment for confounding**: Some rations were assigned heavier steers
+3. **Fair comparison**: Compare rations for steers of the same entry weight
+
+## Dataset
+
+The data are available in `data/beef_feedlot_adg.csv` with the following variables:
+
+- `steer_id`: Unique steer identifier (1-40)
+- `ration`: Feedlot ration (Ration1, Ration2, Ration3, Ration4, Ration5)
+- `initial_weight_kg`: Live weight at feedlot entry in kilograms
+- `adg_kg_day`: Average daily gain in kg/day during finishing period
+
+Load the data:
+
+```{r}
+#| eval: false
+beef <- read.csv("data/beef_feedlot_adg.csv")
+```
+
+## Tasks
+
+**a. Examine Confounding**
+
+1. Compute the mean initial weight for each ration group
+2. Create side-by-side boxplots of initial weight by ration
+3. Test H₀: Equal mean initial weights across rations using one-way ANOVA
+4. Is there evidence of confounding (i.e., do rations differ in average initial weight)?
+
+**b. Compare ANOVA vs. ANCOVA**
+
+Fit two models to compare the impact of including the covariate:
+
+1. **Model 1** (ANOVA): `adg_kg_day ~ ration` (no covariate)
+2. **Model 2** (ANCOVA): `adg_kg_day ~ ration + initial_weight_kg` (with covariate)
+
+For each model, report:
+
+- SSE (residual sum of squares)
+- MSE (mean square error / residual variance)
+- R² (coefficient of determination)
+
+How much does including initial weight improve model fit?
+
+**c. Test Covariate Effect**
+
+From Model 2 (ANCOVA):
+
+1. Test H₀: β = 0 (no initial weight effect)
+2. Report the t-statistic and p-value
+3. Interpret the estimated slope: What is the expected change in ADG for each 10 kg increase in initial weight?
+
+**d. Test Treatment Effect**
+
+From Model 2 (ANCOVA):
+
+1. Test H₀: No ration effect (after adjusting for initial weight)
+2. Report the F-statistic and p-value
+3. Does the significance of the ration effect change when comparing Model 1 (ANOVA) vs. Model 2 (ANCOVA)? Explain why.
+
+**e. Adjusted Means and Ranking**
+
+1. Compute unadjusted ration means (simple averages of ADG by ration)
+2. Compute adjusted ration means (LSMeans at overall mean initial weight)
+3. Create a table showing both sets of means with their ranks
+4. Did the adjustment change the ranking of rations? Which rations moved up/down after adjustment?
+
+**f. Visualization**
+
+Create an ANCOVA visualization:
+
+1. Scatter plot: ADG vs. initial weight, points colored by ration
+2. Add the fitted ANCOVA lines (parallel slopes, one per ration)
+3. Mark the overall mean initial weight with a vertical line
+4. Add horizontal lines at the adjusted means (where ANCOVA lines cross the overall mean)
+5. Include a legend and appropriate axis labels
+
+**g. Specific Contrasts**
+
+Test the following contrasts (using adjusted means):
+
+1. Ration2 vs. Ration5
+2. High-energy rations (Ration2, Ration4) vs. moderate-energy rations (Ration1, Ration3, Ration5)
+
+Report the contrast estimates, standard errors, t-statistics, and p-values.
+
+**h. Prediction**
+
+Using your fitted ANCOVA model:
+
+1. Predict the ADG for a steer on Ration3 with initial weight 350 kg
+2. Compute a 95% prediction interval for this individual steer
+3. Compute a 95% confidence interval for the mean ADG of steers on Ration3 with initial weight 350 kg
+4. Explain the difference between the prediction interval and confidence interval
+
+**i. Management Recommendations**
+
+Write a brief report (1 paragraph, 6-8 sentences) for the feedlot manager addressing:
+
+- Which ration produces the best ADG after accounting for initial weight?
+- How important is initial weight in determining feedlot performance?
+- Are there specific rations that perform better for lighter vs. heavier entry weights? (Hint: this would require testing homogeneity of slopes)
+- What ration would you recommend and why?
+
+---
+
+# Problem 6: Dairy Herd Milk Yield Comparison
+
+## Background
+
+A dairy cooperative wants to compare milk production across four member herds (HerdA, HerdB, HerdC, HerdD). However, herds were tested at different stages of lactation (days in milk, DIM), which strongly affects milk yield due to the lactation curve. ANCOVA will adjust herd means for DIM differences.
+
+This example demonstrates ANCOVA for **removing confounding**: herds tested at different lactation stages appear to have different yields, but the differences may be due to testing timing rather than true management differences.
+
+## Dataset
+
+The data are available in `data/dairy_milk_herds.csv` with the following variables:
+
+- `cow_id`: Unique cow identifier (1-40)
+- `herd`: Dairy herd identifier (HerdA, HerdB, HerdC, HerdD)
+- `days_in_milk`: Days since calving/freshening (lactation stage)
+- `milk_yield_kg`: Daily milk production in kilograms
+
+Load the data:
+
+```{r}
+#| eval: false
+dairy <- read.csv("data/dairy_milk_herds.csv")
+```
+
+## Tasks
+
+**a. Understand the Confounding**
+
+1. Compute mean DIM and mean milk yield for each herd
+2. Create a scatter plot: milk yield vs. DIM, colored by herd
+3. Describe the relationship between DIM and milk yield (positive, negative, or none?)
+4. Which herd was tested earliest in lactation? Which was tested latest?
+5. Explain why comparing raw herd means would be misleading
+
+**b. Fit and Compare Models**
+
+Fit three models:
+
+1. **Model 0** (intercept only): `milk_yield_kg ~ 1`
+2. **Model 1** (herd only): `milk_yield_kg ~ herd`
+3. **Model 2** (ANCOVA): `milk_yield_kg ~ herd + days_in_milk`
+
+Create an ANOVA table comparing all three models:
+
+| Model | Predictors | SSE | df | MSE | R² |
+|-------|-----------|-----|----|----|-----|
+| 0 | (Intercept) | ? | ? | ? | 0 |
+| 1 | Herd | ? | ? | ? | ? |
+| 2 | Herd + DIM | ? | ? | ? | ? |
+
+**c. Incremental F-tests**
+
+Conduct two F-tests:
+
+1. **Test 1**: Model 1 vs. Model 0 (Does herd explain variation in milk yield?)
+2. **Test 2**: Model 2 vs. Model 1 (Does adding DIM improve the model?)
+
+For each test, report:
+
+- F-statistic
+- Numerator and denominator df
+- p-value
+- Conclusion
+
+**d. Partition Sums of Squares**
+
+From the ANCOVA model (Model 2), obtain the Type I (sequential) sums of squares:
+
+- SS(Herd | Intercept)
+- SS(DIM | Intercept, Herd)
+- SSE (Residual)
+
+Verify that these sum to SST (total sum of squares).
+
+Now obtain Type III sums of squares and compare:
+
+- SS(Herd | Intercept, DIM) [Type III for Herd]
+- SS(DIM | Intercept, Herd) [Type III for DIM]
+
+Are Type I and Type III SS different? Why or why not?
+
+**e. Adjusted Herd Means**
+
+1. Compute unadjusted herd means (simple averages)
+2. Compute adjusted herd means (LSMeans at overall mean DIM ≈ 98 days)
+3. Create a bar plot comparing unadjusted vs. adjusted means (grouped bars)
+4. Which herd shows the largest change after adjustment?
+5. Does the ranking of herds change after adjustment?
+
+**f. Test All Pairwise Comparisons**
+
+Using the adjusted means, test all pairwise herd differences:
+
+- HerdA vs. HerdB
+- HerdA vs. HerdC
+- HerdA vs. HerdD
+- HerdB vs. HerdC
+- HerdB vs. HerdD
+- HerdC vs. HerdD
+
+Use Tukey's HSD procedure for multiple comparisons (or report Bonferroni-adjusted p-values).
+
+Which herds are significantly different from each other?
+
+**g. Visualize Adjusted Means**
+
+Create a coefficient plot showing:
+
+- Adjusted herd means on the y-axis
+- 95% confidence intervals (error bars)
+- Herd labels on the x-axis
+
+Add a horizontal line at the overall adjusted mean for reference.
+
+**h. Test Homogeneity of Slopes**
+
+Test whether the lactation curve slope is the same across herds:
+
+1. Fit interaction model: `milk_yield_kg ~ herd * days_in_milk`
+2. Compare to parallel slopes model using F-test
+3. State conclusion: Is the parallel slopes assumption valid?
+4. If violated, what would be the implication for interpretation?
+
+**i. Practical Interpretation**
+
+Answer the following questions based on your ANCOVA results:
+
+1. After accounting for lactation stage, which herd has the highest milk production?
+2. HerdD had the lowest unadjusted mean milk yield. Does this mean HerdD has poor management? Explain using your adjusted means.
+3. The dairy cooperative wants to identify the top-performing herd to share best management practices. Which herd would you recommend studying, and why?
+4. What is the estimated decline in milk yield per day post-peak lactation (based on the DIM slope)? Is this biologically reasonable?
+
+**j. Custom ANCOVA Function**
+
+Write an R function to compute adjusted means from scratch (without using `emmeans` or similar packages):
+
+```{r}
+#| eval: false
+compute_adjusted_means <- function(y, treatment, covariate) {
+  # Your code here
+  # Should return a data frame with:
+  # - treatment levels
+  # - adjusted means
+  # - standard errors
+}
+```
+
+Test your function on the dairy data and verify it matches `emmeans()` output.
+
+---
+
+# Problem 7: Theoretical Properties of Adjusted Means (Proof)
+
+## Background
+
+In ANCOVA, we compute adjusted treatment means using the formula:
+
+$$\bar{y}_{i}^* = \bar{y}_{i.} - \hat{\beta}(\bar{x}_{i.} - \bar{x}_{..})$$
+
+where:
+
+- $\bar{y}_{i}^*$ = adjusted mean for treatment i
+- $\bar{y}_{i.}$ = unadjusted (raw) mean for treatment i
+- $\hat{\beta}$ = estimated covariate slope
+- $\bar{x}_{i.}$ = mean covariate value for treatment i
+- $\bar{x}_{..}$ = overall mean covariate value
+
+## Tasks
+
+**a. Prove: Adjusted Means Sum to Overall Mean**
+
+Prove that the weighted sum of adjusted means equals the overall mean (for balanced designs with equal $n_i = n$):
+
+$$\frac{1}{g} \sum_{i=1}^{g} \bar{y}_{i}^* = \bar{y}_{..}$$
+
+where $g$ is the number of treatment groups.
+
+**Hints**:
+
+- Start with the definition of adjusted means
+- Expand the sum: $\sum_{i=1}^{g} \bar{y}_{i}^*$
+- Use the fact that $\sum_{i=1}^{g} \bar{y}_{i.} = g \bar{y}_{..}$ (for balanced designs)
+- Use the fact that $\sum_{i=1}^{g} \bar{x}_{i.} = g \bar{x}_{..}$
+
+**b. Extension: Weighted Adjusted Means**
+
+For unbalanced designs (unequal $n_i$), prove that the weighted sum of adjusted means equals the overall mean:
+
+$$\sum_{i=1}^{g} w_i \bar{y}_{i}^* = \bar{y}_{..}$$
+
+where $w_i = n_i / n$ and $n = \sum_{i=1}^{g} n_i$ is the total sample size.
+
+**c. Interpretation**
+
+Explain in words (2-3 sentences) what this property means practically. Why is it desirable that adjusted means "balance" around the overall mean?
+
+**d. Prove: Variance of Adjusted Mean**
+
+The variance of an adjusted treatment mean is given by:
+
+$$\text{Var}(\bar{y}_{i}^*) = \sigma^2 \left[ \frac{1}{n_i} + \frac{(\bar{x}_{i.} - \bar{x}_{..})^2}{\sum_{j=1}^{g} \sum_{k=1}^{n_j} (x_{jk} - \bar{x}_{..})^2} \right]$$
+
+This formula shows that the precision of adjusted means depends on two components:
+
+1. Sampling variability within treatment ($1/n_i$)
+2. Distance of treatment covariate mean from overall mean (second term)
+
+**Prove this result** starting from:
+
+$$\bar{y}_{i}^* = \bar{y}_{i.} - \hat{\beta}(\bar{x}_{i.} - \bar{x}_{..})$$
+
+**Hints**:
+
+- Use $\text{Var}(\bar{y}_{i.}) = \sigma^2 / n_i$
+- Use $\text{Var}(\hat{\beta}) = \sigma^2 / \sum_{j,k}(x_{jk} - \bar{x}_{..})^2$ (from regression theory)
+- Use $\text{Cov}(\bar{y}_{i.}, \hat{\beta})$ = ? (requires careful algebra)
+
+**e. Implication for Design**
+
+Based on the variance formula in part (d), answer the following:
+
+1. When is $\text{Var}(\bar{y}_{i}^*)$ minimized?
+2. If you were designing an experiment and wanted to maximize precision of adjusted means, how would you allocate covariate values across treatment groups?
+3. Explain why treatments with covariate means far from the overall mean have larger standard errors for their adjusted means.
+
+**f. Special Case: When Does ANCOVA Provide No Benefit?**
+
+Consider the variance formula. Under what condition does $\text{Var}(\bar{y}_{i}^*)$ reduce to simply $\sigma^2 / n_i$ (i.e., the second term disappears)?
+
+Interpret this result: In what experimental situation does ANCOVA adjustment provide no additional benefit beyond ANOVA?
+
+---
+
+# Submission Guidelines
+
+## Computational Problems (1-3)
+
+- Show all work and calculations
+- Round final answers to 2-3 decimal places
+- Clearly label each part (a, b, c, ...)
+
+## Applied Problems (4-6)
+
+- Include well-commented R code
+- Present results in clearly formatted tables
+- Create publication-quality plots with appropriate labels
+- Write interpretations in complete sentences
+- For each problem, create a single R script (e.g., `problem4_solution.R`)
+
+## Theoretical Problem (7)
+
+- Write formal mathematical proofs using proper notation
+- State all assumptions explicitly
+- Show all algebraic steps
+- Explain the practical meaning of theoretical results
+
+## R Code Style
+
+Follow these guidelines for all R code:
+
+```{r}
+#| eval: false
+
+# Load libraries at the beginning
+library(ggplot2)
+library(emmeans)
+library(car)
+
+# Use clear variable names
+adj_means <- compute_adjusted_means(y, treatment, covariate)
+
+# Comment complex steps
+# Test homogeneity of slopes: compare parallel vs. separate slopes models
+fit_parallel <- lm(y ~ treatment + covariate)
+fit_separate <- lm(y ~ treatment * covariate)
+anova(fit_parallel, fit_separate)
+
+# Create readable output
+cat("F-statistic:", f_stat, "\n")
+cat("p-value:", p_value, "\n")
+```
+
+## Plot Requirements
+
+All plots should include:
+
+- Descriptive titles
+- Axis labels with units
+- Legend (when multiple groups)
+- Appropriate colors (consider color-blind friendly palettes)
+- Readable font sizes
+
+---
+
+# Additional Resources
+
+## Helpful R Functions
+
+- `lm()`: Fit linear models
+- `anova()`: ANOVA tables and model comparisons
+- `summary()`: Model summaries
+- `coef()`: Extract coefficients
+- `fitted()`: Extract fitted values
+- `residuals()`: Extract residuals
+- `emmeans()`: Estimated marginal means (from `emmeans` package)
+- `Anova()`: Type II/III sums of squares (from `car` package)
+- `contrast()`: Test contrasts (from `emmeans` package)
+
+## Formulas to Remember
+
+**Adjusted means**:
+$$\bar{y}_{i}^* = \bar{y}_{i.} - \hat{\beta}(\bar{x}_{i.} - \bar{x}_{..})$$
+
+**Standard error of adjusted mean** (balanced design):
+$$\text{SE}(\bar{y}_{i}^*) = \sqrt{\frac{\text{MSE}}{n_i} \left[1 + \frac{(\bar{x}_{i.} - \bar{x}_{..})^2}{\sum (x_{jk} - \bar{x}_{..})^2}\right]}$$
+
+**F-test for homogeneity of slopes**:
+$$F = \frac{(SSE_{\text{parallel}} - SSE_{\text{separate}}) / (g-1)}{SSE_{\text{separate}} / (n - 2g)}$$
+
+where $g$ is the number of groups and $n$ is the total sample size.
+
+**F-test for treatment effect** (ANCOVA):
+$$F = \frac{\text{MS(Treatment | Covariate)}}{\text{MSE}}$$
+
+## Tips for Success
+
+1. **Check assumptions first**: Always test homogeneity of slopes before interpreting ANCOVA results
+2. **Visualize the data**: Scatter plots with group colors help understand the covariate-response relationship
+3. **Compare models**: Fit both ANOVA (no covariate) and ANCOVA to see the impact of adjustment
+4. **Interpret adjusted means**: Remember they represent the expected response at the overall mean covariate value
+5. **Use contrasts wisely**: Plan your comparisons in advance and adjust for multiple testing when appropriate
+
+---
+
+**Good luck with the exercises! Remember to consult `Week10_ANCOVA.qmd` for detailed examples and `Week10_Solutions.qmd` for complete solutions.**

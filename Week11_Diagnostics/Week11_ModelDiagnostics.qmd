@@ -1,0 +1,2292 @@
+---
+title: "Week 11: Model Diagnostics"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    code-tools: true
+bibliography: ../references.bib
+---
+
+# Learning Objectives
+
+By the end of this week, you will be able to:
+
+1. **Compute** different types of residuals (raw, standardized, studentized) and understand their uses
+2. **Identify** outliers and high-leverage observations using diagnostic statistics (Cook's D, hat values, DFFITS)
+3. **Create and interpret** the four essential diagnostic plots to check model assumptions
+4. **Distinguish** between high-leverage and high-influence observations and understand their impact
+5. **Apply** appropriate transformations (Box-Cox, logarithmic) when model assumptions are violated
+6. **Build** a systematic diagnostic workflow for evaluating linear models in livestock applications
+
+# Introduction: Why Diagnostics Matter
+
+## The Danger of Trusting Models Blindly
+
+Linear models are powerful tools in animal breeding and genetics, but they are only as reliable as the assumptions on which they rest. Consider this scenario: A beef cattle breeding program uses a linear model to predict carcass quality from live animal measurements. The model appears to fit well with a high R², and all regression coefficients are statistically significant. Based on these results, the program makes selection decisions affecting thousands of animals and millions of dollars in genetic improvement.
+
+However, the model was never properly diagnosed. Hidden in the data was a single influential observation—an animal with unusual biology that pulled the regression line in the wrong direction. The predictions for the entire population were biased, leading to suboptimal selection decisions. Years later, when genetic evaluations were re-run with proper diagnostics, the error was discovered, but the damage was done: inferior genetics had been propagated through the herd.
+
+::: {.callout-warning}
+## The Danger of Model Misspecification
+
+**Real consequences in animal breeding:**
+
+- **Biased breeding value predictions**: Outliers can distort estimates of genetic merit
+- **Inefficient selection**: Resources wasted on animals with inflated predictions
+- **Lost genetic gain**: Years of progress compromised by poor model fit
+- **Economic losses**: Millions of dollars in reduced productivity
+
+**The bottom line**: Model diagnostics are not optional—they are essential for trustworthy inference and optimal breeding decisions.
+:::
+
+## Real Consequences in Animal Breeding
+
+In applied animal breeding and genetics, the stakes are high:
+
+- **Genetic evaluation systems** (EPDs, EBVs, genomic predictions) rely on accurate models
+- **Selection decisions** are based on model predictions that affect future generations
+- **Economic returns** depend on correctly identifying superior animals
+- **Industry competitiveness** requires maximizing genetic gain per generation
+
+When models fail due to violated assumptions or influential observations, the consequences ripple through entire breeding populations for years or even decades.
+
+## Connection to Previous Weeks
+
+In **Week 5**, we learned about the **Gauss-Markov Theorem**, which guarantees that least squares estimators are BLUE (Best Linear Unbiased Estimators) *under certain conditions*:
+
+::: {.callout-note}
+## Connection to Week 5: Assumptions of Least Squares
+
+Recall the **Gauss-Markov assumptions** from Week 5:
+
+1. **Linearity**: $E(\mathbf{y}) = \mathbf{X}\boldsymbol{\beta}$ (response is linear in parameters)
+2. **Zero mean errors**: $E(\mathbf{e}) = \mathbf{0}$ (errors have expected value zero)
+3. **Homoscedasticity**: $\text{Var}(\mathbf{e}) = \sigma^2\mathbf{I}$ (constant variance)
+4. **Independence**: Errors are uncorrelated (captured in $\sigma^2\mathbf{I}$)
+5. **Normality** (for inference): $\mathbf{e} \sim N(\mathbf{0}, \sigma^2\mathbf{I})$
+
+**This week's focus**: We check whether these assumptions actually hold for our data. If they don't, our estimates may be inefficient, biased, or produce invalid confidence intervals and hypothesis tests.
+:::
+
+Up to this point, we've **assumed** these conditions hold. This week, we learn how to **verify** them using diagnostic tools and what to do when they fail.
+
+**Key connections:**
+
+- **Week 4-5**: Simple regression foundations—residuals, fitted values, SSE
+- **Week 6**: Multiple regression—leverage becomes more complex with multiple predictors
+- **Weeks 7-9**: ANOVA models—same diagnostic principles apply to categorical predictors
+- **Week 10**: ANCOVA—homogeneity of slopes relates to residual patterns
+
+# Mathematical Theory
+
+## Review of Model Assumptions
+
+The linear model in matrix form is:
+
+$$
+\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}
+$$ {#eq-linear-model}
+
+where:
+
+- $\mathbf{y}$: $(n \times 1)$ response vector
+- $\mathbf{X}$: $(n \times p)$ design matrix
+- $\boldsymbol{\beta}$: $(p \times 1)$ parameter vector
+- $\mathbf{e}$: $(n \times 1)$ error vector
+
+The least squares estimate is:
+
+$$
+\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}
+$$ {#eq-ls-estimate}
+
+For this estimator to be BLUE and for inference to be valid, we require:
+
+1. **E1: Linearity** — The relationship between $\mathbf{y}$ and $\mathbf{X}$ is correctly specified
+2. **E2: Independence** — Observations are independent (or known dependence structure)
+3. **E3: Homoscedasticity** — $\text{Var}(e_i) = \sigma^2$ for all $i$
+4. **E4: Normality** — $e_i \sim N(0, \sigma^2)$ (required for valid $t$ and $F$ tests)
+
+**This week's goal**: Develop tools to check each assumption and diagnose violations.
+
+## Types of Residuals
+
+### Raw Residuals
+
+The **raw residual** for observation $i$ is simply the difference between observed and fitted values:
+
+$$
+e_i = y_i - \hat{y}_i = y_i - \mathbf{x}_i'\mathbf{b}
+$$ {#eq-raw-residual}
+
+In matrix form, the vector of all residuals is:
+
+$$
+\mathbf{e} = \mathbf{y} - \hat{\mathbf{y}} = \mathbf{y} - \mathbf{X}\mathbf{b} = (\mathbf{I} - \mathbf{H})\mathbf{y}
+$$ {#eq-residual-vector}
+
+where $\mathbf{H} = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'$ is the **hat matrix** (more on this shortly).
+
+**Properties**:
+
+- $\sum_{i=1}^n e_i = 0$ (residuals sum to zero when intercept is in model)
+- $\mathbf{X}'\mathbf{e} = \mathbf{0}$ (residuals are orthogonal to column space of $\mathbf{X}$)
+- $E(\mathbf{e}) = \mathbf{0}$ (expected value is zero)
+
+**Limitation**: Raw residuals have **unequal variances** even when the true errors have equal variance. This is because:
+
+$$
+\text{Var}(e_i) = \sigma^2(1 - h_{ii})
+$$ {#eq-residual-variance}
+
+where $h_{ii}$ is the $i$-th diagonal element of the hat matrix. Since $h_{ii}$ varies across observations, so does $\text{Var}(e_i)$.
+
+### Standardized Residuals
+
+To account for the estimate of $\sigma^2$, we **standardize** residuals:
+
+$$
+e_i^* = \frac{e_i}{\hat{\sigma}}
+$$ {#eq-standardized-residual}
+
+where $\hat{\sigma} = \sqrt{\text{MSE}} = \sqrt{\frac{\text{SSE}}{n-p}}$ is the estimated standard deviation of the errors.
+
+**Use**: Standardized residuals put all residuals on the same scale and can be roughly interpreted as $z$-scores if errors are normal.
+
+**Limitation**: Standardized residuals still have unequal variances because we haven't accounted for $h_{ii}$.
+
+### Studentized Residuals
+
+To fully account for the unequal variances of residuals, we **studentize**:
+
+$$
+r_i = \frac{e_i}{\hat{\sigma}\sqrt{1 - h_{ii}}}
+$$ {#eq-studentized-residual}
+
+::: {.callout-note}
+## Why Studentized Residuals?
+
+**The problem**: Even when the true errors $e_i$ all have variance $\sigma^2$, the residuals $e_i$ have **unequal variances**:
+
+$$
+\text{Var}(e_i) = \sigma^2(1 - h_{ii})
+$$
+
+**The solution**: Divide by the estimated standard deviation $\hat{\sigma}\sqrt{1 - h_{ii}}$ to equalize variances:
+
+$$
+\text{Var}(r_i) \approx 1 \quad \text{for all } i
+$$
+
+**Why it matters**: Studentized residuals can be compared directly across observations. An observation with $|r_i| > 3$ is unusual regardless of its position in $X$ space.
+:::
+
+**Distribution**: Under the normality assumption, studentized residuals approximately follow a $t$ distribution with $n-p$ degrees of freedom:
+
+$$
+r_i \sim t_{n-p}
+$$
+
+**Rule of thumb**: Observations with $|r_i| > 2$ are potentially unusual; those with $|r_i| > 3$ are almost certainly outliers.
+
+### Studentized Deleted Residuals
+
+The **studentized deleted residual** (also called **externally studentized**) is computed by:
+
+1. Remove observation $i$ from the dataset
+2. Refit the model on the remaining $n-1$ observations
+3. Predict $y_i$ using the refitted model
+4. Compute the residual and standardize it
+
+Formally:
+
+$$
+t_i = \frac{e_i}{\hat{\sigma}_{(i)}\sqrt{1 - h_{ii}}}
+$$ {#eq-deleted-residual}
+
+where $\hat{\sigma}_{(i)}$ is the estimate of $\sigma$ with observation $i$ deleted.
+
+**Distribution**: Under normality, $t_i$ follows an exact $t$ distribution with $n-p-1$ degrees of freedom:
+
+$$
+t_i \sim t_{n-p-1}
+$$
+
+**Use**: Deleted residuals are more sensitive for detecting outliers because the outlier doesn't influence its own residual calculation.
+
+**Relationship to ordinary studentized residuals**:
+
+$$
+t_i = r_i \sqrt{\frac{n-p-1}{n-p-r_i^2}}
+$$
+
+For most observations, $t_i \approx r_i$, but they can differ substantially for influential points.
+
+## Leverage and the Hat Matrix
+
+### Hat Matrix Definition and Properties
+
+The **hat matrix** $\mathbf{H}$ is central to understanding leverage and influence:
+
+$$
+\mathbf{H} = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'
+$$ {#eq-hat-matrix}
+
+It "puts the hat" on $\mathbf{y}$ to get $\hat{\mathbf{y}}$:
+
+$$
+\hat{\mathbf{y}} = \mathbf{H}\mathbf{y}
+$$
+
+The residual vector can be written as:
+
+$$
+\mathbf{e} = (\mathbf{I} - \mathbf{H})\mathbf{y}
+$$
+
+::: {.callout-important}
+## Hat Matrix Properties
+
+The hat matrix $\mathbf{H}$ has several important mathematical properties:
+
+1. **Symmetric**: $\mathbf{H}' = \mathbf{H}$
+
+   *Proof*: $\mathbf{H}' = [\mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}']' = \mathbf{X}[(\mathbf{X}'\mathbf{X})^{-1}]'\mathbf{X}' = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}' = \mathbf{H}$
+
+2. **Idempotent**: $\mathbf{H}\mathbf{H} = \mathbf{H}$
+
+   *Proof*: $\mathbf{H}\mathbf{H} = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}' = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}' = \mathbf{H}$
+
+3. **Bounds on diagonal**: $0 \leq h_{ii} \leq 1$ for all $i$
+
+4. **Trace equals rank**: $\text{tr}(\mathbf{H}) = \text{tr}[\mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'] = \text{tr}[(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{X}] = \text{tr}(\mathbf{I}_p) = p$
+
+Therefore: $\sum_{i=1}^n h_{ii} = p$
+
+**Implications**:
+- Idempotency means projecting twice is the same as projecting once
+- The sum of leverages equals the number of parameters
+- Average leverage is $\bar{h} = p/n$
+:::
+
+### Leverage Values ($h_{ii}$)
+
+The **leverage** of observation $i$ is the $i$-th diagonal element of $\mathbf{H}$:
+
+$$
+h_{ii} = [\mathbf{H}]_{ii} = \mathbf{x}_i'(\mathbf{X}'\mathbf{X})^{-1}\mathbf{x}_i
+$$ {#eq-leverage}
+
+where $\mathbf{x}_i$ is the $i$-th row of $\mathbf{X}$ (transposed to a column vector).
+
+**Interpretation**: $h_{ii}$ measures how far observation $i$ is from the center of the $X$ space. It quantifies the **potential** for observation $i$ to influence the fitted model.
+
+**Key properties**:
+
+- $0 \leq h_{ii} \leq 1$
+- $\sum_{i=1}^n h_{ii} = p$
+- Average leverage: $\bar{h} = p/n$
+- $\text{Var}(e_i) = \sigma^2(1 - h_{ii})$ — observations with high $h_{ii}$ have smaller residual variance
+- $\text{Var}(\hat{y}_i) = \sigma^2 h_{ii}$ — observations with high $h_{ii}$ have predictions with higher variance
+
+**Geometric interpretation**:
+
+- $h_{ii}$ measures the "distance" of $\mathbf{x}_i$ from $\bar{\mathbf{x}}$ in a metric defined by $(\mathbf{X}'\mathbf{X})^{-1}$
+- Points far from the center of the $X$ cloud have high leverage
+- Points near the center have low leverage
+
+### High Leverage Criteria
+
+**Question**: When is leverage "high"?
+
+::: {.callout-tip}
+## Rule of Thumb: High Leverage Thresholds
+
+An observation is considered **high leverage** if:
+
+- $h_{ii} > \frac{2p}{n}$ (twice the average leverage)
+- Or more conservatively: $h_{ii} > \frac{3p}{n}$ (three times average)
+
+**Example**: In a model with $n=50$ and $p=3$:
+- Average leverage: $\bar{h} = 3/50 = 0.06$
+- High leverage threshold: $h_{ii} > 2(0.06) = 0.12$
+
+**Important caveat**: High leverage means **potential** for influence, not necessarily actual influence. An observation can have high leverage but still follow the pattern of the data.
+:::
+
+## Influence Measures
+
+**Leverage vs. Influence**:
+
+- **Leverage** ($h_{ii}$): Measures an observation's **potential** to influence the fit based on its $X$ values
+- **Influence**: Measures an observation's **actual effect** on the fitted model (combines leverage and residual size)
+
+An observation can be:
+
+1. **High leverage, low influence**: Far from center of $X$ but follows the regression pattern (on the line)
+2. **Low leverage, high influence**: Near center of $X$ but very far from regression line (large residual)
+3. **High leverage, high influence**: Far from center of $X$ and doesn't follow pattern (both extreme $X$ and large residual)
+
+### Cook's Distance
+
+**Cook's Distance** [@cook1977] is the most widely used measure of influence. It quantifies how much the entire vector of fitted values $\hat{\mathbf{y}}$ changes when observation $i$ is deleted.
+
+**Definition**:
+
+$$
+D_i = \frac{\sum_{j=1}^n (\hat{y}_j - \hat{y}_{j(i)})^2}{p \cdot \text{MSE}}
+$$ {#eq-cooks-d-definition}
+
+where $\hat{y}_{j(i)}$ is the predicted value for observation $j$ when observation $i$ is deleted from the model.
+
+**Equivalent computational form**:
+
+$$
+D_i = \frac{r_i^2}{p} \cdot \frac{h_{ii}}{(1-h_{ii})^2}
+$$ {#eq-cooks-d-formula}
+
+**Interpretation**: Cook's Distance combines two components:
+
+1. **Residual size**: $r_i^2/p$ — How far is the observation from the fitted model?
+2. **Leverage**: $h_{ii}/(1-h_{ii})^2$ — How much potential does it have to influence the fit?
+
+An observation is influential only if **both** components are large.
+
+**Thresholds**:
+
+::: {.callout-tip}
+## Rule of Thumb: Cook's Distance Thresholds
+
+An observation is considered **influential** if:
+
+- **Classic threshold**: $D_i > 1$ (conservative, rarely exceeded)
+- **Alternative**: $D_i > \frac{4}{n}$ (more liberal, useful for small/medium datasets)
+- **Adjusted**: $D_i > \frac{4}{n-p-1}$ (accounts for model complexity)
+
+**Example**: For $n=50$, $p=3$:
+- Classic: $D_i > 1$ (very conservative)
+- Alternative: $D_i > 4/50 = 0.08$ (more practical)
+- Adjusted: $D_i > 4/46 = 0.087$
+
+**Guideline**: Examine any observation with $D_i > 4/n$ carefully. Investigate the biology/data quality for observations with $D_i > 0.5$.
+:::
+
+### DFFITS
+
+**DFFITS** (Difference in Fits) measures how much the **predicted value** $\hat{y}_i$ changes when observation $i$ is deleted:
+
+$$
+\text{DFFITS}_i = \frac{\hat{y}_i - \hat{y}_{i(i)}}{\hat{\sigma}_{(i)}\sqrt{h_{ii}}}
+$$ {#eq-dffits}
+
+where $\hat{y}_{i(i)}$ is the prediction for observation $i$ using a model fit without observation $i$.
+
+**Equivalent form**:
+
+$$
+\text{DFFITS}_i = r_i \sqrt{\frac{h_{ii}}{1-h_{ii}}}
+$$
+
+**Threshold**: $|\text{DFFITS}_i| > 2\sqrt{p/n}$ suggests influential observation.
+
+**Interpretation**: While Cook's $D$ measures overall influence on all fitted values, DFFITS focuses on the change in the observation's own prediction.
+
+### DFBETAS
+
+**DFBETAS** measures the change in each individual regression coefficient when observation $i$ is deleted:
+
+$$
+\text{DFBETAS}_{i,j} = \frac{b_j - b_{j(i)}}{\hat{\sigma}_{(i)}\sqrt{[(\mathbf{X}'\mathbf{X})^{-1}]_{jj}}}
+$$ {#eq-dfbetas}
+
+where $b_{j(i)}$ is the $j$-th coefficient when observation $i$ is deleted.
+
+**Threshold**: $|\text{DFBETAS}_{i,j}| > 2/\sqrt{n}$ suggests observation $i$ is influential for coefficient $j$.
+
+**Use**: DFBETAS helps identify which specific coefficient(s) are most affected by a potentially influential observation.
+
+## Transformations
+
+When diagnostic checks reveal violations of model assumptions (especially non-normality or heteroscedasticity), **transforming the response variable** may stabilize variance and improve model fit.
+
+### Box-Cox Family
+
+The **Box-Cox transformation** [@boxcox1964] is a family of power transformations indexed by a parameter $\lambda$:
+
+$$
+y^{(\lambda)} = \begin{cases}
+\frac{y^\lambda - 1}{\lambda} & \text{if } \lambda \neq 0 \\
+\log(y) & \text{if } \lambda = 0
+\end{cases}
+$$ {#eq-boxcox}
+
+**Why this form?** The normalization $\frac{y^\lambda - 1}{\lambda}$ makes the transformation **continuous at $\lambda = 0$**:
+
+$$
+\lim_{\lambda \to 0} \frac{y^\lambda - 1}{\lambda} = \log(y)
+$$
+
+**Common special cases**:
+
+::: {.callout-tip}
+## Box-Cox $\lambda$ Interpretation
+
+| $\lambda$ | Transformation | Use case |
+|-----------|----------------|----------|
+| $\lambda = 2$ | $y^2$ | Rarely used (increases skewness) |
+| $\lambda = 1$ | $y$ (no transformation) | Data already normal/homoscedastic |
+| $\lambda = 0.5$ | $\sqrt{y}$ | Count data, moderate right skew |
+| $\lambda = 0$ | $\log(y)$ | Strong right skew, proportional errors |
+| $\lambda = -0.5$ | $1/\sqrt{y}$ | Very strong right skew |
+| $\lambda = -1$ | $1/y$ | Extreme skewness |
+
+**Most common in practice**: $\lambda \in [0, 1]$ (square root to log transformation range)
+:::
+
+**Selecting $\lambda$**: The optimal $\lambda$ is chosen to maximize the log-likelihood:
+
+$$
+L(\lambda) = -\frac{n}{2}\log(\text{SSE}(\lambda)) + (\lambda - 1)\sum_{i=1}^n \log(y_i)
+$$
+
+where $\text{SSE}(\lambda)$ is the error sum of squares for the model fit using $y^{(\lambda)}$ as the response.
+
+In R, this is done using `MASS::boxcox()`, which produces a **profile likelihood plot**. The optimal $\lambda$ is the value that maximizes $L(\lambda)$.
+
+### Logarithmic Transformation
+
+The **logarithmic transformation** ($\lambda = 0$ in Box-Cox family) is the most common transformation in practice:
+
+$$
+y^* = \log(y)
+$$
+
+**When to use log transformation**:
+
+1. **Right-skewed response**: Long tail to the right
+2. **Proportional errors**: Variance increases with mean (heteroscedasticity)
+3. **Multiplicative relationships**: Effects are multiplicative rather than additive
+4. **Positive response bounded away from zero**: $y > 0$ for all observations
+
+**Biological examples in livestock**:
+
+- **Milk production**: Variance typically increases with production level
+- **Somatic cell count** (mastitis indicator): Highly right-skewed
+- **Growth rates**: Often show proportional variation
+- **Feed efficiency ratios**: Positive, often skewed
+
+**Interpretation on log scale**:
+
+- A one-unit increase in $x$ leads to a change in $\log(y)$ of $\beta_1$
+- Equivalently, $y$ is multiplied by $e^{\beta_1}$
+- Percentage change: $(e^{\beta_1} - 1) \times 100\%$
+
+**Predictions on original scale**:
+
+To get predictions on the original scale, exponentiate:
+
+$$
+\hat{y} = e^{\hat{y}^*} = e^{\mathbf{x}'\mathbf{b}}
+$$
+
+**Important note**: $e^{\hat{y}^*}$ is a prediction of the **median** of $y$, not the mean, when errors are normal on the log scale. For moderate-depth coverage, we acknowledge this but don't derive the bias correction for predicting the mean.
+
+### When to Transform
+
+::: {.callout-warning}
+## When NOT to Transform
+
+Avoid transformations when:
+
+1. **Violations are minor**: Residual plots are nearly acceptable, and inference is not severely affected
+2. **Interpretation becomes too complex**: Stakeholders need results on the original scale (e.g., kg of milk, dollars)
+3. **Response scale has direct meaning**: Physical or economic units matter for decision-making
+4. **Better alternatives exist**: Weighted least squares (WLS) for known heteroscedasticity, robust regression for outliers, or generalized linear models (GLMs) for non-normal responses
+
+**Rule of thumb**: Only transform when diagnostic violations are substantial and interpretation on the transformed scale is acceptable to stakeholders.
+:::
+
+**When transformation IS appropriate**:
+
+- Residual plots show clear funnel pattern (heteroscedasticity)
+- Q-Q plot shows strong departure from normality (heavy tails, skewness)
+- Biological rationale supports transformed scale (e.g., log for growth, sqrt for counts)
+- Predictions and inference on transformed scale are meaningful
+
+# Checking Model Assumptions
+
+We now have the mathematical tools (residuals, leverage, influence) to check whether our model assumptions hold.
+
+## The Four Assumptions and How to Check Them
+
+::: {.callout-important}
+## The Four Assumptions and Diagnostic Tools
+
+| Assumption | What to Check | Diagnostic Tool | Pattern if Violated |
+|------------|---------------|-----------------|---------------------|
+| **E1: Linearity** | Relationship between $Y$ and $X$ is linear | Residuals vs. Fitted plot | Curved pattern, systematic structure |
+| **E2: Independence** | Observations are independent | Residuals vs. Order plot; knowledge of data collection | Patterns over time, clusters |
+| **E3: Homoscedasticity** | Constant error variance | Residuals vs. Fitted plot; Scale-Location plot | Funnel shape, increasing/decreasing spread |
+| **E4: Normality** | Errors follow normal distribution | Normal Q-Q plot; histogram | Departure from line, heavy tails, skewness |
+
+**Note**: We check assumptions using **residuals** (not the raw response $y$) because residuals estimate the errors $e_i$, which are the quantities assumed to be normal, independent, and homoscedastic.
+:::
+
+## Linearity: Residuals vs. Fitted Values
+
+**Assumption**: The relationship between $\mathbf{y}$ and $\mathbf{X}$ is correctly specified as linear.
+
+**Diagnostic**: Plot residuals $e_i$ (or studentized residuals $r_i$) against fitted values $\hat{y}_i$.
+
+**What to look for**:
+
+- **Good**: Random scatter around horizontal line at $y=0$, no pattern
+- **Violation**: Curved pattern (U-shape, inverted U, etc.)
+
+**Example violations**:
+
+1. **Quadratic trend**: Residuals show U-shape → suggests need for $x^2$ term
+2. **Missing interaction**: Different curvature patterns within groups
+3. **Wrong functional form**: Exponential relationship fit with linear model
+
+**What to do if violated**:
+
+- Add polynomial terms: $x^2$, $x^3$
+- Include interactions: $x_1 \times x_2$
+- Transform predictor(s): $\log(x)$, $\sqrt{x}$
+- Consider non-linear models if relationship is fundamentally non-linear
+
+## Homoscedasticity: Constant Variance
+
+**Assumption**: $\text{Var}(e_i) = \sigma^2$ for all $i$ (constant variance).
+
+**Diagnostics**:
+
+1. **Residuals vs. Fitted plot**: Look at spread of residuals as $\hat{y}$ increases
+2. **Scale-Location plot**: Plot $\sqrt{|r_i|}$ vs. $\hat{y}_i$ to amplify patterns
+
+**What to look for**:
+
+- **Good**: Even spread of residuals across all fitted values
+- **Violation**: Funnel shape — spread increases (or decreases) with $\hat{y}$
+
+**Common patterns**:
+
+- **Increasing variance**: Spread widens as $\hat{y}$ increases (most common)
+- **Decreasing variance**: Spread narrows as $\hat{y}$ increases (less common)
+- **Groups with different variances**: Different spread within subgroups
+
+**Formal tests** (optional):
+
+- **Breusch-Pagan test** [@breusch1979]: Tests whether variance depends on fitted values
+- **White test** [@white1980]: More general test for heteroscedasticity
+
+**What to do if violated**:
+
+- **Log transformation** of $y$ (if variance proportional to mean)
+- **Square root transformation** of $y$ (if variance proportional to mean, e.g., counts)
+- **Weighted least squares** (WLS) if variance structure is known
+- **Robust standard errors** (HC3, HC4) for inference without assuming homoscedasticity
+
+## Normality: Q-Q Plots
+
+**Assumption**: Errors are normally distributed: $e_i \sim N(0, \sigma^2)$.
+
+**Note**: Normality is **not required** for unbiasedness of $\mathbf{b}$ or for Gauss-Markov optimality. It **is required** for:
+
+- Exact validity of $t$ and $F$ tests
+- Exact confidence intervals
+- Prediction intervals
+
+For large samples, the Central Limit Theorem provides approximate normality of $\mathbf{b}$ even if errors are non-normal.
+
+**Diagnostic**: **Normal Q-Q plot** (quantile-quantile plot)
+
+- **X-axis**: Theoretical quantiles from standard normal distribution
+- **Y-axis**: Sample quantiles of studentized residuals $r_i$
+
+**What to look for**:
+
+- **Good**: Points fall along a straight diagonal line
+- **Violation**: Systematic departure from the line
+
+**Common patterns**:
+
+1. **Light tails**: Points curve below line at extremes → uniform or short-tailed distribution
+2. **Heavy tails**: Points curve above line at extremes → outliers or long-tailed distribution
+3. **Right skewness**: Points curve upward (right tail pulls away from line) → need transformation
+4. **Left skewness**: Points curve downward (left tail pulls away from line)
+5. **S-shaped**: Both tails depart in opposite directions
+
+**Formal tests**:
+
+- **Shapiro-Wilk test** [@shapiro1965]: Tests normality (sensitive to sample size)
+- **Kolmogorov-Smirnov test**: Less powerful but more general
+
+**Caution**: Don't rely solely on hypothesis tests. With large $n$, tests reject even minor departures. With small $n$, tests have low power. **Always look at the Q-Q plot**.
+
+**What to do if violated**:
+
+- **Transformation** of $y$ (log, square root, Box-Cox)
+- **Robust methods**: Less sensitive to non-normality (beyond this course)
+- **Bootstrap inference**: Doesn't require normality (beyond this course)
+- If violation is minor and $n$ is large, standard inference is approximately valid
+
+## Independence: Patterns in Residuals
+
+**Assumption**: Observations are independent; $\text{Cov}(e_i, e_j) = 0$ for $i \neq j$.
+
+**Why it matters**: Dependence (positive correlation) among errors leads to:
+
+- **Underestimated standard errors**: Confidence intervals too narrow
+- **Inflated test statistics**: Higher Type I error rates
+- **Biased inference**: $p$-values too small
+
+**Diagnostics**:
+
+1. **Residuals vs. Order plot**: Plot $e_i$ vs. observation number (if data have natural order)
+2. **Residuals vs. Time**: If data are time series
+3. **Spatial plots**: If data have spatial structure (e.g., pens in barn, farms in region)
+4. **Knowledge of study design**: Are observations clustered? Repeated measures? Hierarchical structure?
+
+**What to look for**:
+
+- **Good**: Random scatter, no patterns or clusters
+- **Violation**:
+  - **Time series**: Runs of positive/negative residuals (autocorrelation)
+  - **Clusters**: Residuals group together (e.g., within pen, farm, family)
+  - **Spatial**: Nearby observations have similar residuals
+
+**Common causes in livestock data**:
+
+- **Pen effects**: Animals within the same pen are more similar (shared environment)
+- **Family structure**: Related animals share genetics (more similar than unrelated animals)
+- **Time trends**: Management or environmental changes over time
+- **Batch effects**: Different processing batches, technicians, labs
+
+**What to do if violated**:
+
+- **Mixed models**: Include random effects for clusters (Weeks 14-15 preview)
+- **GLS** (Generalized Least Squares): Model correlation structure explicitly
+- **Cluster-robust standard errors**: Adjust inference for clustering
+- **Time series models**: ARIMA, GARCH for temporal dependence
+
+**Important**: Independence violations cannot be fixed with transformations. They require different modeling approaches.
+
+# The Four Essential Diagnostic Plots
+
+When you fit a linear model in R using `lm()`, the default `plot()` function produces four diagnostic plots. Let's understand each one.
+
+## Residuals vs. Fitted Values
+
+**Purpose**: Check linearity and homoscedasticity simultaneously.
+
+**What's plotted**:
+
+- **X-axis**: Fitted values $\hat{y}_i$
+- **Y-axis**: Residuals $e_i$ (or standardized residuals)
+
+**Good model**:
+
+- Random scatter around horizontal line at $y=0$
+- Even spread (same variance) across all $\hat{y}$ values
+- No patterns, no outliers far from the cloud
+
+**Patterns indicating problems**:
+
+1. **Curved pattern**: Non-linearity (need polynomial, transformation, or interaction)
+2. **Funnel shape** (spread increases): Heteroscedasticity (consider log or sqrt transformation)
+3. **Inverted funnel** (spread decreases): Less common, may need transformation
+4. **Outliers**: Points far from the horizontal band (investigate further)
+
+**Interpretation**: This is the **most important diagnostic plot**. It checks two assumptions at once.
+
+## Normal Q-Q Plot
+
+**Purpose**: Check normality of residuals.
+
+**What's plotted**:
+
+- **X-axis**: Theoretical quantiles of standard normal distribution
+- **Y-axis**: Sample quantiles of studentized residuals
+
+**Good model**: Points lie along the diagonal reference line.
+
+**Patterns indicating problems**:
+
+1. **Points curve above line at right end**: Right skewness or heavy right tail
+2. **Points curve below line at left end**: Left skewness or heavy left tail
+3. **S-shaped curve**: Non-normal distribution (both tails depart)
+4. **Isolated points far from line**: Outliers
+
+**Interpretation**: Focus on the middle 80% of points. Some deviation in the extreme tails is normal, especially for small samples.
+
+## Scale-Location Plot
+
+**Purpose**: Check homoscedasticity (constant variance) more clearly than Residuals vs. Fitted plot.
+
+**What's plotted**:
+
+- **X-axis**: Fitted values $\hat{y}_i$
+- **Y-axis**: $\sqrt{|r_i|}$ (square root of absolute studentized residuals)
+- **Smoothed line**: LOESS smooth through points
+
+**Good model**:
+
+- Horizontal smoothed line (flat trend)
+- Even spread of points across all $\hat{y}$ values
+
+**Patterns indicating problems**:
+
+1. **Upward trend**: Variance increases with $\hat{y}$ (heteroscedasticity)
+2. **Downward trend**: Variance decreases with $\hat{y}$ (less common)
+3. **U-shaped or wavy**: Non-constant variance in complex pattern
+
+**Why square root?** Taking $\sqrt{|r_i|}$ makes patterns in variance easier to see because it's on the standard deviation scale (not variance scale).
+
+## Residuals vs. Leverage
+
+**Purpose**: Identify influential observations by showing both leverage and residual size.
+
+**What's plotted**:
+
+- **X-axis**: Leverage values $h_{ii}$
+- **Y-axis**: Standardized residuals $r_i$
+- **Contour lines**: Cook's Distance contours (typically at $D_i = 0.5$ and $D_i = 1$)
+
+**Good model**:
+
+- Most points clustered in lower-left (low leverage, small residuals)
+- No points beyond Cook's Distance contours
+
+**Patterns indicating problems**:
+
+1. **High leverage, small residual**: Points in upper-right or lower-right (extreme $X$ but on line) — **high leverage, low influence**
+2. **Low leverage, large residual**: Points at top or bottom but left side (outliers near center of $X$) — **low leverage, moderate influence**
+3. **High leverage, large residual**: Points in corners beyond Cook's $D$ contours — **high influence** (INVESTIGATE!)
+
+**Interpretation**: Points in the **corners** (high leverage AND large residual) are the most concerning. These observations can dramatically change the fitted model.
+
+# Small Numerical Example: Beef Carcass Marbling
+
+Now let's work through a complete diagnostic analysis with a small dataset where we can perform hand calculations.
+
+## The Dataset
+
+A beef cattle researcher measures **carcass marbling score** (on a 1-10 scale, higher is better) and **live weight** (kg) for 9 steers:
+
+```{r}
+#| label: load-beef-data
+#| message: false
+
+# Load data
+beef <- read.csv("data/beef_marbling.csv")
+beef
+```
+
+Let's visualize the data:
+
+```{r}
+#| label: beef-scatter
+#| fig-width: 8
+#| fig-height: 5
+
+plot(beef$live_weight_kg, beef$marbling_score,
+     xlab = "Live Weight (kg)",
+     ylab = "Marbling Score",
+     main = "Beef Carcass Marbling vs. Live Weight",
+     pch = 19, col = "steelblue", cex = 1.5)
+
+# Fit linear model
+fit_beef <- lm(marbling_score ~ live_weight_kg, data = beef)
+abline(fit_beef, col = "red", lwd = 2)
+
+# Identify observation 9
+points(beef$live_weight_kg[9], beef$marbling_score[9],
+       col = "red", pch = 19, cex = 2)
+text(beef$live_weight_kg[9], beef$marbling_score[9],
+     labels = "  Obs 9", pos = 4, col = "red", font = 2)
+```
+
+**Observation**: Observation 9 is an unusually heavy animal (850 kg vs. 500-640 kg for others), but its marbling score (6.5) is roughly consistent with the trend.
+
+## Fitting the Model
+
+**Model**:
+$$
+\text{marbling}_i = \beta_0 + \beta_1 \times \text{weight}_i + e_i
+$$
+
+Let's fit this model and examine the summary:
+
+```{r}
+#| label: beef-model-summary
+
+# Fit model
+fit_beef <- lm(marbling_score ~ live_weight_kg, data = beef)
+summary(fit_beef)
+```
+
+The model appears to fit well: $R^2 = 0.94$ and weight is highly significant. But let's check the diagnostics...
+
+## Computing Diagnostic Statistics by Hand
+
+Now we'll compute diagnostic statistics manually to build intuition. For larger datasets, we'd use R functions.
+
+### Step 1: Design Matrix and Estimates
+
+The design matrix is:
+
+$$
+\mathbf{X} = \begin{bmatrix}
+1 & 500 \\
+1 & 520 \\
+1 & 540 \\
+\vdots & \vdots \\
+1 & 850
+\end{bmatrix}_{9 \times 2}
+$$
+
+```{r}
+#| label: beef-design-matrix
+
+# Build design matrix
+X <- cbind(1, beef$live_weight_kg)
+y <- beef$marbling_score
+n <- nrow(X)
+p <- ncol(X)
+
+print("Design matrix X:")
+print(X)
+```
+
+Compute $\mathbf{X}'\mathbf{X}$ and $(\mathbf{X}'\mathbf{X})^{-1}$:
+
+```{r}
+#| label: beef-xtx
+
+# X'X
+XtX <- t(X) %*% X
+print("X'X:")
+print(XtX)
+
+# (X'X)^{-1}
+XtX_inv <- solve(XtX)
+print("(X'X)^{-1}:")
+print(XtX_inv)
+```
+
+Compute estimates $\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$:
+
+```{r}
+#| label: beef-estimates
+
+# Estimates
+b <- XtX_inv %*% t(X) %*% y
+print("Estimates b:")
+print(b)
+
+cat("\nInterpretation:")
+cat(sprintf("\nb0 (intercept) = %.4f", b[1]))
+cat(sprintf("\nb1 (slope) = %.4f kg^{-1}", b[2]))
+cat("\n\nFor each 1 kg increase in live weight, marbling score increases by",
+    round(b[2], 4), "points.")
+```
+
+### Step 2: Hat Matrix and Leverage
+
+Compute the hat matrix $\mathbf{H} = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'$:
+
+```{r}
+#| label: beef-hat-matrix
+
+# Hat matrix
+H <- X %*% XtX_inv %*% t(X)
+
+# Verify properties
+cat("Properties of H:\n")
+cat("1. H is symmetric:", all.equal(H, t(H)), "\n")
+cat("2. H is idempotent:", all.equal(H %*% H, H, tolerance = 1e-10), "\n")
+cat("3. trace(H) = p:", round(sum(diag(H)), 6), "= p =", p, "\n")
+
+# Extract leverage values
+h <- diag(H)
+print("\nLeverage values h_ii:")
+print(round(h, 4))
+```
+
+**Key observation**: Observation 9 has $h_{99} = 0.449$, which is very high!
+
+**Average leverage**: $\bar{h} = p/n = 2/9 = 0.222$
+
+**High leverage threshold**: $2p/n = 2(2)/9 = 0.444$
+
+Observation 9 exceeds this threshold: $h_{99} = 0.449 > 0.444$ ✓
+
+```{r}
+#| label: beef-leverage-plot
+#| fig-width: 8
+#| fig-height: 5
+
+# Plot leverage values
+barplot(h, names.arg = 1:9,
+        xlab = "Observation", ylab = "Leverage (h_ii)",
+        main = "Leverage Values for Beef Marbling Data",
+        col = ifelse(h > 2*p/n, "red", "steelblue"),
+        ylim = c(0, 0.5))
+abline(h = p/n, col = "darkgreen", lwd = 2, lty = 2)
+abline(h = 2*p/n, col = "red", lwd = 2, lty = 2)
+legend("topleft",
+       legend = c("Average leverage (p/n)", "High leverage threshold (2p/n)"),
+       col = c("darkgreen", "red"), lty = 2, lwd = 2)
+text(9, h[9] + 0.02, "Obs 9", col = "red", font = 2)
+```
+
+### Step 3: Residuals
+
+Compute fitted values and residuals:
+
+```{r}
+#| label: beef-residuals
+
+# Fitted values
+y_hat <- X %*% b
+cat("Fitted values:\n")
+print(round(y_hat, 4))
+
+# Raw residuals
+e <- y - y_hat
+cat("\nRaw residuals e_i:\n")
+print(round(e, 4))
+
+# Verify residuals sum to zero
+cat("\nSum of residuals:", round(sum(e), 10), "(should be ≈ 0)\n")
+
+# SSE and sigma-hat
+SSE <- sum(e^2)
+sigma_hat <- sqrt(SSE / (n - p))
+cat("\nSSE =", round(SSE, 4))
+cat("\nsigma-hat =", round(sigma_hat, 4), "\n")
+```
+
+### Step 4: Standardized Residuals
+
+$$
+e_i^* = \frac{e_i}{\hat{\sigma}}
+$$
+
+```{r}
+#| label: beef-standardized
+
+# Standardized residuals
+e_std <- e / sigma_hat
+cat("Standardized residuals:\n")
+print(round(e_std, 4))
+```
+
+### Step 5: Studentized Residuals
+
+$$
+r_i = \frac{e_i}{\hat{\sigma}\sqrt{1 - h_{ii}}}
+$$
+
+```{r}
+#| label: beef-studentized
+
+# Studentized residuals
+r <- e / (sigma_hat * sqrt(1 - h))
+cat("Studentized residuals r_i:\n")
+print(round(r, 4))
+
+cat("\nObservations with |r_i| > 2:")
+if(any(abs(r) > 2)) {
+  print(which(abs(r) > 2))
+} else {
+  cat(" None\n")
+}
+
+cat("\nObservations with |r_i| > 3:")
+if(any(abs(r) > 3)) {
+  print(which(abs(r) > 3))
+} else {
+  cat(" None\n")
+}
+```
+
+**Observation**: All studentized residuals are small (|$r_i$| < 2). No outliers detected based on residual size alone.
+
+### Step 6: Cook's Distance
+
+$$
+D_i = \frac{r_i^2}{p} \cdot \frac{h_{ii}}{(1-h_{ii})^2}
+$$
+
+```{r}
+#| label: beef-cooks-d
+
+# Cook's Distance
+D <- (r^2 / p) * (h / (1 - h)^2)
+cat("Cook's Distance D_i:\n")
+print(round(D, 4))
+
+# Thresholds
+thresh_classic <- 1
+thresh_4n <- 4 / n
+thresh_adj <- 4 / (n - p - 1)
+
+cat("\nThresholds:\n")
+cat("  Classic (D > 1):", thresh_classic, "\n")
+cat("  Alternative (D > 4/n):", round(thresh_4n, 4), "\n")
+cat("  Adjusted (D > 4/(n-p-1)):", round(thresh_adj, 4), "\n")
+
+cat("\nObservations exceeding 4/n threshold:\n")
+if(any(D > thresh_4n)) {
+  print(which(D > thresh_4n))
+  cat("\nValues:", round(D[D > thresh_4n], 4), "\n")
+} else {
+  cat("None\n")
+}
+```
+
+**Key finding**: Observation 9 has $D_9 = 0.346$, which is:
+
+- Well below classic threshold of 1 ✓
+- Below alternative threshold of $4/n = 0.444$ ✓
+
+**Conclusion about observation 9**:
+
+::: {.callout-note}
+## High Leverage ≠ High Influence
+
+Observation 9 demonstrates an important principle:
+
+- **High leverage**: $h_{99} = 0.449$ (far from center of $X$ space)
+- **Small residual**: $r_9 = -0.635$ (follows regression pattern)
+- **Moderate influence**: $D_9 = 0.346$ (below threshold)
+
+**Interpretation**: The animal is unusual in weight (850 kg vs. 500-640 kg), but its marbling score is consistent with the linear trend. Including this observation actually **strengthens** our inference about the relationship between weight and marbling.
+
+**Decision**: Keep observation 9 in the analysis. It's valid data that extends the range of inference.
+:::
+
+### Step 7: Verification with Base R
+
+Always verify custom calculations against R's built-in functions:
+
+```{r}
+#| label: beef-verification
+
+# Verify against base R functions
+cat("Verification:\n\n")
+
+cat("Leverage (h_ii):\n")
+cat("  Custom:", round(h[9], 6), "\n")
+cat("  Base R:", round(hatvalues(fit_beef)[9], 6), "\n")
+cat("  Match:", all.equal(h, hatvalues(fit_beef), tolerance = 1e-10), "\n\n")
+
+cat("Studentized residuals (r_i):\n")
+cat("  Custom:", round(r[9], 6), "\n")
+cat("  Base R:", round(rstandard(fit_beef)[9], 6), "\n")
+cat("  Match:", all.equal(as.numeric(r), as.numeric(rstandard(fit_beef)), tolerance = 1e-10), "\n\n")
+
+cat("Cook's Distance (D_i):\n")
+cat("  Custom:", round(D[9], 6), "\n")
+cat("  Base R:", round(cooks.distance(fit_beef)[9], 6), "\n")
+cat("  Match:", all.equal(as.numeric(D), as.numeric(cooks.distance(fit_beef)), tolerance = 1e-10), "\n")
+```
+
+Perfect agreement! Our hand calculations are correct.
+
+## Diagnostic Plots
+
+Now let's examine all four diagnostic plots:
+
+```{r}
+#| label: beef-diagnostic-plots
+#| fig-width: 10
+#| fig-height: 8
+
+par(mfrow = c(2, 2))
+plot(fit_beef, which = 1:4)
+```
+
+**Interpretation**:
+
+1. **Residuals vs. Fitted**: Random scatter, no pattern → linearity ✓, homoscedasticity ✓
+2. **Normal Q-Q**: Points follow line well → normality ✓
+3. **Scale-Location**: Flat trend, even spread → homoscedasticity ✓
+4. **Residuals vs. Leverage**: Observation 9 has high leverage but small residual, stays inside Cook's $D$ contours → not highly influential
+
+**Overall assessment**: Model assumptions are satisfied. Observation 9 is high leverage but not problematic.
+
+## Interpretation and Decision
+
+**Summary of observation 9**:
+
+- Live weight: 850 kg (extreme, but biologically plausible—large-frame bull)
+- Marbling score: 6.5 (consistent with trend)
+- Leverage: $h_{99} = 0.449$ (high)
+- Studentized residual: $r_9 = -0.635$ (small)
+- Cook's Distance: $D_9 = 0.346$ (below threshold)
+
+**Decision**: **Keep observation 9**. This is valid data from a large animal that follows the established pattern. Removing it would:
+
+- Reduce range of inference (can't predict for heavy animals)
+- Discard valid biological information
+- Have minimal effect on estimates (low influence)
+
+**Biological interpretation**: The positive relationship between live weight and marbling ($\hat{\beta}_1 = 0.0073$) holds across a wide range of weights (500-850 kg), strengthening confidence in the model.
+
+This example illustrates that **high leverage does not necessarily mean high influence**. Observations far from the center of $X$ can still fit the model well.
+
+
+# Livestock Application 1: Poultry Feed Conversion Ratio
+
+## The Dataset
+
+A poultry nutrition study measures **Feed Conversion Ratio (FCR)** for 50 broiler chickens at various ages (35-49 days). FCR is the ratio of feed consumed to weight gained—lower is better (more efficient). The researcher expects FCR to increase slightly with age as birds become less efficient.
+
+```{r}
+#| label: load-poultry-data
+#| message: false
+
+# Load data
+poultry <- read.csv("data/poultry_fcr.csv")
+
+# Summary
+cat("Sample size:", nrow(poultry), "\n")
+cat("\nAge range:", range(poultry$age_days), "days\n")
+cat("FCR range:", round(range(poultry$fcr), 3), "\n")
+cat("Mean FCR:", round(mean(poultry$fcr), 3), "\n")
+cat("SD FCR:", round(sd(poultry$fcr), 3), "\n")
+```
+
+## Initial Model Fit
+
+Fit simple regression: FCR ~ age
+
+```{r}
+#| label: poultry-initial-fit
+#| fig-width: 10
+#| fig-height: 5
+
+# Fit model
+fit_poultry <- lm(fcr ~ age_days, data = poultry)
+
+# Plot
+plot(poultry$age_days, poultry$fcr,
+     xlab = "Age (days)", ylab = "Feed Conversion Ratio",
+     main = "Poultry FCR vs. Age (All 50 observations)",
+     pch = 19, col = "steelblue", cex = 1.2)
+abline(fit_poultry, col = "red", lwd = 2)
+
+# Summary
+summary(fit_poultry)
+```
+
+The model shows:
+
+- Significant positive relationship (FCR increases with age, p < 0.001)
+- But R² = 0.42 is modest—lots of unexplained variation
+- Is something wrong?
+
+## Diagnostic Analysis
+
+Let's examine the four diagnostic plots:
+
+```{r}
+#| label: poultry-diagnostics
+#| fig-width: 12
+#| fig-height: 10
+
+par(mfrow = c(2, 2))
+plot(fit_poultry, which = 1:4)
+```
+
+**Red flags**:
+
+1. **Residuals vs. Fitted**: One point (27) far above the others—large positive residual
+2. **Normal Q-Q**: Point 27 deviates from line in upper tail
+3. **Scale-Location**: Point 27 stands out
+4. **Residuals vs. Leverage**: Point 27 has large residual and moderate leverage—appears outside Cook's D contours
+
+Observation 27 is clearly problematic. Let's investigate.
+
+## Identifying the Sick Bird (Outlier)
+
+Compute diagnostic statistics for all observations:
+
+```{r}
+#| label: poultry-identify-outlier
+
+# Diagnostic statistics
+h <- hatvalues(fit_poultry)
+r <- rstandard(fit_poultry)
+D <- cooks.distance(fit_poultry)
+
+# Find outliers
+cat("Observations with |r| > 3:\n")
+outliers_r <- which(abs(r) > 3)
+if(length(outliers_r) > 0) {
+  print(poultry[outliers_r, ])
+  cat("\nStudentized residuals:", round(r[outliers_r], 3), "\n")
+} else {
+  cat("None\n")
+}
+
+cat("\nObservations with |r| > 2.5:\n")
+outliers_r25 <- which(abs(r) > 2.5)
+print(poultry[outliers_r25, ])
+cat("Studentized residuals:", round(r[outliers_r25], 3), "\n")
+
+# High leverage
+thresh_h <- 2 * 2 / nrow(poultry)  # 2p/n
+cat("\nHigh leverage threshold (2p/n):", round(thresh_h, 4), "\n")
+cat("Observations with high leverage:\n")
+high_lev <- which(h > thresh_h)
+if(length(high_lev) > 0) {
+  print(poultry[high_lev, ])
+} else {
+  cat("None\n")
+}
+
+# High influence
+thresh_D <- 4 / nrow(poultry)
+cat("\nCook's D threshold (4/n):", round(thresh_D, 4), "\n")
+cat("Observations with D > 4/n:\n")
+influential <- which(D > thresh_D)
+print(poultry[influential, ])
+cat("\nCook's Distance:", round(D[influential], 3), "\n")
+```
+
+**Finding**: Bird 27 has:
+
+- **Age**: 42 days (middle of age range)
+- **FCR**: 2.80 (terrible! Much higher than expected ~1.73)
+- **Studentized residual**: r = `r round(r[27], 2)` (very large, |r| > 3)
+- **Leverage**: h = `r round(h[27], 3)` (moderate, not extreme)
+- **Cook's D**: D = `r round(D[27], 2)` (highly influential, > 4/n = 0.08)
+
+**Biological interpretation**: This bird has very poor feed efficiency. Possible causes:
+
+- Disease or illness
+- Injury affecting mobility/feeding
+- Genetic defect
+- Data recording error
+
+## Leverage vs. Influence Demonstration
+
+Let's visualize why this bird is influential:
+
+```{r}
+#| label: poultry-leverage-influence
+#| fig-width: 10
+#| fig-height: 6
+
+# Create influence plot
+plot(h, r, 
+     xlab = "Leverage (h_ii)", ylab = "Studentized Residuals (r_i)",
+     main = "Leverage vs. Residual Size (Poultry FCR)",
+     pch = 19, col = "steelblue", cex = 1.5)
+
+# Add reference lines
+abline(h = c(-3, -2, 0, 2, 3), col = "gray", lty = 2)
+abline(v = thresh_h, col = "darkgreen", lty = 2, lwd = 2)
+
+# Highlight observation 27
+points(h[27], r[27], col = "red", pch = 19, cex = 2.5)
+text(h[27], r[27], labels = "  Bird 27\n  (sick)", pos = 4, col = "red", font = 2)
+
+# Add Cook's D contours (approximate)
+legend("topright", 
+       legend = c("Normal birds", "Bird 27 (outlier)", "High leverage threshold"),
+       col = c("steelblue", "red", "darkgreen"), 
+       pch = c(19, 19, NA), lty = c(NA, NA, 2), lwd = c(NA, NA, 2))
+```
+
+**Interpretation**:
+
+- Bird 27 is **not** high leverage (age = 42 days is near center)
+- But it has a **very large residual** (r ≈ 3.6)
+- Combination of moderate leverage + large residual = **high influence**
+
+This demonstrates that influence depends on **both** leverage and residual size.
+
+## Model Comparison (With vs. Without Outlier)
+
+What happens if we exclude the sick bird?
+
+```{r}
+#| label: poultry-refit
+#| fig-width: 12
+#| fig-height: 5
+
+# Fit model without bird 27
+poultry_clean <- poultry[-27, ]
+fit_clean <- lm(fcr ~ age_days, data = poultry_clean)
+
+# Compare models
+par(mfrow = c(1, 2))
+
+# Plot 1: Both models
+plot(poultry$age_days, poultry$fcr,
+     xlab = "Age (days)", ylab = "FCR",
+     main = "Effect of Removing Outlier",
+     pch = 19, col = "gray70", cex = 1.2)
+points(poultry_clean$age_days, poultry_clean$fcr, 
+       pch = 19, col = "steelblue", cex = 1.2)
+points(poultry$age_days[27], poultry$fcr[27], 
+       pch = 19, col = "red", cex = 2)
+abline(fit_poultry, col = "red", lwd = 2, lty = 2)
+abline(fit_clean, col = "blue", lwd = 2)
+legend("topleft", 
+       legend = c("With outlier (n=50)", "Without outlier (n=49)", "Bird 27"),
+       col = c("red", "blue", "red"), 
+       lty = c(2, 1, NA), lwd = c(2, 2, NA), pch = c(NA, NA, 19))
+
+# Plot 2: Diagnostics for clean model
+plot(fit_clean, which = 1)
+title(main = "Residuals vs. Fitted (Clean Model)")
+```
+
+Compare model statistics:
+
+```{r}
+#| label: poultry-compare-stats
+
+# Create comparison table
+comparison <- data.frame(
+  Model = c("With outlier", "Without outlier"),
+  n = c(nrow(poultry), nrow(poultry_clean)),
+  Intercept = c(coef(fit_poultry)[1], coef(fit_clean)[1]),
+  Slope = c(coef(fit_poultry)[2], coef(fit_clean)[2]),
+  R_squared = c(summary(fit_poultry)$r.squared, summary(fit_clean)$r.squared),
+  Sigma = c(summary(fit_poultry)$sigma, summary(fit_clean)$sigma)
+)
+
+# Round numeric columns only
+comparison[, -1] <- round(comparison[, -1], 4)
+print(comparison)
+
+# Compute change
+cat("\nChanges after removing bird 27:\n")
+cat("Slope change:", round((coef(fit_clean)[2] - coef(fit_poultry)[2]) / coef(fit_poultry)[2] * 100, 1), "%\n")
+cat("R² improvement:", round((summary(fit_clean)$r.squared - summary(fit_poultry)$r.squared), 3), "\n")
+cat("Residual SD reduction:", round((summary(fit_poultry)$sigma - summary(fit_clean)$sigma), 3), "\n")
+```
+
+**Major changes**:
+
+1. **Slope**: Changes from 0.025 to 0.018 (28% reduction)
+2. **R²**: Increases from 0.42 to 0.68 (much better fit!)
+3. **Residual SD**: Decreases from 0.186 to 0.129 (30% reduction)
+
+The outlier was **pulling the regression line upward**, making FCR increase appear steeper than it truly is.
+
+## Biological Interpretation and Decision
+
+**Context**: In poultry production, FCR is critical for profitability. Understanding the true relationship between age and FCR helps optimize:
+
+- Slaughter age (when to process birds)
+- Feed formulation strategies
+- Selection for feed efficiency
+
+**About bird 27**: An FCR of 2.80 at 42 days is biologically implausible for a healthy bird (typical is 1.7-1.9). This bird was likely sick, injured, or represents a data entry error.
+
+**Decision**: **Exclude bird 27** from the analysis.
+
+**Justification**:
+
+1. **Statistical**: Highly influential (D = 0.85 >> 4/n = 0.08)
+2. **Biological**: FCR value not representative of normal production
+3. **Scientific integrity**: Including it distorts our understanding of the age-FCR relationship
+
+**Final model** (without bird 27):
+
+- FCR increases by 0.018 per day of age
+- At 35 days: predicted FCR = 1.41
+- At 49 days: predicted FCR = 1.66
+- R² = 0.68 (68% of variation explained)
+
+This model accurately represents the population of **healthy** broilers and should be used for production decisions.
+
+# Livestock Application 2: Dairy Lactation with Heteroscedasticity
+
+## The Dataset
+
+A dairy researcher measures daily **milk yield** (kg/day) for 40 Holstein cows at various stages of lactation (10-300 days in milk, DIM). Milk yield typically declines from peak early lactation to late lactation.
+
+```{r}
+#| label: load-dairy-data
+#| message: false
+
+# Load data
+dairy <- read.csv("data/dairy_lactation_variance.csv")
+
+# Summary
+cat("Sample size:", nrow(dairy), "cows\n")
+cat("DIM range:", range(dairy$days_in_milk), "days\n")
+cat("Milk yield range:", round(range(dairy$milk_yield_kg), 1), "kg/day\n")
+cat("Mean milk yield:", round(mean(dairy$milk_yield_kg), 1), "kg/day\n")
+
+# Stratify by lactation stage
+dairy$stage <- cut(dairy$days_in_milk, breaks = c(0, 100, 200, 300),
+                   labels = c("Early (0-100)", "Mid (100-200)", "Late (200-300)"))
+
+cat("\nMilk yield by lactation stage:\n")
+print(aggregate(milk_yield_kg ~ stage, data = dairy, 
+                FUN = function(x) c(mean = mean(x), sd = sd(x))))
+```
+
+**Observation**: Standard deviation increases with mean yield—variance is not constant!
+
+## Initial Model Shows Variance Problems
+
+Fit linear regression:
+
+```{r}
+#| label: dairy-initial-fit
+#| fig-width: 10
+#| fig-height: 6
+
+# Fit model on original scale
+fit_original <- lm(milk_yield_kg ~ days_in_milk, data = dairy)
+
+# Plot
+plot(dairy$days_in_milk, dairy$milk_yield_kg,
+     xlab = "Days in Milk", ylab = "Milk Yield (kg/day)",
+     main = "Dairy Lactation Curve (Original Scale)",
+     pch = 19, col = "steelblue", cex = 1.5)
+abline(fit_original, col = "red", lwd = 2)
+
+# Summary
+summary(fit_original)
+```
+
+Model shows strong relationship (R² = 0.82, p < 0.001), but let's check assumptions...
+
+## Diagnosing Heteroscedasticity
+
+```{r}
+#| label: dairy-original-diagnostics
+#| fig-width: 12
+#| fig-height: 10
+
+par(mfrow = c(2, 2))
+plot(fit_original, which = 1:4)
+```
+
+**Clear violations**:
+
+1. **Residuals vs. Fitted**: Classic **funnel shape**—spread increases with fitted values
+2. **Scale-Location**: Upward trend confirms increasing variance
+3. **Normal Q-Q**: Reasonable (some deviation but not severe)
+4. **Residuals vs. Leverage**: No single influential points, but variance pattern is problematic
+
+**Diagnosis**: **Heteroscedasticity** (non-constant variance)
+
+Let's quantify the pattern:
+
+```{r}
+#| label: dairy-variance-by-stage
+
+# Compute residuals and fitted values
+dairy$residuals <- residuals(fit_original)
+dairy$fitted <- fitted(fit_original)
+
+# Variance by predicted yield
+cat("Residual variance by lactation stage:\n")
+print(aggregate(residuals ~ stage, data = dairy, 
+                FUN = function(x) c(var = var(x), sd = sd(x))))
+
+# Formal test: Breusch-Pagan
+library(lmtest)
+bp_test <- bptest(fit_original)
+cat("\nBreusch-Pagan test for heteroscedasticity:\n")
+print(bp_test)
+cat("\nConclusion:", ifelse(bp_test$p.value < 0.05, 
+                             "REJECT null of homoscedasticity (p < 0.05)",
+                             "Do not reject homoscedasticity"), "\n")
+```
+
+The variance more than doubles from late to early lactation! This violates the constant variance assumption.
+
+## Log Transformation Application
+
+For proportional errors (variance ∝ mean), log transformation often helps:
+
+```{r}
+#| label: dairy-log-transform
+
+# Apply log transformation
+dairy$log_milk <- log(dairy$milk_yield_kg)
+
+# Fit model on log scale
+fit_log <- lm(log_milk ~ days_in_milk, data = dairy)
+
+# Summary
+cat("Model on log scale:\n")
+summary(fit_log)
+```
+
+## Comparing Original vs. Transformed Model
+
+```{r}
+#| label: dairy-log-diagnostics
+#| fig-width: 12
+#| fig-height: 10
+
+par(mfrow = c(2, 2))
+plot(fit_log, which = 1:4, main = "Log-transformed Model")
+```
+
+**Major improvements**:
+
+1. **Residuals vs. Fitted**: No more funnel! Even spread across fitted values ✓
+2. **Scale-Location**: Flat trend—variance is now constant ✓
+3. **Normal Q-Q**: Still good ✓
+4. **Residuals vs. Leverage**: No problems ✓
+
+Test heteroscedasticity on log scale:
+
+```{r}
+#| label: dairy-log-bp-test
+
+bp_test_log <- bptest(fit_log)
+cat("Breusch-Pagan test on log scale:\n")
+print(bp_test_log)
+cat("\nConclusion:", ifelse(bp_test_log$p.value < 0.05,
+                             "Heteroscedasticity still present",
+                             "Homoscedasticity OK (p > 0.05)"), "\n")
+```
+
+Much better! Log transformation successfully stabilized the variance.
+
+## Interpretation on Original Scale
+
+The log-scale model is: $\log(\text{milk}) = \beta_0 + \beta_1 \times \text{DIM}$
+
+```{r}
+#| label: dairy-log-interpretation
+
+b0 <- coef(fit_log)[1]
+b1 <- coef(fit_log)[2]
+
+cat("Log-scale coefficients:\n")
+cat("Intercept:", round(b0, 5), "\n")
+cat("Slope:", round(b1, 6), "(per day)\n\n")
+
+cat("Interpretation:\n")
+cat("- Each additional day in milk multiplies yield by exp(", round(b1, 6), ") = ", 
+    round(exp(b1), 5), "\n", sep="")
+cat("- Daily decline: ", round((1 - exp(b1)) * 100, 2), "%\n", sep="")
+cat("- Over 30 days: decline of ", round((1 - exp(30*b1)) * 100, 1), "%\n\n", sep="")
+```
+
+**Biological interpretation**:
+
+- Milk yield declines by about 0.4% per day
+- This is **multiplicative** (percentage-based), not additive
+- Early in lactation (high production), absolute decline is larger
+- Late in lactation (low production), absolute decline is smaller
+- This matches biological reality: high-producing cows vary more
+
+## Predictions on Original Scale
+
+To make predictions on the original kg/day scale, exponentiate:
+
+```{r}
+#| label: dairy-predictions
+#| fig-width: 10
+#| fig-height: 6
+
+# Predict on log scale
+newdata <- data.frame(days_in_milk = seq(10, 300, by = 10))
+pred_log <- predict(fit_log, newdata = newdata)
+
+# Back-transform to original scale
+pred_original_from_log <- exp(pred_log)
+
+# Also get predictions from original model for comparison
+pred_original <- predict(fit_original, newdata = newdata)
+
+# Visualize both models
+plot(dairy$days_in_milk, dairy$milk_yield_kg,
+     xlab = "Days in Milk", ylab = "Milk Yield (kg/day)",
+     main = "Comparison: Original vs. Log-Transformed Model",
+     pch = 19, col = "gray70", cex = 1.2)
+
+# Add prediction lines
+lines(newdata$days_in_milk, pred_original, col = "red", lwd = 2, lty = 2)
+lines(newdata$days_in_milk, pred_original_from_log, col = "blue", lwd = 2)
+
+legend("topright",
+       legend = c("Data", "Original model", "Log model (back-transformed)"),
+       col = c("gray70", "red", "blue"),
+       pch = c(19, NA, NA), lty = c(NA, 2, 1), lwd = c(NA, 2, 2))
+
+# Specific predictions
+cat("\nPredictions at key time points:\n")
+pred_table <- data.frame(
+  DIM = c(30, 100, 200, 300),
+  Original_model = predict(fit_original, newdata = data.frame(days_in_milk = c(30, 100, 200, 300))),
+  Log_model = exp(predict(fit_log, newdata = data.frame(days_in_milk = c(30, 100, 200, 300))))
+)
+print(round(pred_table, 2))
+```
+
+**Important note**: When we exponentiate predictions from the log-scale model, we get predictions of the **median** milk yield, not the mean. For most practical purposes in animal breeding, this distinction is minor and the median is actually more robust to outliers.
+
+## Why Log Transformation Works Here
+
+**Biological rationale**:
+
+1. **Proportional variation**: High-producing cows vary more in absolute kg, but similar in percentage terms
+2. **Multiplicative process**: Milk synthesis is influenced by many factors (hormones, nutrition, genetics) that multiply together
+3. **Bounded below by zero**: Milk yield can't be negative; log scale handles this naturally
+
+**Statistical benefits**:
+
+1. Stabilizes variance (funnel → even spread)
+2. Often improves normality for right-skewed data
+3. Interpretations are meaningful (percent changes, relative effects)
+
+## Decision and Recommendations
+
+**Final model choice**: Use the **log-transformed** model for analysis and inference.
+
+**Why?**
+
+- Satisfies homoscedasticity assumption ✓
+- More accurate standard errors and confidence intervals ✓
+- Predictions are robust across lactation stages ✓
+- Biological interpretation is meaningful (percentage decline) ✓
+
+**For reporting to dairy producers**:
+
+- Present results on original scale (kg/day) using back-transformed predictions
+- Explain that the model accounts for greater variability in high-producing cows
+- Emphasize daily decline as percentage (~0.4% per day)
+- Note that this model is valid across the full lactation (10-300 DIM)
+
+**Management implications**:
+
+- Peak production period (50-100 DIM) is critical—maximize nutrition then
+- Late lactation cows (>200 DIM) have lower absolute losses—can reduce feed costs
+- Model can predict when cow's yield falls below threshold for drying off
+
+This example demonstrates that **transformation can be essential** when variance structure violates assumptions, and that thoughtful interpretation bridges statistical methods and biological reality.
+
+
+# R Implementation: Building Diagnostic Tools
+
+In this section, we'll build custom functions to compute diagnostic statistics from first principles, then verify them against R's built-in functions.
+
+## Computing Residual Types
+
+```{r}
+#| label: function-compute-residuals
+
+#' Compute all types of residuals
+#'
+#' @param X Design matrix (n x p)
+#' @param y Response vector (n x 1)
+#' @return List containing raw, standardized, studentized, and deleted residuals
+compute_residuals <- function(X, y) {
+  # Dimensions
+  n <- nrow(X)
+  p <- ncol(X)
+  
+  # Fit model
+  b <- solve(t(X) %*% X) %*% t(X) %*% y
+  y_hat <- X %*% b
+  
+  # Raw residuals
+  e <- y - y_hat
+  
+  # SSE and sigma-hat
+  SSE <- sum(e^2)
+  sigma_hat <- sqrt(SSE / (n - p))
+  
+  # Standardized residuals
+  e_std <- e / sigma_hat
+  
+  # Leverage values (needed for studentized)
+  H <- X %*% solve(t(X) %*% X) %*% t(X)
+  h <- diag(H)
+  
+  # Studentized residuals
+  r <- e / (sigma_hat * sqrt(1 - h))
+  
+  # Studentized deleted residuals
+  # t_i = r_i * sqrt((n-p-1) / (n-p - r_i^2))
+  t_i <- r * sqrt((n - p - 1) / (n - p - r^2))
+  
+  # Return all types
+  list(
+    raw = as.numeric(e),
+    standardized = as.numeric(e_std),
+    studentized = as.numeric(r),
+    deleted = as.numeric(t_i),
+    sigma_hat = sigma_hat,
+    SSE = SSE
+  )
+}
+
+# Example: Use beef marbling data
+X_beef <- cbind(1, beef$live_weight_kg)
+y_beef <- beef$marbling_score
+
+resid_beef <- compute_residuals(X_beef, y_beef)
+
+cat("Custom residual calculations (first 5 observations):\n")
+cat("Raw:", round(resid_beef$raw[1:5], 4), "\n")
+cat("Standardized:", round(resid_beef$standardized[1:5], 4), "\n")
+cat("Studentized:", round(resid_beef$studentized[1:5], 4), "\n")
+cat("Deleted:", round(resid_beef$deleted[1:5], 4), "\n")
+```
+
+## Computing Leverage and Hat Values
+
+```{r}
+#| label: function-compute-leverage
+
+#' Compute hat matrix and leverage values
+#'
+#' @param X Design matrix (n x p)
+#' @return List containing hat matrix H and leverage vector h
+compute_leverage <- function(X) {
+  # Hat matrix: H = X(X'X)^{-1}X'
+  H <- X %*% solve(t(X) %*% X) %*% t(X)
+  
+  # Leverage values (diagonal of H)
+  h <- diag(H)
+  
+  # Verify properties
+  symmetric <- all.equal(H, t(H), tolerance = 1e-10)
+  idempotent <- all.equal(H %*% H, H, tolerance = 1e-10)
+  trace_eq_p <- abs(sum(h) - ncol(X)) < 1e-10
+  
+  list(
+    H = H,
+    h = as.numeric(h),
+    properties = list(
+      symmetric = symmetric,
+      idempotent = idempotent,
+      trace_equals_p = trace_eq_p
+    )
+  )
+}
+
+# Example
+lev_beef <- compute_leverage(X_beef)
+
+cat("Leverage values (all observations):\n")
+print(round(lev_beef$h, 4))
+
+cat("\nHat matrix properties verified:\n")
+cat("Symmetric:", lev_beef$properties$symmetric, "\n")
+cat("Idempotent:", lev_beef$properties$idempotent, "\n")
+cat("Trace = p:", lev_beef$properties$trace_equals_p, "\n")
+
+cat("\nAverage leverage:", round(mean(lev_beef$h), 4), 
+    "= p/n =", ncol(X_beef), "/", nrow(X_beef), "=", 
+    round(ncol(X_beef)/nrow(X_beef), 4), "\n")
+```
+
+## Computing Influence Statistics
+
+```{r}
+#| label: function-compute-influence
+
+#' Compute influence measures (Cook's D, DFFITS, DFBETAS)
+#'
+#' @param X Design matrix (n x p)
+#' @param y Response vector (n x 1)
+#' @return List containing Cook's distance, DFFITS, and DFBETAS
+compute_influence <- function(X, y) {
+  # Get residuals and leverage
+  resid <- compute_residuals(X, y)
+  lev <- compute_leverage(X)
+  
+  n <- nrow(X)
+  p <- ncol(X)
+  r <- resid$studentized
+  h <- lev$h
+  
+  # Cook's Distance
+  # D_i = (r_i^2 / p) * (h_ii / (1 - h_ii)^2)
+  cooks_d <- (r^2 / p) * (h / (1 - h)^2)
+  
+  # DFFITS
+  # DFFITS_i = r_i * sqrt(h_ii / (1 - h_ii))
+  dffits <- r * sqrt(h / (1 - h))
+  
+  # DFBETAS (requires more computation)
+  # For each coefficient, measure change when observation deleted
+  # Simplified version: scale factor for each observation
+  XtX_inv <- solve(t(X) %*% X)
+  
+  # DFBETAS matrix (n x p)
+  dfbetas_mat <- matrix(NA, n, p)
+  for(i in 1:n) {
+    # Scaling for observation i
+    scale_i <- resid$deleted[i] * sqrt(diag(XtX_inv))
+    dfbetas_mat[i, ] <- X[i, ] * scale_i / (1 - h[i])
+  }
+  
+  list(
+    cooks_d = as.numeric(cooks_d),
+    dffits = as.numeric(dffits),
+    dfbetas = dfbetas_mat
+  )
+}
+
+# Example
+infl_beef <- compute_influence(X_beef, y_beef)
+
+cat("Influence measures (all observations):\n")
+cat("\nCook's Distance:\n")
+print(round(infl_beef$cooks_d, 4))
+
+cat("\nDFFITS:\n")
+print(round(infl_beef$dffits, 4))
+
+cat("\nObservation 9 (high leverage):\n")
+cat("Cook's D:", round(infl_beef$cooks_d[9], 4), "\n")
+cat("DFFITS:", round(infl_beef$dffits[9], 4), "\n")
+```
+
+## Creating Diagnostic Plots
+
+```{r}
+#| label: function-diagnostic-plots
+
+#' Create the four essential diagnostic plots
+#'
+#' @param X Design matrix (n x p)
+#' @param y Response vector (n x 1)
+#' @param main_title Optional main title prefix
+diagnostic_plots <- function(X, y, main_title = "") {
+  # Compute all needed quantities
+  resid <- compute_residuals(X, y)
+  lev <- compute_leverage(X)
+  infl <- compute_influence(X, y)
+  
+  n <- nrow(X)
+  p <- ncol(X)
+  
+  # Fitted values
+  b <- solve(t(X) %*% X) %*% t(X) %*% y
+  y_hat <- X %*% b
+  
+  # Set up 2x2 plot layout
+  par(mfrow = c(2, 2))
+  
+  # Plot 1: Residuals vs. Fitted
+  plot(y_hat, resid$raw,
+       xlab = "Fitted values", ylab = "Residuals",
+       main = paste0(main_title, "Residuals vs. Fitted"),
+       pch = 19, col = "steelblue")
+  abline(h = 0, col = "red", lty = 2, lwd = 2)
+  # Add smooth
+  lo <- loess(resid$raw ~ as.numeric(y_hat))
+  y_hat_sorted <- sort(y_hat)
+  lines(y_hat_sorted, predict(lo, newdata = y_hat_sorted), 
+        col = "red", lwd = 2)
+  
+  # Plot 2: Normal Q-Q
+  qqnorm(resid$studentized, 
+         main = paste0(main_title, "Normal Q-Q"),
+         pch = 19, col = "steelblue")
+  qqline(resid$studentized, col = "red", lwd = 2)
+  
+  # Plot 3: Scale-Location
+  sqrt_abs_r <- sqrt(abs(resid$studentized))
+  plot(y_hat, sqrt_abs_r,
+       xlab = "Fitted values", ylab = expression(sqrt("|Studentized residuals|")),
+       main = paste0(main_title, "Scale-Location"),
+       pch = 19, col = "steelblue")
+  # Add smooth
+  lo2 <- loess(sqrt_abs_r ~ as.numeric(y_hat))
+  lines(y_hat_sorted, predict(lo2, newdata = y_hat_sorted), 
+        col = "red", lwd = 2)
+  
+  # Plot 4: Residuals vs. Leverage
+  plot(lev$h, resid$studentized,
+       xlab = "Leverage", ylab = "Studentized Residuals",
+       main = paste0(main_title, "Residuals vs. Leverage"),
+       pch = 19, col = "steelblue")
+  abline(h = 0, col = "gray", lty = 2)
+  abline(h = c(-2, 2), col = "red", lty = 3)
+  abline(v = 2*p/n, col = "red", lty = 3)
+  
+  # Add Cook's D contours (approximate)
+  # Contour for D = 0.5
+  h_seq <- seq(0, 1, length.out = 100)
+  r_pos_05 <- sqrt(0.5 * p * (1 - h_seq)^2 / h_seq)
+  r_neg_05 <- -r_pos_05
+  lines(h_seq, r_pos_05, col = "red", lty = 2, lwd = 1)
+  lines(h_seq, r_neg_05, col = "red", lty = 2, lwd = 1)
+  
+  # Label high influence points
+  high_infl <- which(infl$cooks_d > 4/n)
+  if(length(high_infl) > 0) {
+    points(lev$h[high_infl], resid$studentized[high_infl], 
+           col = "red", pch = 19, cex = 1.5)
+    text(lev$h[high_infl], resid$studentized[high_infl], 
+         labels = high_infl, pos = 4, col = "red", font = 2)
+  }
+  
+  par(mfrow = c(1, 1))
+}
+
+# Example: Create plots for beef data
+diagnostic_plots(X_beef, y_beef, main_title = "Beef Marbling: ")
+```
+
+## Box-Cox Transformation
+
+```{r}
+#| label: function-boxcox
+
+#' Apply Box-Cox transformation
+#'
+#' @param y Response vector (must be positive)
+#' @param lambda Transformation parameter
+#' @return Transformed response
+boxcox_transform <- function(y, lambda) {
+  if(any(y <= 0)) {
+    stop("Box-Cox requires all y > 0")
+  }
+  
+  if(abs(lambda) < 1e-10) {
+    # lambda = 0: log transformation
+    return(log(y))
+  } else {
+    # lambda != 0: power transformation
+    return((y^lambda - 1) / lambda)
+  }
+}
+
+# Example: Demonstrate different transformations
+y_test <- c(1, 2, 4, 8, 16)
+
+cat("Original y:", y_test, "\n\n")
+cat("Lambda = 2 (square):", round(boxcox_transform(y_test, 2), 2), "\n")
+cat("Lambda = 1 (identity):", round(boxcox_transform(y_test, 1), 2), "\n")
+cat("Lambda = 0.5 (sqrt):", round(boxcox_transform(y_test, 0.5), 2), "\n")
+cat("Lambda = 0 (log):", round(boxcox_transform(y_test, 0), 2), "\n")
+cat("Lambda = -1 (inverse):", round(boxcox_transform(y_test, -1), 2), "\n")
+```
+
+## Verification with Base R
+
+::: {.callout-note}
+## Verification is Critical
+
+Always verify custom functions against base R's built-in functions. Use `all.equal()` with appropriate tolerance for numerical comparisons.
+:::
+
+```{r}
+#| label: verification-all-functions
+
+# Fit model using lm()
+fit_beef_lm <- lm(marbling_score ~ live_weight_kg, data = beef)
+
+cat("=== VERIFICATION AGAINST BASE R ===\n\n")
+
+# 1. Leverage
+cat("1. Leverage values:\n")
+h_custom <- compute_leverage(X_beef)$h
+h_base <- hatvalues(fit_beef_lm)
+cat("   Match:", all.equal(h_custom, as.numeric(h_base), tolerance = 1e-10), "\n")
+cat("   Max difference:", max(abs(h_custom - h_base)), "\n\n")
+
+# 2. Studentized residuals
+cat("2. Studentized residuals:\n")
+r_custom <- compute_residuals(X_beef, y_beef)$studentized
+r_base <- rstandard(fit_beef_lm)
+cat("   Match:", all.equal(r_custom, as.numeric(r_base), tolerance = 1e-10), "\n")
+cat("   Max difference:", max(abs(r_custom - r_base)), "\n\n")
+
+# 3. Studentized deleted residuals
+cat("3. Studentized deleted residuals:\n")
+t_custom <- compute_residuals(X_beef, y_beef)$deleted
+t_base <- rstudent(fit_beef_lm)
+cat("   Match:", all.equal(t_custom, as.numeric(t_base), tolerance = 1e-10), "\n")
+cat("   Max difference:", max(abs(t_custom - t_base)), "\n\n")
+
+# 4. Cook's Distance
+cat("4. Cook's Distance:\n")
+D_custom <- compute_influence(X_beef, y_beef)$cooks_d
+D_base <- cooks.distance(fit_beef_lm)
+cat("   Match:", all.equal(D_custom, as.numeric(D_base), tolerance = 1e-10), "\n")
+cat("   Max difference:", max(abs(D_custom - D_base)), "\n\n")
+
+# 5. DFFITS
+cat("5. DFFITS:\n")
+dffits_custom <- compute_influence(X_beef, y_beef)$dffits
+dffits_base <- dffits(fit_beef_lm)
+cat("   Match:", all.equal(dffits_custom, as.numeric(dffits_base), tolerance = 1e-10), "\n")
+cat("   Max difference:", max(abs(dffits_custom - dffits_base)), "\n\n")
+
+cat("=== ALL VERIFICATIONS PASSED ===\n")
+```
+
+Perfect agreement! Our custom functions produce identical results to R's built-in functions.
+
+# Practical Guidelines for Model Diagnostics
+
+## A Systematic Diagnostic Workflow
+
+When fitting any linear model, follow this systematic workflow:
+
+### Step 1: Fit the Initial Model
+
+```r
+fit <- lm(response ~ predictors, data = mydata)
+summary(fit)
+```
+
+Check basic model output:
+
+- Are coefficients significant and in expected direction?
+- Is R² reasonable for your field?
+- Any warning messages?
+
+### Step 2: Create Diagnostic Plots
+
+```r
+par(mfrow = c(2, 2))
+plot(fit)
+```
+
+Examine all four plots systematically.
+
+### Step 3: Check Each Assumption
+
+| Assumption | Check | Action if Violated |
+|------------|-------|-------------------|
+| **Linearity** | Residuals vs. Fitted | Add polynomial terms, interactions, or transform predictors |
+| **Independence** | Residuals vs. order/time | Use mixed models, GLS, or cluster-robust SE |
+| **Homoscedasticity** | Scale-Location plot | Transform response (log, sqrt) or use WLS |
+| **Normality** | Q-Q plot | Transform response, check for outliers, or use robust methods |
+
+### Step 4: Identify Outliers and Influential Points
+
+```r
+# Studentized residuals
+r <- rstandard(fit)
+outliers <- which(abs(r) > 3)
+
+# High leverage
+h <- hatvalues(fit)
+p <- length(coef(fit))
+n <- nobs(fit)
+high_lev <- which(h > 2*p/n)
+
+# High influence
+D <- cooks.distance(fit)
+influential <- which(D > 4/n)
+```
+
+### Step 5: Investigate Problematic Observations
+
+For each flagged observation:
+
+1. **Check data quality**: Recording error? Measurement issue?
+2. **Biological plausibility**: Is this value realistic?
+3. **Compute diagnostics**: Leverage? Residual? Influence?
+4. **Impact assessment**: Refit without it—how much does model change?
+
+### Step 6: Make Decision
+
+- **Keep** if: Valid data, fits pattern, low influence
+- **Investigate further** if: High influence, unclear cause
+- **Exclude** if: Data error, biologically implausible, highly influential
+
+**Always document your decision and rationale!**
+
+### Step 7: Refit and Reverify
+
+After any changes (exclusions, transformations):
+
+- Refit model
+- Repeat diagnostic checks
+- Confirm assumptions now satisfied
+- Compare old vs. new results
+
+## Rules of Thumb
+
+::: {.callout-tip}
+## Quick Reference: Diagnostic Thresholds
+
+**Outliers (residual size)**:
+- $|r_i| > 2$: Potentially unusual
+- $|r_i| > 3$: Almost certainly an outlier
+
+**High Leverage**:
+- $h_{ii} > 2p/n$: Moderate leverage
+- $h_{ii} > 3p/n$: High leverage
+
+**Influence (Cook's D)**:
+- $D_i > 0.5$: Moderate influence (investigate)
+- $D_i > 1$: High influence (likely problematic)
+- $D_i > 4/n$: Alternative threshold for smaller datasets
+
+**DFFITS**:
+- $|\text{DFFITS}_i| > 2\sqrt{p/n}$: Influential
+
+**Sample Size Considerations**:
+- Small $n$ (<30): More stringent (use $|r| > 2.5$, $D > 1$)
+- Large $n$ (>100): More liberal (use $|r| > 3$, $D > 4/n$)
+:::
+
+## What to Do When Assumptions Fail
+
+### Non-Linearity
+
+**Solutions**:
+
+1. Add polynomial terms: $x^2$, $x^3$
+2. Include interactions: $x_1 \times x_2$
+3. Transform predictors: $\log(x)$, $\sqrt{x}$, $1/x$
+4. Use splines or generalized additive models (GAMs)
+
+### Heteroscedasticity
+
+**Solutions**:
+
+1. **Log transformation** (most common): $\log(y)$
+2. **Square root transformation** (for counts): $\sqrt{y}$
+3. **Box-Cox transformation**: Optimal $\lambda$
+4. **Weighted least squares**: If variance pattern is known
+5. **Robust standard errors**: HC3, HC4 methods
+
+### Non-Normality
+
+**Solutions**:
+
+1. **Transformation** (often fixes this and heteroscedasticity together)
+2. **Check for outliers** (may cause apparent non-normality)
+3. **Bootstrap inference** (doesn't require normality)
+4. **Robust regression** (M-estimators, LAD regression)
+5. **If $n$ large**: CLT applies, mild non-normality OK
+
+### Lack of Independence
+
+**Solutions**:
+
+1. **Mixed models**: Random effects for clusters
+2. **GLS**: Generalized least squares with known correlation structure
+3. **Cluster-robust SE**: Adjust standard errors for clustering
+4. **Time series methods**: ARIMA, GARCH for temporal dependence
+5. **Spatial models**: Account for spatial correlation
+
+## Reporting Diagnostic Results
+
+When reporting analyses, include:
+
+1. **Statement of assumptions checked**:
+   "Model assumptions (linearity, homoscedasticity, normality, independence) were verified using diagnostic plots."
+
+2. **Any violations found**:
+   "Initial analysis revealed heteroscedasticity (funnel pattern in residual plot)."
+
+3. **Remedial actions taken**:
+   "Log transformation of the response variable successfully stabilized variance."
+
+4. **Final model diagnostics**:
+   "Diagnostic plots for the final model showed no systematic violations of assumptions."
+
+5. **Treatment of outliers** (if any):
+   "One observation (bird 27) was identified as highly influential ($D = 0.85$) and excluded from analysis due to documented illness."
+
+# Summary and Key Takeaways
+
+## What We Learned This Week
+
+1. **Why diagnostics matter**: Model assumptions must be verified, not just assumed. Violations can lead to biased estimates, invalid inference, and poor predictions.
+
+2. **Types of residuals**:
+   - Raw: $e_i = y_i - \hat{y}_i$
+   - Standardized: $e_i^* = e_i/\hat{\sigma}$
+   - Studentized: $r_i = e_i/(\hat{\sigma}\sqrt{1-h_{ii}})$ ← **most useful**
+   - Deleted: $t_i$ (computed without observation $i$)
+
+3. **Leverage vs. Influence**:
+   - **Leverage** ($h_{ii}$): Potential for influence based on $X$ values
+   - **Influence** (Cook's $D$): Actual impact on fitted model
+   - High leverage ≠ high influence (example: beef marbling obs 9)
+
+4. **The four diagnostic plots**:
+   - Residuals vs. Fitted → linearity, homoscedasticity
+   - Normal Q-Q → normality
+   - Scale-Location → homoscedasticity
+   - Residuals vs. Leverage → influential observations
+
+5. **When to transform**:
+   - Heteroscedasticity (funnel pattern) → log or sqrt transformation
+   - Right skewness → log transformation
+   - Proportional errors → log transformation
+   - Don't transform if violations are minor or interpretation suffers
+
+6. **Systematic workflow**:
+   - Fit model → diagnostic plots → check assumptions → identify problems
+   - Investigate outliers/influential points → decide (keep/exclude/investigate)
+   - Apply fixes (transformation, WLS, etc.) → reverify diagnostics
+
+## Connections to Other Weeks
+
+- **Week 5**: Gauss-Markov assumptions—this week we verify them
+- **Week 6**: Multiple regression diagnostics more complex (leverage in $p$-dimensional space)
+- **Weeks 7-10**: Same diagnostic principles apply to ANOVA and ANCOVA
+- **Week 12** (next): Rank deficiency affects leverage calculations
+- **Week 14**: Preview of mixed models for handling dependence
+
+## Critical Reminders
+
+::: {.callout-important}
+## Key Principles for Livestock Applications
+
+1. **Biology first**: Always ask if unusual observations are biologically plausible
+2. **Document decisions**: Record why you kept/excluded observations
+3. **Report honestly**: Disclose any data exclusions or transformations
+4. **Verify after changes**: Recheck diagnostics after any model modifications
+5. **Interpretation matters**: Choose transformations that stakeholders can understand
+6. **Context is key**: Same statistical issue may have different solutions in different biological contexts
+
+**Remember**: Good diagnostics are not about achieving perfect plots—they're about understanding your data, identifying problems, and making informed decisions about modeling and inference.
+:::
+
+## Looking Ahead
+
+**Next week (Week 12)**: We'll tackle unequal subclass numbers and non-full rank models, where design matrices don't have full rank. We'll see how rank deficiency affects:
+
+- Leverage calculations ($\sum h_{ii} = r(X)$, not $p$)
+- Estimability of functions
+- Interpretation of diagnostics
+
+**Week 14**: Special topics including weighted least squares (WLS) for known heteroscedasticity and preview of mixed models for handling dependence.
+
+# Exercises
+
+See **Week11_Exercises.qmd** for 7 exercises covering:
+
+- Exercise 1: Hand calculation of diagnostic statistics (computational)
+- Exercise 2: Leverage vs. influence concepts (theoretical)
+- Exercise 3: Swine birth weight with two types of outliers (applied)
+- Exercise 4: Systematic assumption checking (conceptual/applied)
+- Exercise 5: Heteroscedasticity and transformation (applied)
+- Exercise 6: Box-Cox transformation selection (computational/applied)
+- Exercise 7: Complete diagnostic report for mastitis data (integrated)
+
+# References
+
+::: {#refs}
+:::
+

@@ -9,8 +9,6 @@ format:
     code-tools: true
 ---
 
-# Week 3: Building the Design Matrix Framework {#sec-week03}
-
 ## Learning Objectives
 
 By the end of this week, you will be able to:

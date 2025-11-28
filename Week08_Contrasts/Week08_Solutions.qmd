@@ -1,0 +1,177 @@
+---
+title: "Week 8 Solutions: Contrasts and Estimable Functions"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: show
+---
+
+## Conceptual Solutions
+
+### Solution 1: Estimability Proof
+
+**To prove**: The contrast $\alpha_i - \alpha_j$ is estimable in the effects model $y_{ij} = \mu + \alpha_i + e_{ij}$ with $\sum \alpha_i = 0$.
+
+**Proof**:
+
+For a contrast to be estimable, its coefficient vector must be in the row space of $\mathbf{X}$.
+
+Consider the design matrix for the effects model (example with 3 groups, 2 obs each):
+
+$$
+\mathbf{X} = \begin{bmatrix}
+1 & 1 & 0 & 0 \\
+1 & 1 & 0 & 0 \\
+1 & 0 & 1 & 0 \\
+1 & 0 & 1 & 0 \\
+1 & 0 & 0 & 1 \\
+1 & 0 & 0 & 1
+\end{bmatrix}
+$$
+
+For the contrast $\alpha_1 - \alpha_2$, the coefficient vector is $\mathbf{c}' = [0, 1, -1, 0]$.
+
+Take row 1 of $\mathbf{X}$: $[1, 1, 0, 0]$
+Take row 3 of $\mathbf{X}$: $[1, 0, 1, 0]$
+
+Their difference is: $[1, 1, 0, 0] - [1, 0, 1, 0] = [0, 1, -1, 0] = \mathbf{c}'$
+
+Since $\mathbf{c}'$ can be expressed as a linear combination of rows of $\mathbf{X}$, it is in the row space of $\mathbf{X}$, and therefore the contrast $\alpha_1 - \alpha_2$ is estimable. ∎
+
+### Solution 2: Orthogonal Contrasts
+
+Orthogonal contrasts partition SS(Treatments) because they represent **independent** sources of variation.
+
+For $g-1$ orthogonal contrasts:
+- Each contrast accounts for 1 degree of freedom
+- Together they account for $g-1$ degrees of freedom (same as treatments)
+- Since they're orthogonal (independent), their SSs add without overlap
+
+Mathematically: If $\mathbf{c}_1'\mathbf{c}_2 = 0$ (orthogonal), then:
+$$\text{SS}(\mathbf{c}_1) + \text{SS}(\mathbf{c}_2) = \text{partial sum of SS(Treatments)}$$
+
+With $g-1$ orthogonal contrasts, we capture all treatment variation.
+
+**For unbalanced designs**: Orthogonality defined as $\mathbf{c}_1'(\mathbf{X}'\mathbf{X})^{-}\mathbf{c}_2 = 0$ is harder to achieve, and the simple summation property may not hold exactly.
+
+### Solution 3: Genetic Evaluation Context
+
+**Testable statement**: "Sire A is different from Sire B"
+- This is a **contrast**: Sire A effect minus Sire B effect
+- Estimable because it's in the row space of $\mathbf{X}$
+- Has a unique estimate regardless of constraints
+
+**Potentially non-estimable**: "Sire A has breeding value +10 kg"
+- This is an **absolute value** of a single parameter
+- In models with multiple sires, individual sire effects may be confounded with the overall mean
+- Different constraints (set-to-zero vs. sum-to-zero) give different absolute values
+- Only **differences** between sires are uniquely estimable
+
+## Computational Solutions
+
+### Solution 1: Swine Litter Size
+
+**Complete solution with R code**:
+
+```{r}
+#| label: swine-solution
+#| message: false
+
+# Data
+yorkshire <- c(11, 12, 11)
+landrace <- c(10, 11, 10)
+duroc <- c(9, 10, 9)
+
+# Part (a): Cell means model
+y <- c(yorkshire, landrace, duroc)
+breed <- factor(rep(c("Yorkshire", "Landrace", "Duroc"), each = 3))
+n <- length(y)
+
+X <- model.matrix(~ breed - 1)
+b <- solve(t(X) %*% X) %*% t(X) %*% y
+cat("Breed means:\n")
+print(b)
+
+# Calculate MSE
+residuals <- y - X %*% b
+SSE <- sum(residuals^2)
+MSE <- SSE / (n - ncol(X))
+cat("\nMSE =", MSE, "\n")
+
+# Part (b): Yorkshire vs Landrace
+c1 <- c(1, -1, 0)
+est1 <- sum(c1 * b)
+se1 <- sqrt(sum(c1^2) / 3 * MSE)
+t1 <- est1 / se1
+p1 <- 2 * (1 - pt(abs(t1), 6))
+cat("\n(b) Yorkshire - Landrace:\n")
+cat("Estimate:", est1, "SE:", se1, "t:", t1, "p:", p1, "\n")
+
+# Part (c): Yorkshire vs average of others
+c2 <- c(1, -0.5, -0.5)
+est2 <- sum(c2 * b)
+se2 <- sqrt(sum(c2^2) / 3 * MSE)
+t2 <- est2 / se2
+p2 <- 2 * (1 - pt(abs(t2), 6))
+cat("\n(c) Yorkshire - (Landrace+Duroc)/2:\n")
+cat("Estimate:", est2, "SE:", se2, "t:", t2, "p:", p2, "\n")
+
+# Part (d): 95% CIs
+t_crit <- qt(0.975, 6)
+ci1 <- est1 + c(-1, 1) * t_crit * se1
+ci2 <- est2 + c(-1, 1) * t_crit * se2
+cat("\n(d) 95% Confidence Intervals:\n")
+cat("Contrast 1:", ci1, "\n")
+cat("Contrast 2:", ci2, "\n")
+
+# Part (e): Check orthogonality
+ortho_check <- sum(c1 * c2)
+cat("\n(e) Orthogonality: c1' c2 =", ortho_check, "\n")
+cat("Contrasts are", ifelse(abs(ortho_check) < 1e-10, "orthogonal", "NOT orthogonal"), "\n")
+```
+
+## Applied Solutions
+
+### Solution Template: Broiler Strains
+
+```{r}
+#| label: broiler-template
+#| eval: false
+
+# Load data (example structure)
+# broiler <- read.csv("broiler_strains.csv")
+
+# Define meaningful contrasts:
+# c1: Fast-growing commercial vs. Heritage
+# c2: Strain A vs. Strain B (within commercial)
+# c3: Group comparison
+# c4: Specific hypothesis
+
+# For each contrast:
+# 1. Compute estimate
+# 2. Compute SE
+# 3. Compute t-statistic
+# 4. Compute p-value
+# 5. Interpret biologically
+
+# Example structure:
+# test_contrast <- function(c_vec, b, X, MSE) {
+#   estimate <- sum(c_vec * b)
+#   se <- sqrt(sum(c_vec^2) / n_per_group * MSE)
+#   t_stat <- estimate / se
+#   p_val <- 2 * (1 - pt(abs(t_stat), df_error))
+#   return(c(est = estimate, se = se, t = t_stat, p = p_val))
+# }
+```
+
+## Notes
+
+These solutions provide frameworks and examples. Students should work through the logic themselves before consulting these answers.
+
+---
+
+**Main Chapter**: [Week 8: Contrasts](Week08_Contrasts.qmd)
+
+**Exercises**: [Week 8 Exercises](Week08_Exercises.qmd)

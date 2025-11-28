@@ -1,0 +1,408 @@
+---
+title: "Week 11 Exercises: Model Diagnostics"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+---
+
+# Instructions
+
+Complete the following 7 exercises. Show all work for computational problems, include all R code and output for applied problems, and provide clear written explanations for theoretical problems.
+
+**Total Points: 195**
+
+---
+
+# Exercise 1: Hand Calculation of Diagnostic Statistics (25 points)
+
+**Type**: Computational
+
+A researcher fits a simple linear regression to predict growth rate from feed intake for 5 animals:
+
+```
+x (feed_kg): 1, 2, 3, 4, 5
+y (growth_kg): 2.1, 3.9, 6.2, 7.8, 10.1
+```
+
+## Part A (8 points)
+
+Fit the simple linear regression model $y_i = \beta_0 + \beta_1 x_i + e_i$ and compute:
+
+a. The least squares estimates $b_0$ and $b_1$ (show matrix calculations)
+b. Fitted values $\hat{y}_i$ for all observations
+c. Raw residuals $e_i$ for all observations
+d. SSE and $\hat{\sigma}$
+
+## Part B (8 points)
+
+Compute the hat matrix $\mathbf{H} = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'$ and extract the leverage values $h_{ii}$:
+
+a. Write out the design matrix $\mathbf{X}$ (5×2)
+b. Compute $\mathbf{X}'\mathbf{X}$ (show calculation)
+c. Compute $(\mathbf{X}'\mathbf{X})^{-1}$ (show calculation)
+d. Verify that $\sum h_{ii} = p$ (number of parameters)
+
+## Part C (5 points)
+
+Compute studentized residuals $r_i$ for observation 3:
+
+a. What is $h_{33}$?
+b. Compute $r_3 = e_3 / (\hat{\sigma}\sqrt{1 - h_{33}})$
+c. Is observation 3 an outlier (using $|r| > 2$ criterion)?
+
+## Part D (4 points)
+
+Compute Cook's Distance for observation 5:
+
+a. What is $r_5$?
+b. What is $h_{55}$?
+c. Compute $D_5 = (r_5^2 / p) \times (h_{55} / (1-h_{55})^2)$
+d. Is observation 5 influential (use threshold $4/n$)?
+
+---
+
+# Exercise 2: Leverage vs. Influence Conceptual Understanding (20 points)
+
+**Type**: Theoretical
+
+## Part A (6 points)
+
+a. Define **leverage** in your own words. What does it measure?
+b. Define **influence** in your own words. What does it measure?
+c. Explain why high leverage does not always mean high influence. Give an example from livestock data.
+
+## Part B (6 points)
+
+Consider three scenarios for an observation in a simple linear regression:
+
+- **Scenario 1**: High leverage, small residual
+- **Scenario 2**: Moderate leverage, large residual
+- **Scenario 3**: High leverage, large residual
+
+For each scenario:
+- Will the observation be influential? Why or why not?
+- Should it be excluded from analysis?
+
+## Part C (4 points)
+
+Prove that the diagonal elements of the hat matrix satisfy $0 \leq h_{ii} \leq 1$ for all $i$.
+
+**Hint**: Use the fact that $\mathbf{H}$ is an orthogonal projection matrix.
+
+## Part D (4 points)
+
+Prove that $\sum_{i=1}^n h_{ii} = p$ where $p$ is the number of parameters.
+
+**Hint**: Use the trace property: $\text{tr}(\mathbf{AB}) = \text{tr}(\mathbf{BA})$.
+
+---
+
+# Exercise 3: Swine Birth Weight Analysis with Outliers (30 points)
+
+**Type**: Applied
+
+A swine breeding study measures average birth weight (kg) for piglets from litters of varying sizes. The dataset is provided in `data/swine_birth_weight_outliers.csv`.
+
+Load the data:
+
+```r
+swine <- read.csv("data/swine_birth_weight_outliers.csv")
+```
+
+## Part A: Initial Model (5 points)
+
+a. Fit a linear regression: `average_birth_weight_kg ~ litter_size`
+b. Report the coefficients and R²
+c. Interpret the slope in biological terms
+
+## Part B: Diagnostic Plots (8 points)
+
+a. Create all four diagnostic plots using `plot(fit)`
+b. Describe what you observe in each plot
+c. Do any observations stand out as unusual?
+
+## Part C: Identify Problematic Observations (8 points)
+
+a. Compute studentized residuals. Identify observations with $|r_i| > 2.5$
+b. Compute leverage values. Identify observations with $h_{ii} > 2p/n$
+c. Compute Cook's Distance. Identify observations with $D_i > 4/n$
+d. Based on these diagnostics, which observations are problematic?
+
+## Part D: Classify Outliers (4 points)
+
+The data contains TWO problematic observations. For each:
+
+a. Is it high leverage, high residual, or both?
+b. Is it influential (high Cook's D)?
+c. Classify it as:
+   - **High-leverage, low-influence** (follows pattern, extreme X)
+   - **High-influence** (doesn't follow pattern)
+
+## Part E: Refit and Compare (5 points)
+
+a. Refit the model excluding the TWO problematic observations
+b. Compare coefficients, R², and $\hat{\sigma}$ between original and refitted models
+c. Plot both regression lines on the same graph with all data points (color the excluded points red)
+d. Should these observations be excluded? Provide biological justification.
+
+---
+
+# Exercise 4: Systematic Assumption Checking (20 points)
+
+**Type**: Conceptual/Applied
+
+A sheep breeding study examines weaning weight as a function of birth weight and dam age. The dataset is clean and well-behaved (all assumptions satisfied). Data: `data/lamb_weaning_weight.csv`.
+
+Load the data:
+
+```r
+lamb <- read.csv("data/lamb_weaning_weight.csv")
+```
+
+## Part A: Fit Model (3 points)
+
+Fit the multiple regression model:
+
+```r
+fit <- lm(weaning_weight_kg ~ birth_weight_kg + dam_age_years, data = lamb)
+```
+
+Report the summary output.
+
+## Part B: Check All Four Assumptions (12 points)
+
+For **each** of the four assumptions (linearity, homoscedasticity, normality, independence), complete the following:
+
+a. **State the assumption precisely** (mathematical form)
+b. **Which diagnostic plot(s)** check this assumption?
+c. **What pattern would indicate violation?** Describe what you'd see in the plot(s)
+d. **Assess this dataset**: Does the assumption hold? Explain based on your diagnostic plots.
+
+Create a table with your answers.
+
+## Part C: Overall Assessment (5 points)
+
+a. Based on your diagnostics, is this model trustworthy for inference?
+b. If you were to report this analysis to sheep breeders, what would you say about model validity?
+c. Are there any concerns or limitations?
+
+---
+
+# Exercise 5: Heteroscedasticity and Transformation (35 points)
+
+**Type**: Applied
+
+A poultry growth study measures body weight at various ages for 50 broiler chickens. The data exhibit heteroscedasticity. Data: `data/broiler_bodyweight_growth.csv`.
+
+Load the data:
+
+```r
+broiler <- read.csv("data/broiler_bodyweight_growth.csv")
+```
+
+## Part A: Original Model (6 points)
+
+a. Fit the model: `body_weight_kg ~ age_days`
+b. Create the four diagnostic plots
+c. Which plots indicate heteroscedasticity? Describe the pattern you observe.
+
+## Part B: Diagnosing Heteroscedasticity (8 points)
+
+a. Create a residuals vs. fitted values plot. Describe the **funnel shape** if present.
+b. Create a scale-location plot ($\sqrt{|r_i|}$ vs. fitted values). Is there an upward trend?
+c. **(Optional)** Run the Breusch-Pagan test using `lmtest::bptest()`. What is the conclusion?
+d. Compute residual variance for three groups:
+   - Young birds (age < 21 days)
+   - Medium birds (21-35 days)
+   - Old birds (age > 35 days)
+
+   Does variance increase with age?
+
+## Part C: Log Transformation (10 points)
+
+a. Create a new variable: `log_weight <- log(body_weight_kg)`
+b. Fit the model on log scale: `log_weight ~ age_days`
+c. Create diagnostic plots for the log-transformed model
+d. Compare the residuals vs. fitted plot for **original** vs. **log-transformed** models. Has the funnel pattern improved?
+e. Test for heteroscedasticity on the log scale (Breusch-Pagan test). Has it been resolved?
+
+## Part D: Compare Models (6 points)
+
+Create a comparison table:
+
+| Metric | Original Model | Log-Transformed Model |
+|--------|----------------|----------------------|
+| R² | | |
+| Residual SD ($\hat{\sigma}$) | | |
+| Heteroscedasticity present? | | |
+
+Which model is better? Why?
+
+## Part E: Predictions on Original Scale (5 points)
+
+a. Using the log-scale model, predict body weight at **age = 35 days**
+b. Compute the prediction on the **log scale** first: $\log(\hat{y})$
+c. Back-transform to original scale: $\hat{y} = \exp(\log(\hat{y}))$
+d. Compare this with the prediction from the original-scale model
+e. Why is the log-transformed model's prediction more trustworthy?
+
+## Part F: Biological Interpretation (bonus 2 points)
+
+Why does log transformation make biological sense for growth data? Explain in terms of **proportional variation** and **multiplicative growth processes**.
+
+---
+
+# Exercise 6: Box-Cox Transformation Selection (25 points)
+
+**Type**: Computational/Applied
+
+A beef feedlot study measures average daily gain (ADG, kg/day) as a function of initial weight and days on feed. The response is right-skewed with moderate heteroscedasticity. Data: `data/beef_feedlot_gain.csv`.
+
+Load the data:
+
+```r
+beef <- read.csv("data/beef_feedlot_gain.csv")
+```
+
+## Part A: Fit Original Model (5 points)
+
+a. Fit the model: `adg_kg_day ~ initial_weight_kg + days_on_feed`
+b. Create a histogram of the response variable `adg_kg_day`. Is it right-skewed?
+c. Create diagnostic plots. Are there violations?
+
+## Part B: Box-Cox Analysis (10 points)
+
+a. Load the MASS package: `library(MASS)`
+b. Run Box-Cox analysis: `boxcox(fit)`
+c. What is the optimal $\lambda$ (peak of the curve)?
+d. What transformation does this suggest?
+   - If $\lambda \approx 0.5$: square root
+   - If $\lambda \approx 0$: log
+   - If $\lambda \approx 1$: no transformation
+e. Does the 95% confidence interval for $\lambda$ include 1? (If yes, maybe transformation not needed)
+
+## Part C: Apply Suggested Transformation (6 points)
+
+Based on your Box-Cox results, apply the appropriate transformation:
+
+a. If $\lambda \approx 0.5$: Create `sqrt_adg <- sqrt(adg_kg_day)` and fit model with this as response
+b. If $\lambda \approx 0$: Create `log_adg <- log(adg_kg_day)` and fit model with this as response
+c. If $\lambda \approx 1$: No transformation needed
+
+Fit the model on the transformed scale and create diagnostic plots.
+
+## Part D: Compare Diagnostics (4 points)
+
+Create side-by-side comparisons:
+
+a. Q-Q plots: Original vs. Transformed
+b. Residuals vs. Fitted: Original vs. Transformed
+
+Has the transformation improved model fit?
+
+## Part E: Report Final Model (bonus 2 points)
+
+Write a brief summary (3-4 sentences) explaining:
+
+a. What transformation was applied and why
+b. How diagnostics improved after transformation
+c. How you would report results to beef producers (original scale or transformed scale?)
+
+---
+
+# Exercise 7: Building a Complete Diagnostic Report (40 points)
+
+**Type**: Applied/Integrated
+
+A dairy health study examines somatic cell count (SCC) as an indicator of mastitis. SCC is measured for 100 cows along with days in milk, parity, and previous SCC. The data have multiple violations. Data: `data/dairy_scc_mastitis.csv`.
+
+Load the data:
+
+```r
+dairy <- read.csv("data/dairy_scc_mastitis.csv")
+```
+
+## Part A: Exploratory Analysis (5 points)
+
+a. Compute summary statistics for all variables
+b. Create a histogram of `somatic_cell_count`. Describe its distribution (normal, right-skewed, left-skewed?)
+c. Create a scatterplot matrix or correlation matrix. Are there strong relationships?
+
+## Part B: Fit Initial Model (5 points)
+
+Fit the full model:
+
+```r
+fit <- lm(somatic_cell_count ~ days_in_milk + parity + previous_scc, data = dairy)
+```
+
+Report the summary output. Are all predictors significant?
+
+## Part C: Comprehensive Diagnostic Assessment (15 points)
+
+Create a **comprehensive diagnostic report** including:
+
+1. **All four diagnostic plots** with interpretation of each
+2. **Outlier identification**:
+   - Which observations have $|r_i| > 3$?
+   - List them with their data values
+3. **High leverage identification**:
+   - Which observations have $h_{ii} > 3p/n$?
+4. **Influential observation identification**:
+   - Which observations have $D_i > 4/n$?
+   - Are any observations both outliers AND high influence?
+5. **Assumption assessment**:
+   - Is linearity satisfied?
+   - Is homoscedasticity satisfied? (Look for funnel)
+   - Is normality satisfied?
+
+## Part D: Propose and Implement Remedial Measures (10 points)
+
+Based on your diagnostics, propose fixes:
+
+a. **Should any observations be excluded?** Which ones and why? (Consider: are they clinical mastitis cases? Data errors?)
+b. **Should transformation be applied?** Which one (log, sqrt, Box-Cox)?
+c. **Implement your recommended fixes**: Refit the model with exclusions/transformations
+d. **Recheck diagnostics** on the final model. Are assumptions now satisfied?
+
+## Part E: Final Report for Dairy Producer (5 points)
+
+Write a **2-paragraph summary** (approximately 150-200 words) for a dairy producer explaining:
+
+**Paragraph 1**: What was wrong with the initial model? What violations were found?
+
+**Paragraph 2**: What you fixed (exclusions, transformations) and what the final model tells us about SCC management. Include 1-2 practical recommendations based on the results.
+
+Use **non-technical language** suitable for a producer without statistics background.
+
+---
+
+# Submission Guidelines
+
+For each exercise:
+
+1. **Show all work** for computational problems (matrix calculations, formulas)
+2. **Include all R code and output** for applied problems
+3. **Create all requested plots** (labeled axes, titles, legends)
+4. **Provide clear written explanations** for interpretations
+5. **Answer all sub-parts** (a, b, c, etc.)
+
+**Formatting**:
+
+- Use Quarto or R Markdown to combine code, output, and text
+- Number your responses clearly (Exercise 1, Part A, etc.)
+- Include your name and date
+
+**Grading Rubric**:
+
+- **Correctness**: Are calculations and interpretations correct?
+- **Completeness**: Are all parts answered?
+- **Clarity**: Are explanations clear and well-written?
+- **Code quality**: Is R code well-commented and reproducible?
+- **Biological insight**: Are interpretations connected to livestock applications?
+
+---
+
+**Good luck! Remember**: Model diagnostics are not about achieving perfect plots—they're about understanding your data, identifying problems, and making informed decisions.

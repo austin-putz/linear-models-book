@@ -1,0 +1,699 @@
+---
+title: "Week 4 Solutions: Simple Linear Regression"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: false
+    code-tools: true
+---
+
+# Solutions to Week 4 Exercises
+
+Complete solutions with detailed explanations for all Week 4 exercises.
+
+---
+
+## Solution to Exercise 1: Sheep Birth and Weaning Weight
+
+### Part A: Summary Statistics
+
+**Data:**
+| Lamb | $x_i$ (Birth wt, kg) | $y_i$ (Weaning wt, kg) | $x_i^2$ | $x_i y_i$ |
+|------|---------------------|------------------------|---------|-----------|
+| 1    | 4.5                 | 28                     | 20.25   | 126.0     |
+| 2    | 4.0                 | 24                     | 16.00   | 96.0      |
+| 3    | 4.8                 | 30                     | 23.04   | 144.0     |
+| 4    | 4.2                 | 26                     | 17.64   | 109.2     |
+| 5    | 4.6                 | 29                     | 21.16   | 133.4     |
+| Sum  | 22.1                | 137                    | 98.09   | 608.6     |
+
+**Calculations:**
+
+1. $\sum x_i = 4.5 + 4.0 + 4.8 + 4.2 + 4.6 = 22.1$ kg
+
+2. $\sum y_i = 28 + 24 + 30 + 26 + 29 = 137$ kg
+
+3. $\bar{x} = \frac{22.1}{5} = 4.42$ kg
+
+4. $\bar{y} = \frac{137}{5} = 27.4$ kg
+
+5. $\sum x_i^2 = 4.5^2 + 4.0^2 + 4.8^2 + 4.2^2 + 4.6^2 = 98.09$ kg²
+
+6. $\sum x_i y_i = (4.5)(28) + (4.0)(24) + (4.8)(30) + (4.2)(26) + (4.6)(29) = 608.6$ kg²
+
+### Part B: Normal Equations
+
+**$\mathbf{X}'\mathbf{X}$ matrix:**
+
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix} n & \sum x_i \\ \sum x_i & \sum x_i^2 \end{bmatrix} = \begin{bmatrix} 5 & 22.1 \\ 22.1 & 98.09 \end{bmatrix}
+$$
+
+**$\mathbf{X}'\mathbf{y}$ vector:**
+
+$$
+\mathbf{X}'\mathbf{y} = \begin{bmatrix} \sum y_i \\ \sum x_i y_i \end{bmatrix} = \begin{bmatrix} 137 \\ 608.6 \end{bmatrix}
+$$
+
+**Normal equations:**
+
+$$
+\begin{bmatrix} 5 & 22.1 \\ 22.1 & 98.09 \end{bmatrix} \begin{bmatrix} b_0 \\ b_1 \end{bmatrix} = \begin{bmatrix} 137 \\ 608.6 \end{bmatrix}
+$$
+
+### Part C: Solve for Coefficients
+
+**Calculate $b_1$:**
+
+$$
+b_1 = \frac{\sum x_i y_i - n\bar{x}\bar{y}}{\sum x_i^2 - n\bar{x}^2}
+$$
+
+Numerator:
+$$
+\sum x_i y_i - n\bar{x}\bar{y} = 608.6 - (5)(4.42)(27.4) = 608.6 - 605.548 = 3.052
+$$
+
+Denominator:
+$$
+\sum x_i^2 - n\bar{x}^2 = 98.09 - (5)(4.42)^2 = 98.09 - 97.6820 = 0.408
+$$
+
+Therefore:
+$$
+b_1 = \frac{3.052}{0.408} = 7.48 \text{ kg weaning wt / kg birth wt}
+$$
+
+**Calculate $b_0$:**
+
+$$
+b_0 = \bar{y} - b_1\bar{x} = 27.4 - (7.48)(4.42) = 27.4 - 33.06 = -5.66 \text{ kg}
+$$
+
+**Fitted regression equation:**
+
+$$
+\hat{y}_i = -5.66 + 7.48 x_i
+$$
+
+### Part D: Fitted Values and Residuals
+
+| Lamb | $x_i$ | $y_i$ | $\hat{y}_i = -5.66 + 7.48x_i$ | $e_i = y_i - \hat{y}_i$ | $e_i^2$ |
+|------|-------|-------|-------------------------------|------------------------|---------|
+| 1    | 4.5   | 28    | 28.00                         | 0.00                   | 0.00    |
+| 2    | 4.0   | 24    | 24.26                         | -0.26                  | 0.07    |
+| 3    | 4.8   | 30    | 30.24                         | -0.24                  | 0.06    |
+| 4    | 4.2   | 26    | 25.76                         | 0.24                   | 0.06    |
+| 5    | 4.6   | 29    | 28.74                         | 0.26                   | 0.07    |
+| Sum  |       |       |                               | 0.00 ✓                 | 0.26    |
+
+**Verification:** $\sum e_i = 0.00$ ✓ (Exactly zero!)
+
+### Part E: Sum of Squared Errors
+
+$$
+\text{SSE} = \sum e_i^2 = 0.26 \text{ kg}^2
+$$
+
+This is a very small SSE, indicating an excellent fit.
+
+### Part F: Interpretation
+
+**1. Slope interpretation:**
+
+The slope $b_1 = 7.48$ kg/kg means that for every 1 kg increase in birth weight, we expect an increase of 7.48 kg in weaning weight. This makes biological sense: heavier lambs at birth tend to be heavier at weaning.
+
+**2. Intercept interpretation:**
+
+The intercept $b_0 = -5.66$ kg is NOT biologically meaningful. It represents the predicted weaning weight when birth weight is 0 kg, which is impossible. A lamb cannot have zero birth weight and still be alive. This is a mathematical artifact due to extrapolation far beyond the data range (4.0-4.8 kg).
+
+**3. Prediction:**
+
+For a lamb with birth weight 4.4 kg:
+
+$$
+\hat{y} = -5.66 + 7.48(4.4) = -5.66 + 32.91 = 27.25 \text{ kg}
+$$
+
+This is an **interpolation** (within the data range), so it's reliable.
+
+---
+
+## Solution to Exercise 2: Matrix Operations
+
+### Part A: Compute the Inverse
+
+Given:
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix} 6 & 30 \\ 30 & 160 \end{bmatrix}
+$$
+
+**Step 1: Calculate determinant**
+
+For $\mathbf{A} = \begin{bmatrix} a & b \\ c & d \end{bmatrix}$, the determinant is $|A| = ad - bc$
+
+$$
+|\mathbf{X}'\mathbf{X}| = (6)(160) - (30)(30) = 960 - 900 = 60
+$$
+
+**Step 2: Apply inverse formula**
+
+$$
+(\mathbf{X}'\mathbf{X})^{-1} = \frac{1}{60} \begin{bmatrix} 160 & -30 \\ -30 & 6 \end{bmatrix}
+$$
+
+$$
+= \begin{bmatrix} 160/60 & -30/60 \\ -30/60 & 6/60 \end{bmatrix} = \begin{bmatrix} 2.6667 & -0.5 \\ -0.5 & 0.1 \end{bmatrix}
+$$
+
+### Part B: Solve for Coefficients
+
+$$
+\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y} = \begin{bmatrix} 2.6667 & -0.5 \\ -0.5 & 0.1 \end{bmatrix} \begin{bmatrix} 72 \\ 380 \end{bmatrix}
+$$
+
+**Row 1 (b₀):**
+$$
+b_0 = (2.6667)(72) + (-0.5)(380) = 192 - 190 = 2
+$$
+
+**Row 2 (b₁):**
+$$
+b_1 = (-0.5)(72) + (0.1)(380) = -36 + 38 = 2
+$$
+
+Therefore:
+$$
+\mathbf{b} = \begin{bmatrix} 2 \\ 2 \end{bmatrix}
+$$
+
+So $b_0 = 2$ and $b_1 = 2$.
+
+### Part C: Derive from Normal Equations
+
+**Write out the two equations:**
+
+From $\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$:
+
+$$
+\begin{bmatrix} 6 & 30 \\ 30 & 160 \end{bmatrix} \begin{bmatrix} b_0 \\ b_1 \end{bmatrix} = \begin{bmatrix} 72 \\ 380 \end{bmatrix}
+$$
+
+**Equation 1:** $6b_0 + 30b_1 = 72$
+
+**Equation 2:** $30b_0 + 160b_1 = 380$
+
+**Solve algebraically:**
+
+From Equation 1:
+$$
+6b_0 + 30b_1 = 72
+$$
+$$
+b_0 = \frac{72 - 30b_1}{6} = 12 - 5b_1
+$$
+
+Substitute into Equation 2:
+$$
+30(12 - 5b_1) + 160b_1 = 380
+$$
+$$
+360 - 150b_1 + 160b_1 = 380
+$$
+$$
+10b_1 = 20
+$$
+$$
+b_1 = 2
+$$
+
+Back-substitute:
+$$
+b_0 = 12 - 5(2) = 12 - 10 = 2
+$$
+
+**Result:** $b_0 = 2$, $b_1 = 2$ ✓ (Matches Part B!)
+
+---
+
+## Solution to Exercise 3: Properties of Residuals
+
+### Part A: Prove Residuals Sum to Zero
+
+**To prove:** $\sum_{i=1}^{n} e_i = 0$
+
+**Proof:**
+
+The normal equations are:
+$$
+\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}
+$$
+
+Multiply both sides by $(\mathbf{X}'\mathbf{X})^{-1}$:
+$$
+\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}
+$$
+
+Now, consider the residuals:
+$$
+\mathbf{e} = \mathbf{y} - \mathbf{X}\mathbf{b}
+$$
+
+From the normal equations, we can show that $\mathbf{X}'\mathbf{e} = \mathbf{0}$:
+
+$$
+\mathbf{X}'\mathbf{e} = \mathbf{X}'(\mathbf{y} - \mathbf{X}\mathbf{b}) = \mathbf{X}'\mathbf{y} - \mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y} - \mathbf{X}'\mathbf{y} = \mathbf{0}
+$$
+
+The first row of $\mathbf{X}'$ is $[1, 1, 1, \ldots, 1]$ (n ones), so the first element of $\mathbf{X}'\mathbf{e} = \mathbf{0}$ is:
+
+$$
+[1, 1, \ldots, 1] \begin{bmatrix} e_1 \\ e_2 \\ \vdots \\ e_n \end{bmatrix} = \sum_{i=1}^{n} e_i = 0
+$$
+
+Therefore, the residuals sum to zero. **QED**
+
+### Part B: Prove Orthogonality Condition
+
+**To prove:** $\sum_{i=1}^{n} x_i e_i = 0$
+
+**Proof:**
+
+From Part A, we showed that $\mathbf{X}'\mathbf{e} = \mathbf{0}$.
+
+The second row of $\mathbf{X}'$ is $[x_1, x_2, \ldots, x_n]$, so the second element of $\mathbf{X}'\mathbf{e} = \mathbf{0}$ is:
+
+$$
+[x_1, x_2, \ldots, x_n] \begin{bmatrix} e_1 \\ e_2 \\ \vdots \\ e_n \end{bmatrix} = \sum_{i=1}^{n} x_i e_i = 0
+$$
+
+Therefore, the sum of products of predictors and residuals is zero. **QED**
+
+### Part C: Geometric Meaning
+
+The orthogonality condition $\sum x_i e_i = 0$ means that the residual vector $\mathbf{e}$ is **perpendicular** (orthogonal) to the column space of the design matrix $\mathbf{X}$.
+
+Geometrically, this means the least squares solution projects the response vector $\mathbf{y}$ onto the column space of $\mathbf{X}$, and the residuals represent the component of $\mathbf{y}$ that is perpendicular to this space. This is why least squares gives the "best" fit—it finds the point in the column space of $\mathbf{X}$ that is closest to $\mathbf{y}$ in terms of Euclidean distance.
+
+---
+
+## Solution to Exercise 4: Pig Feed Efficiency Analysis
+
+### Part A: Load and Explore Data
+
+```{r}
+#| label: ex4-load-data
+#| message: false
+
+# Load the data
+pig_data <- read.csv("data/pig_feed_efficiency.csv")
+
+# Display first few rows
+head(pig_data, 10)
+
+# Summary statistics
+cat("Summary Statistics:\n")
+cat("==================\n\n")
+cat("Feed Intake (kg/day):\n")
+cat("  Mean:", mean(pig_data$feed_intake_kg), "\n")
+cat("  SD:  ", sd(pig_data$feed_intake_kg), "\n")
+cat("  Range:", range(pig_data$feed_intake_kg), "\n\n")
+
+cat("ADG (kg/day):\n")
+cat("  Mean:", mean(pig_data$adg_kg_day), "\n")
+cat("  SD:  ", sd(pig_data$adg_kg_day), "\n")
+cat("  Range:", range(pig_data$adg_kg_day), "\n")
+```
+
+```{r}
+#| label: ex4-scatter
+#| message: false
+#| fig-width: 7
+#| fig-height: 5
+
+# Create scatter plot
+plot(pig_data$feed_intake_kg, pig_data$adg_kg_day,
+     pch = 16, col = "darkgreen", cex = 1.3,
+     xlab = "Feed Intake (kg/day)",
+     ylab = "Average Daily Gain (kg/day)",
+     main = "Pig Feed Efficiency: ADG vs. Feed Intake")
+grid()
+```
+
+**Expected relationship:** Based on the scatter plot, we expect a **positive relationship**—pigs that eat more feed tend to have higher ADG. This makes biological sense.
+
+### Part B: Manual Regression
+
+```{r}
+#| label: ex4-manual
+#| message: false
+
+# Extract variables
+x <- pig_data$feed_intake_kg
+y <- pig_data$adg_kg_day
+n <- length(x)
+
+cat("Sample size:", n, "\n\n")
+
+# Construct design matrix
+X <- cbind(1, x)
+cat("Design matrix X (first 5 rows):\n")
+print(head(X, 5))
+
+# Compute X'X
+XtX <- t(X) %*% X
+cat("\nX'X:\n")
+print(XtX)
+
+# Compute X'y
+Xty <- t(X) %*% y
+cat("\nX'y:\n")
+print(Xty)
+
+# Solve for b
+b <- solve(XtX) %*% Xty
+cat("\nCoefficients:\n")
+cat("b0 (intercept):", b[1,1], "\n")
+cat("b1 (slope):    ", b[2,1], "\n")
+
+# Calculate fitted values
+y_hat <- X %*% b
+
+# Calculate residuals
+e <- y - y_hat
+
+# Calculate SSE
+SSE <- sum(e^2)
+cat("\nSSE:", SSE, "\n")
+```
+
+### Part C: Verify with lm()
+
+```{r}
+#| label: ex4-verify
+#| message: false
+
+# Fit with lm()
+fit_pig <- lm(adg_kg_day ~ feed_intake_kg, data = pig_data)
+
+cat("Comparison: Manual vs lm()\n")
+cat("===========================\n")
+cat("Intercept:\n")
+cat("  Manual:", b[1,1], "\n")
+cat("  lm():  ", coef(fit_pig)[1], "\n")
+cat("\nSlope:\n")
+cat("  Manual:", b[2,1], "\n")
+cat("  lm():  ", coef(fit_pig)[2], "\n")
+
+cat("\n\nFull lm() Summary:\n")
+cat("==================\n")
+summary(fit_pig)
+```
+
+Perfect match! ✓
+
+### Part D: Visualization
+
+```{r}
+#| label: ex4-viz
+#| message: false
+#| fig-width: 8
+#| fig-height: 6
+
+# Plot data and fitted line
+plot(pig_data$feed_intake_kg, pig_data$adg_kg_day,
+     pch = 16, col = "darkgreen", cex = 1.3,
+     xlab = "Feed Intake (kg/day)",
+     ylab = "Average Daily Gain (kg/day)",
+     main = "Pig Feed Efficiency: Fitted Regression")
+
+# Add regression line
+abline(b[1,1], b[2,1], col = "red", lwd = 2)
+
+# Add equation
+eq_text <- paste0("ADG = ", round(b[1,1], 3), " + ",
+                 round(b[2,1], 3), " × Feed Intake")
+text(2.0, 1.0, eq_text, cex = 1.1, col = "red")
+
+# Add legend
+legend("topleft",
+       legend = c("Observed data", "Fitted line"),
+       col = c("darkgreen", "red"),
+       pch = c(16, NA),
+       lty = c(NA, 1),
+       lwd = c(NA, 2))
+grid()
+```
+
+### Part E: Biological Interpretation
+
+```{r}
+#| label: ex4-interpret
+#| message: false
+
+b0 <- b[1,1]
+b1 <- b[2,1]
+
+cat("Biological Interpretation:\n")
+cat("==========================\n\n")
+
+cat("1. Slope interpretation:\n")
+cat("   The slope b1 =", round(b1, 4), "means that for every additional\n")
+cat("   1 kg/day of feed intake, ADG increases by", round(b1, 4), "kg/day.\n")
+cat("   This is the feed conversion efficiency.\n\n")
+
+cat("2. Sign of slope:\n")
+cat("   The slope is POSITIVE (", round(b1, 4), "), which makes perfect\n")
+cat("   biological sense: more feed → more growth.\n\n")
+
+cat("3. Effect of +0.5 kg/day feed:\n")
+increase <- 0.5 * b1
+cat("   If feed intake increases by 0.5 kg/day, we expect ADG to\n")
+cat("   increase by", round(increase, 4), "kg/day.\n\n")
+
+cat("4. Feed needed for 1.0 kg/day ADG:\n")
+target_adg <- 1.0
+feed_needed <- (target_adg - b0) / b1
+cat("   To achieve ADG = 1.0 kg/day:\n")
+cat("   1.0 = b0 + b1 × Feed\n")
+cat("   Feed = (1.0 - b0) / b1 =", round(feed_needed, 3), "kg/day\n")
+```
+
+---
+
+## Solution to Exercise 5: Understanding the Design Matrix
+
+### Part A: Design Matrix Structure
+
+**Data:**
+| $i$ | $x_i$ | $y_i$ |
+|-----|-------|-------|
+| 1   | 2     | 5     |
+| 2   | 4     | 9     |
+| 3   | 6     | 12    |
+
+**1. Design matrix $\mathbf{X}$ (3×2):**
+
+$$
+\mathbf{X} = \begin{bmatrix} 1 & 2 \\ 1 & 4 \\ 1 & 6 \end{bmatrix}_{3 \times 2}
+$$
+
+- First column: all 1s (for intercept $\beta_0$)
+- Second column: predictor values (for slope $\beta_1$)
+
+**2. Response vector $\mathbf{y}$ (3×1):**
+
+$$
+\mathbf{y} = \begin{bmatrix} 5 \\ 9 \\ 12 \end{bmatrix}_{3 \times 1}
+$$
+
+**3. Parameter vector $\boldsymbol{\beta}$ (2×1):**
+
+$$
+\boldsymbol{\beta} = \begin{bmatrix} \beta_0 \\ \beta_1 \end{bmatrix}_{2 \times 1}
+$$
+
+### Part B: Matrix Multiplication
+
+**1. Calculate $\mathbf{X}'\mathbf{X}$:**
+
+$$
+\mathbf{X}' = \begin{bmatrix} 1 & 1 & 1 \\ 2 & 4 & 6 \end{bmatrix}_{2 \times 3}
+$$
+
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix} 1 & 1 & 1 \\ 2 & 4 & 6 \end{bmatrix} \begin{bmatrix} 1 & 2 \\ 1 & 4 \\ 1 & 6 \end{bmatrix}
+$$
+
+Element (1,1): $1(1) + 1(1) + 1(1) = 3$
+
+Element (1,2): $1(2) + 1(4) + 1(6) = 12$
+
+Element (2,1): $2(1) + 4(1) + 6(1) = 12$
+
+Element (2,2): $2(2) + 4(4) + 6(6) = 4 + 16 + 36 = 56$
+
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix} 3 & 12 \\ 12 & 56 \end{bmatrix}_{2 \times 2}
+$$
+
+**2. Calculate $\mathbf{X}'\mathbf{y}$:**
+
+$$
+\mathbf{X}'\mathbf{y} = \begin{bmatrix} 1 & 1 & 1 \\ 2 & 4 & 6 \end{bmatrix} \begin{bmatrix} 5 \\ 9 \\ 12 \end{bmatrix}
+$$
+
+Element 1: $1(5) + 1(9) + 1(12) = 26$
+
+Element 2: $2(5) + 4(9) + 6(12) = 10 + 36 + 72 = 118$
+
+$$
+\mathbf{X}'\mathbf{y} = \begin{bmatrix} 26 \\ 118 \end{bmatrix}_{2 \times 1}
+$$
+
+**3. Dimensions:**
+- $\mathbf{X}'\mathbf{X}$ is 2×2 (square, symmetric)
+- $\mathbf{X}'\mathbf{y}$ is 2×1 (column vector)
+
+### Part C: Role of the Intercept Column
+
+**1. What if we removed the first column?**
+
+If we removed the intercept column, we would have a **regression through the origin** model:
+$$
+y_i = \beta_1 x_i + e_i
+$$
+
+This forces the regression line to pass through the origin (0,0). This is only appropriate when we have strong theoretical reasons to believe $y = 0$ when $x = 0$.
+
+**2. Why is the intercept column necessary?**
+
+The intercept column allows the regression line to have a non-zero y-intercept. Without it:
+- The line must pass through (0,0)
+- We lose a degree of freedom
+- The model is more restrictive and may fit poorly
+- Residuals no longer sum to zero
+
+**3. When might we want regression through the origin?**
+
+Examples where $y = 0$ when $x = 0$ makes sense:
+- Distance traveled vs. time (when time = 0, distance = 0)
+- Total cost vs. number of items (when items = 0, cost = 0, assuming no fixed costs)
+- Milk production vs. feed intake (when feed = 0, milk ≈ 0)
+
+But be cautious! Even when theoretically justified, forcing through the origin can give poor fits if the relationship doesn't truly pass through (0,0).
+
+### Part D: Interpretation
+
+**1. Which column of $\mathbf{X}$ corresponds to $\beta_0$?**
+
+The **first column** (all 1s) corresponds to $\beta_0$, the intercept.
+
+**2. Which column of $\mathbf{X}$ corresponds to $\beta_1$?**
+
+The **second column** (the $x$ values) corresponds to $\beta_1$, the slope.
+
+**3. Dimensions of $\mathbf{X}\boldsymbol{\beta}$:**
+
+$$
+\mathbf{X}\boldsymbol{\beta} = \begin{bmatrix} 1 & 2 \\ 1 & 4 \\ 1 & 6 \end{bmatrix}_{3 \times 2} \begin{bmatrix} \beta_0 \\ \beta_1 \end{bmatrix}_{2 \times 1} = \begin{bmatrix} \cdot \\ \cdot \\ \cdot \end{bmatrix}_{3 \times 1}
+$$
+
+The result is **3×1** (same as $\mathbf{y}$).
+
+**4. Why must $\mathbf{X}\boldsymbol{\beta}$ be the same dimension as $\mathbf{y}$?**
+
+Because the model is $\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}$. For this equation to make sense:
+- $\mathbf{X}\boldsymbol{\beta}$ represents the expected values (fitted values) for each observation
+- $\mathbf{y}$ contains the observed values for each observation
+- $\mathbf{e}$ contains the residuals for each observation
+- All three must have the same dimension: $n \times 1$ (one value per observation)
+
+---
+
+## Solution to Challenge Problem
+
+### Analysis of Dairy Lactation Data
+
+```{r}
+#| label: challenge
+#| message: false
+
+# Load data
+dairy <- read.csv("data/dairy_lactation.csv")
+
+# Fit model
+x <- dairy$days_in_milk
+y <- dairy$milk_yield_kg
+n <- length(x)
+
+# Manual calculation
+X <- cbind(1, x)
+b <- solve(t(X) %*% X) %*% t(X) %*% y
+y_hat <- X %*% b
+e <- y - y_hat
+
+# Calculate sum of squares
+SSE <- sum(e^2)
+SST <- sum((y - mean(y))^2)
+R2 <- 1 - SSE/SST
+
+cat("Model Results:\n")
+cat("==============\n")
+cat("Intercept:", b[1,1], "kg/day\n")
+cat("Slope:    ", b[2,1], "kg/(day·DIM)\n\n")
+
+cat("Sum of Squares:\n")
+cat("  SSE (error):", round(SSE, 4), "\n")
+cat("  SST (total):", round(SST, 4), "\n")
+cat("  SSM (model):", round(SST - SSE, 4), "\n\n")
+
+cat("R-squared:", round(R2, 4), "\n")
+cat("This means", round(R2 * 100, 2), "% of the variation in milk yield\n")
+cat("is explained by days in milk.\n")
+```
+
+### Interpretation and Model Adequacy
+
+**R² Interpretation:**
+
+The R² value of approximately 0.92 (92%) indicates that days in milk explains 92% of the variation in milk yield in this linear model. This is a strong relationship.
+
+**Is a linear model appropriate?**
+
+While the linear model explains a lot of variation, there are some concerns:
+
+1. **Biological reality:** True lactation curves are **nonlinear**
+   - Peak production occurs around 60-90 days postpartum
+   - Production rises rapidly early in lactation
+   - Then gradually declines
+   - A linear model misses the peak
+
+2. **Our data range:** We only have data from days 15-95
+   - This misses the early rise
+   - Captures mainly the declining phase
+   - Linear approximation may be adequate for this limited range
+
+3. **What would improve the model?**
+   - **Polynomial regression** (Week 14): Include $x^2$, $x^3$ terms to capture curvature
+   - **Wood's lactation curve**: A specialized nonlinear model for lactation
+   - **Spline regression**: Flexible fitting with smooth curves
+
+Despite these limitations, the linear model serves as a useful first-order approximation for this phase of lactation!
+
+---
+
+## Summary
+
+These exercises covered:
+
+✓ Manual calculation of regression coefficients
+✓ Matrix operations for solving normal equations
+✓ Theoretical properties of residuals
+✓ Applied data analysis with R
+✓ Understanding the design matrix structure
+✓ Biological interpretation of results
+
+Keep practicing these concepts—they form the foundation for all linear models!

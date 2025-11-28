@@ -1,28 +1,497 @@
-# Week 6: Multiple Regression {#sec-week06}
+---
+title: "Week 6: Multiple Regression"
+format: html
+bibliography: ../references.bib
+---
 
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. Extend simple regression to multiple predictors
-2. Interpret partial regression coefficients
-3. Understand collinearity and its consequences
-4. Compare sequential vs. partial sums of squares
+*   Extend simple linear regression to models with multiple predictors.
+*   Construct and solve the normal equations for multiple regression in matrix form.
+*   Interpret partial regression coefficients and distinguish them from marginal effects.
+*   Partition sums of squares into sequential (Type I) and partial (Type III) components.
+*   Identify collinearity and quantify its impact using Variance Inflation Factors (VIF).
+*   Compare and select models using criteria such as AIC, BIC, and Mallows' $C_p$.
 
-## Coming Soon
+## Conceptual Introduction
 
-This chapter is under development. The complete content will include:
+In the previous weeks, we focused on simple linear regression where a single independent variable $x$ explains the variation in a response variable $y$. However, biological systems are rarely governed by a single factor. In animal breeding and genetics, phenotypes like growth rate, milk yield, or disease resistance are influenced by multiple environmental and genetic factors simultaneously.
 
-- Multiple regression model
-- Interpretation of partial coefficients
-- R² and adjusted R²
-- Sequential vs. partial SS
-- F-tests and t-tests
-- Collinearity and VIF
-- Small example: Lamb weaning weight prediction
-- Realistic application: Beef carcass marbling
-- R implementation and exercises
+**Multiple Linear Regression** allows us to model the relationship between a response variable and multiple predictor variables. For example, we might want to predict a beef steer's average daily gain based on its initial weight, frame size, and the energy density of its diet.
 
-**Previous**: [Week 5: Least Squares Theory](../Week05_LeastSquares/Week05_LeastSquares.qmd)
+The transition from simple to multiple regression is mathematically straightforward when using matrix algebra. The model $\mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e}$ remains the same; the only difference is the dimensions of $\mathbf{X}$ and $\boldsymbol{\beta}$. However, the *interpretation* of the results becomes more nuanced. We must now consider how predictors relate to each other (collinearity) and how the order of predictors in the model might affect our conclusions (sequential vs. partial sums of squares). Furthermore, with more predictors available, we face the challenge of **model selection**: determining which subset of variables provides the best balance between model fit and complexity.
 
-**Next**: [Week 7: One-Way ANOVA](../Week07_ANOVA_OneWay/Week07_ANOVA_OneWay.qmd)
+## Mathematical Theory
+
+### The Multiple Regression Model
+
+The multiple linear regression model relates a response $y_i$ to $p-1$ predictor variables $x_1, x_2, ..., x_{p-1}$:
+
+$$ y_i = \beta_0 + \beta_1 x_{i1} + \beta_2 x_{i2} + \dots + \beta_{p-1} x_{i,p-1} + e_i $$
+
+where:
+
+* $y_i$ is the $i^{th}$ observation of the response variable.
+* $\beta_0$ is the intercept.
+* $\beta_j$ is the partial regression coefficient for the $j^{th}$ predictor.
+* $x_{ij}$ is the value of the $j^{th}$ predictor for the $i^{th}$ observation.
+* $e_i$ is the random error term, assumed $e_i \sim N(0, \sigma^2)$.
+
+::: {.callout-note}
+## Notation Convention: p vs. p-1
+
+In this chapter, we use the following notation consistently:
+
+* **p-1** = number of predictor variables (covariates): $x_1, x_2, \ldots, x_{p-1}$
+* **p** = total number of parameters (including the intercept): $\beta_0, \beta_1, \ldots, \beta_{p-1}$
+
+For example, if you have 3 predictors (birth weight, dam age, sex), then:
+* p-1 = 3 (three predictor variables)
+* p = 4 (four total parameters: intercept + three predictors)
+
+This notation is consistent with the design matrix dimensions: $\mathbf{X}$ is $n \times p$, where the first column is all 1's (for the intercept) and the remaining p-1 columns contain the predictor variables.
+:::
+
+### Matrix Representation
+
+In matrix notation, the model is:
+
+$$ \mathbf{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{e} $$
+
+where:
+
+*   $\mathbf{y}$ is an $n \times 1$ vector of observations.
+*   $\mathbf{X}$ is an $n \times p$ design matrix (including a column of ones for the intercept).
+*   $\boldsymbol{\beta}$ is a $p \times 1$ vector of fixed effects parameters.
+*   $\mathbf{e}$ is an $n \times 1$ vector of residuals.
+
+$$ 
+\mathbf{y} = 
+\begin{bmatrix} 
+	y_1 \\ 
+	y_2 \\
+	\vdots \\ 
+	y_n 
+\end{bmatrix}
+$$ 
+
+$$
+\quad \mathbf{X} = 
+\begin{bmatrix} 
+	1 & x_{11} & \dots & x_{1,p-1} \\ 
+	1 & x_{21} & \dots & x_{2,p-1} \\ 
+	\vdots & \vdots & \ddots & \vdots \\ 
+	1 & x_{n1} & \dots & x_{n,p-1} 
+\end{bmatrix}
+$$ 
+
+$$
+\quad \boldsymbol{\beta} = 
+\begin{bmatrix} 
+	\beta_0 \\ 
+	\beta_1 \\ 
+	\vdots \\ 
+	\beta_{p-1} 
+\end{bmatrix}
+$$ 
+
+$$
+\quad \mathbf{e} = 
+\begin{bmatrix} 
+	e_1 \\ 
+	e_2 \\ 
+	\vdots \\ 
+	e_n 
+\end{bmatrix} 
+$$
+
+::: {.callout-note}
+**Notation Reminder**: $n$ is the number of observations, and $p$ is the number of parameters (including the intercept). The degrees of freedom for error will be $n-p$.
+:::
+
+### Least Squares Estimation
+
+We estimate $\boldsymbol{\beta}$ by minimizing the sum of squared residuals ($SSE = \mathbf{e}'\mathbf{e}$). The solution is given by the normal equations:
+
+$$ \mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y} $$
+
+Assuming $\mathbf{X}$ is full rank ($r(\mathbf{X}) = p$), the unique solution is:
+
+$$ \mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y} $$
+
+### Interpretation of Coefficients
+
+In simple regression, $\beta_1$ is the expected change in $y$ for a one-unit increase in $x$. In multiple regression, $\beta_j$ is the **partial regression coefficient**. It represents the expected change in $y$ for a one-unit increase in $x_j$, **holding all other predictors constant**.
+
+This distinction is crucial. The marginal effect of a variable (ignored other predictors) can be very different from its partial effect (adjusted for other predictors), especially if the predictors are correlated.
+
+### Sums of Squares: Sequential vs. Partial
+
+When predictors are correlated, the variability in $y$ explained by $x_1$ might overlap with that explained by $x_2$. We must define how we partition the Model Sum of Squares ($SSM$).
+
+#### Sequential (Type I) Sums of Squares
+
+This approach builds the model one variable at a time, in the order specified.
+
+*   $R(\beta_0)$: SS due to intercept (uncorrected mean).
+*   $R(\beta_1 | \beta_0)$: SS due to $x_1$ given intercept.
+*   $R(\beta_2 | \beta_0, \beta_1)$: SS due to $x_2$ given intercept and $x_1$.
+*   ...
+
+**Key**: The order matters! $R(\beta_1 | \beta_0) + R(\beta_2 | \beta_0, \beta_1) \neq R(\beta_2 | \beta_0) + R(\beta_1 | \beta_0, \beta_2)$ if $x_1$ and $x_2$ are correlated.
+
+#### Partial (Type III) Sums of Squares
+
+This approach calculates the SS for each variable as if it were the *last* one added to the model.
+
+*   $R(\beta_1 | \beta_0, \beta_2, \dots)$: SS due to $x_1$ given all other predictors.
+*   $R(\beta_2 | \beta_0, \beta_1, \dots)$: SS due to $x_2$ given all other predictors.
+
+**Key**: The order does not matter. These tests correspond to the standard t-tests for coefficients output by software like R. Note that for Type III SS, the sums of squares for individual predictors generally do not sum to the total Model SS if the data are unbalanced or predictors are correlated.
+
+### Collinearity and Variance Inflation Factor (VIF)
+
+**Collinearity** occurs when two or more predictor variables are highly correlated.
+
+*   **Perfect collinearity**: Predictors are linearly dependent (e.g., weight in kg and weight in lbs). $\mathbf{X}'\mathbf{X}$ is singular and cannot be inverted.
+*   **Near collinearity**: Predictors are strongly but not perfectly correlated. $\mathbf{X}'\mathbf{X}$ is invertible, but the variances of the estimates, $Var(\mathbf{b}) = (\mathbf{X}'\mathbf{X})^{-1}\sigma^2$, become very large.
+
+The **Variance Inflation Factor (VIF)** quantifies how much the variance of an estimated regression coefficient is increased because of collinearity. For predictor $j$:
+
+$$ VIF_j = \frac{1}{1 - R^2_j} $$
+
+where $R^2_j$ is the coefficient of determination from a regression of predictor $x_j$ on all other predictors.
+
+*   $VIF = 1$: No correlation.
+*   $VIF > 5-10$: Serious collinearity issues.
+
+### Model Selection Criteria
+
+When we have many potential predictors, we often want to select the "best" subset. We seek a model that fits the data well (low SSE) but is not overly complex (low $p$).
+
+#### 1. Akaike Information Criterion (AIC)
+
+Proposed by @akaike1974, AIC estimates the relative quality of statistical models.
+
+$$ AIC = 2p - 2\ln(\hat{L}) $$
+
+For least squares models with normal errors (ignoring constants):
+
+$$ AIC = n \ln\left(\frac{SSE}{n}\right) + 2p $$
+
+*   **Goal**: Minimize AIC.
+*   **Penalty**: $2p$ (penalizes adding parameters).
+
+#### 2. Bayesian Information Criterion (BIC)
+
+Proposed by @schwarz1978, BIC imposes a heavier penalty for model complexity when $n > 7$.
+
+$$ BIC = n \ln\left(\frac{SSE}{n}\right) + p \ln(n) $$
+
+*   **Goal**: Minimize BIC.
+*   **Penalty**: $p \ln(n)$. Tends to select simpler models than AIC.
+
+#### 3. Mallows' $C_p$
+Proposed by @mallows1973, $C_p$ compares the precision of a sub-model to the full model.
+
+$$ C_p = \frac{SSE_p}{MSE_{full}} - (n - 2p) $$
+where $SSE_p$ is from the sub-model with $p$ parameters, and $MSE_{full}$ is from the model with all available predictors.
+*   **Goal**: Look for models where $C_p \approx p$.
+
+## Small Numerical Example
+
+We wish to predict lamb weaning weight ($y$, kg) using birth weight ($x_1$, kg), dam age ($x_2$, years), and sex ($x_3$, 0=ewe, 1=ram).
+
+**Data**:
+
+| Observation | Birth Wt ($x_1$) | Dam Age ($x_2$) | Sex ($x_3$) | Weaning Wt ($y$) |
+|:-----------:|:----------------:|:---------------:|:-----------:|:----------------:|
+| 1           | 4.5              | 3               | 1           | 28               |
+| 2           | 4.0              | 5               | 0           | 24               |
+| 3           | 4.8              | 4               | 1           | 30               |
+| 4           | 4.2              | 6               | 0           | 26               |
+| 5           | 4.6              | 4               | 1           | 29               |
+
+**1. Construct Matrices**
+
+$$ \mathbf{y} = \begin{bmatrix} 28 \ 24 \ 30 \ 26 \ 29 \end{bmatrix}, \quad \mathbf{X} = \begin{bmatrix} 1 & 4.5 & 3 & 1 \ 1 & 4.0 & 5 & 0 \ 1 & 4.8 & 4 & 1 \ 1 & 4.2 & 6 & 0 \ 1 & 4.6 & 4 & 1 \end{bmatrix}, \quad \boldsymbol{\beta} = \begin{bmatrix} \beta_0 \ \beta_1 \ \beta_2 \ \beta_3 \end{bmatrix} $$
+
+**2. Normal Equations Components**
+
+We compute $\mathbf{X}'\mathbf{X}$ and $\mathbf{X}'\mathbf{y}$.
+
+```{r}
+#| label: small-example-setup
+#| echo: true
+
+y <- c(28, 24, 30, 26, 29)
+X <- matrix(c(
+  1, 4.5, 3, 1,
+  1, 4.0, 5, 0,
+  1, 4.8, 4, 1,
+  1, 4.2, 6, 0,
+  1, 4.6, 4, 1
+), ncol=4, byrow=TRUE)
+colnames(X) <- c("Int", "BirthWt", "DamAge", "Sex")
+
+XtX <- t(X) %*% X
+Xty <- t(X) %*% y
+```
+
+$$ \mathbf{X}'\mathbf{X} = \begin{bmatrix} 5 & 22.1 & 22 & 3 \ 22.1 & 98.09 & 96.7 & 13.9 \ 22 & 96.7 & 102 & 11 \ 3 & 13.9 & 11 & 3 \end{bmatrix} $$
+
+**3. Solve for b**
+
+$$ \mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y} $$
+
+```{r}
+#| label: small-example-solve
+#| echo: true
+
+b <- solve(XtX) %*% Xty
+print(b)
+```
+
+The estimated equation is:
+$$ \hat{y} = -2.87 + 4.96(x_1) + 0.99(x_2) + 0.35(x_3) $$
+
+**Interpretation**:
+
+*   For every 1 kg increase in birth weight, weaning weight increases by 4.96 kg, holding dam age and sex constant.
+*   Rams ($x_3=1$) are estimated to be 0.35 kg heavier than ewes ($x_3=0$) of the same birth weight and dam age.
+
+## Realistic Livestock Application
+
+We will analyze a dataset of beef cattle carcass traits. The goal is to predict **Marbling Score** based on **Live Weight**, **Ribeye Area**, and **Backfat Thickness**.
+
+*   **Marbling**: Intramuscular fat score (higher is better for quality grade).
+*   **Live Weight**: Weight of animal prior to slaughter (kg).
+*   **Ribeye Area**: Area of the *Longissimus dorsi* muscle ($cm^2$).
+*   **Backfat**: Subcutaneous fat thickness (cm).
+
+### Load Data and Exploratory Analysis
+
+```{r}
+#| label: load-data
+#| echo: true
+
+# Load the dataset
+df <- read.csv("data/beef_carcass_marbling.csv")
+head(df)
+
+# Check for correlations (collinearity check)
+cor(df)
+```
+
+Notice the correlation between the predictors. High correlations might indicate collinearity issues.
+
+### Fit the Multiple Regression Model
+
+We build the $\mathbf{X}$ matrix and solve.
+
+```{r}
+#| label: fit-model
+#| echo: true
+
+n <- nrow(df)
+X <- as.matrix(cbind(1, df[, c("LiveWeight", "RibeyeArea", "Backfat")]))
+y <- df$Marbling
+p <- ncol(X)
+
+# 1. Solve for b
+XtX <- t(X) %*% X
+Xty <- t(X) %*% y
+b <- solve(XtX) %*% Xty
+
+rownames(b) <- c("Intercept", "LiveWeight", "RibeyeArea", "Backfat")
+print(b)
+```
+
+### Calculate Statistics ($R^2$, MSE)
+
+```{r}
+#| label: model-stats
+#| echo: true
+
+# Fitted values and residuals
+y_hat <- X %*% b
+e <- y - y_hat
+
+# Sums of squares
+SST <- sum((y - mean(y))^2)
+SSE <- sum(e^2)
+SSM <- SST - SSE
+
+# R-squared and Adjusted R-squared
+R2 <- SSM / SST
+R2_adj <- 1 - (SSE / (n - p)) / (SST / (n - 1))
+
+# Mean Square Error
+MSE <- SSE / (n - p)
+sigma_hat <- sqrt(MSE)
+
+cat("R-squared:", round(R2, 4), "\n")
+cat("Adj R-squared:", round(R2_adj, 4), "\n")
+cat("MSE:", round(MSE, 4), "\n")
+```
+
+### Variance Inflation Factors (VIF)
+
+Let's calculate VIF for each predictor to check for multicollinearity.
+
+```{r}
+#| label: vif-calc
+#| echo: true
+
+# Function to calculate VIF for a predictor index j (excluding intercept)
+calc_vif <- function(X, j) {
+  # Regress x_j on other x's (excluding intercept col 1 and target col j)
+  # The input X includes intercept at col 1.
+  
+  y_j <- X[, j]
+  X_others <- X[, -c(j)] # Includes intercept and other predictors
+  
+  b_j <- solve(t(X_others) %*% X_others) %*% t(X_others) %*% y_j
+  y_j_hat <- X_others %*% b_j
+  
+  SST_j <- sum((y_j - mean(y_j))^2)
+  SSE_j <- sum((y_j - y_j_hat)^2)
+  R2_j <- 1 - SSE_j/SST_j
+  
+  return(1 / (1 - R2_j))
+}
+
+# Calculate VIF for predictors (columns 2, 3, 4 of X)
+vifs <- c(
+  LiveWeight = calc_vif(X, 2),
+  RibeyeArea = calc_vif(X, 3),
+  Backfat = calc_vif(X, 4)
+)
+print(vifs)
+```
+
+*   **Interpretation**: If any VIF > 5 or 10, we should be concerned. A high VIF for Live Weight might be expected if it is correlated with Ribeye Area and Backfat.
+
+### Model Selection (AIC/BIC)
+
+Let's compare the full model against a reduced model without `RibeyeArea` (assuming it might be non-significant or redundant).
+
+```{r}
+#| label: model-selection
+#| echo: true
+
+# Full Model AIC/BIC
+AIC_full <- n * log(SSE / n) + 2 * p
+BIC_full <- n * log(SSE / n) + p * log(n)
+
+# Reduced Model (drop RibeyeArea, col 3)
+X_red <- X[, -3]
+p_red <- ncol(X_red)
+
+b_red <- solve(t(X_red) %*% X_red) %*% t(X_red) %*% y
+e_red <- y - X_red %*% b_red
+SSE_red <- sum(e_red^2)
+
+AIC_red <- n * log(SSE_red / n) + 2 * p_red
+BIC_red <- n * log(SSE_red / n) + p_red * log(n)
+
+results <- data.frame(
+  Model = c("Full", "Reduced"),
+  p = c(p, p_red),
+  SSE = c(SSE, SSE_red),
+  AIC = c(AIC_full, AIC_red),
+  BIC = c(BIC_full, BIC_red)
+)
+print(results)
+```
+
+We choose the model with the lowest AIC or BIC.
+
+## Solver Implementation in R
+
+Below is a more generalized function that computes multiple regression statistics, including AIC and BIC.
+
+```{r}
+#| label: solver-function
+#| echo: true
+
+solve_ols <- function(X, y) {
+  n <- nrow(X)
+  p <- ncol(X)
+  
+  # 1. Coefficients
+  XtX <- t(X) %*% X
+  # Check for singularity
+  if(kappa(XtX) > 1e12) warning("Design matrix is near singular!")
+  XtX_inv <- solve(XtX)
+  b <- XtX_inv %*% t(X) %*% y
+  
+  # 2. Residuals and Fit
+  y_hat <- X %*% b
+  e <- y - y_hat
+  
+  # 3. Variance stats
+  SSE <- sum(e^2)
+  SST <- sum((y - mean(y))^2)
+  MSE <- SSE / (n - p)
+  R2 <- 1 - SSE/SST
+  R2_adj <- 1 - (SSE/(n-p))/(SST/(n-1))
+  
+  # 4. Standard Errors
+  var_b <- XtX_inv * MSE
+  se_b <- sqrt(diag(var_b))
+  t_vals <- b / se_b
+  p_vals <- 2 * (1 - pt(abs(t_vals), df = n - p))
+  
+  # 5. Information Criteria
+  AIC_val <- n * log(SSE/n) + 2 * p
+  BIC_val <- n * log(SSE/n) + p * log(n)
+  
+  return(list(
+    Coefficients = cbind(Estimate=b, SE=se_b, t=t_vals, p=p_vals),
+    Stats = c(R2=R2, R2_adj=R2_adj, MSE=MSE, AIC=AIC_val, BIC=BIC_val)
+  ))
+}
+
+# Test with our beef data
+results <- solve_ols(X, y)
+print(results)
+
+# Compare with built-in R function
+# fit_lm <- lm(Marbling ~ LiveWeight + RibeyeArea + Backfat, data=df)
+# summary(fit_lm)
+# AIC(fit_lm)
+```
+
+## Exercises
+
+### Conceptual
+1.  Explain why partial regression coefficients can differ in sign from simple linear regression coefficients for the same variables.
+2.  Prove that $VIF_j = 1$ when predictor $x_j$ is orthogonal to all other predictors.
+3.  Why does adding a variable always increase $R^2$ but not necessarily Adjusted $R^2$ or decrease AIC?
+
+### Computational
+1.  Using the **Small Numerical Example** data:
+    a.  Calculate the sequential Sums of Squares: $R(BirthWt | Int)$, $R(DamAge | Int, BirthWt)$, and $R(Sex | Int, BirthWt, DamAge)$.
+    b.  Calculate the partial Sum of Squares for Sex: $R(Sex | Int, BirthWt, DamAge)$. Compare to the sequential result. Are they the same? Why or why not?
+    c.  Calculate the AIC for this model.
+
+2.  **Simulation Exercise**:
+    a.  Generate a dataset with $n=100$ where $x_1$ and $x_2$ have a correlation of 0.9. Let $y = x_1 + x_2 + e$.
+    b.  Fit the model $y = \beta_0 + \beta_1 x_1 + \beta_2 x_2 + e$. Check the standard errors of $\beta_1$ and $\beta_2$.
+    c.  Calculate VIFs.
+    d.  Fit the model $y = \beta_0 + \beta_1 x_1 + e$. How does the estimate of $\beta_1$ change?
+
+### Applied
+Using the **Beef Carcass** dataset provided in class (or the one analyzed in the chapter):
+1.  Fit a model predicting Marbling using only Backfat.
+2.  Fit the full model (LiveWt, Ribeye, Backfat).
+3.  Calculate Mallows' $C_p$ for the single-variable model (using the full model as the "true" estimate of $\sigma^2$).
+4.  Based on AIC, BIC, and $C_p$, which model is preferred?
+
+## References
+
+::: {#refs}
+:::

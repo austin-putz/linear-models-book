@@ -1,0 +1,62 @@
+---
+title: "Week 5: Exercises"
+author: "Claude"
+date: "today"
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-location: left
+    embed-resources: true
+    code-copy: true
+---
+
+### Question 1: Theoretical Properties (Part 1)
+
+Prove that the hat matrix, $\mathbf{H} = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'$, is symmetric. That is, show $\mathbf{H}' = \mathbf{H}$.
+
+*Hint: Use the property that $(\mathbf{ABC})' = \mathbf{C}'\mathbf{B}'\mathbf{A}'$ and that the inverse of a symmetric matrix is also symmetric.*
+
+### Question 2: Theoretical Properties (Part 2)
+
+Prove that the residual-forming matrix, $(\mathbf{I} - \mathbf{H})$, is idempotent. That is, show $(\mathbf{I} - \mathbf{H})(\mathbf{I} - \mathbf{H}) = (\mathbf{I} - \mathbf{H})$.
+
+*Hint: Expand the expression and use the fact that $\mathbf{H}$ is idempotent ($\mathbf{H}\mathbf{H} = \mathbf{H}$).*
+
+### Question 3: Hand Calculation Practice
+
+A small study was conducted to investigate the effect of daily protein intake (x, in grams) on average daily gain (y, in kg) in lambs.
+
+| Protein (g) | ADG (kg) |
+|:-----------:|:--------:|
+| 150         | 0.25     |
+| 160         | 0.28     |
+| 170         | 0.30     |
+| 180         | 0.31     |
+| 190         | 0.33     |
+
+For the simple linear regression model $y_i = \beta_0 + \beta_1 x_i + e_i$:
+
+a.  Construct the $\mathbf{X}$ matrix and $\boldsymbol{y}$ vector.
+b.  Calculate $\mathbf{X}'\mathbf{X}$ and its inverse, $(\mathbf{X}'\mathbf{X})^{-1}$.
+c.  Calculate $\mathbf{X}'\boldsymbol{y}$.
+d.  Solve for the least squares estimates $\boldsymbol{b} = \begin{pmatrix} b_0 \\ b_1 \end{pmatrix}$.
+e.  Calculate the Sum of Squares (SST, SSM, SSE).
+f.  Calculate the estimate of the residual variance, $\hat{\sigma}^2$.
+g.  Calculate the standard error for $b_1$.
+
+### Question 4: Understanding the Gauss-Markov Theorem
+
+Consider the simple model $y_i = \mu + e_i$, where $E(e_i)=0$ and $Var(e_i)=\sigma^2$. The least squares estimator for $\mu$ is the sample mean, $\hat{\mu} = \bar{y}$.
+
+Now consider a different linear, unbiased estimator. For example, let's use only the first two observations: $\tilde{\mu} = \frac{y_1 + y_2}{2}$.
+
+a.  Show that $\tilde{\mu}$ is a linear estimator (a linear combination of the $y_i$).
+b.  Show that $\tilde{\mu}$ is an unbiased estimator of $\mu$.
+c.  Calculate the variance of the least squares estimator, $Var(\hat{\mu}) = Var(\bar{y})$.
+d.  Calculate the variance of our alternative estimator, $Var(\tilde{\mu})$.
+e.  Compare the two variances. Which is smaller? How does this demonstrate the principle of the Gauss-Markov theorem (that the LS estimator is "Best")?
+
+### Question 5: Confidence Intervals
+
+Using your results from Question 3, construct a 95% confidence interval for the slope parameter, $\beta_1$. The required t-value is $t_{0.025, 3} = 3.182$. What can you conclude about the effect of protein intake on average daily gain?

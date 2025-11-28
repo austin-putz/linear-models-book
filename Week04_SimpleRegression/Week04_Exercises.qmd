@@ -1,0 +1,258 @@
+---
+title: "Week 4 Exercises: Simple Linear Regression"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: false
+    code-tools: true
+---
+
+# Week 4: Simple Linear Regression Exercises
+
+These exercises will help you practice the concepts learned in Week 4. Work through each problem carefully, showing all steps in your calculations.
+
+---
+
+## Exercise 1: Hand Calculation - Sheep Birth and Weaning Weight
+
+**Type:** Computational
+
+A researcher collected data on birth weight and weaning weight for 5 lambs:
+
+| Lamb ID | Birth Weight (kg), $x$ | Weaning Weight (kg), $y$ |
+|---------|------------------------|--------------------------|
+| 1       | 4.5                    | 28                       |
+| 2       | 4.0                    | 24                       |
+| 3       | 4.8                    | 30                       |
+| 4       | 4.2                    | 26                       |
+| 5       | 4.6                    | 29                       |
+
+We want to fit a simple linear regression model: $y_i = \beta_0 + \beta_1 x_i + e_i$
+
+### Part A: Calculate Summary Statistics
+
+Calculate the following (show your work):
+
+1. $\sum x_i$
+2. $\sum y_i$
+3. $\bar{x}$ (mean of x)
+4. $\bar{y}$ (mean of y)
+5. $\sum x_i^2$
+6. $\sum x_i y_i$
+
+### Part B: Construct Normal Equations
+
+Using your summary statistics:
+
+1. Write out the $\mathbf{X}'\mathbf{X}$ matrix (2×2)
+2. Write out the $\mathbf{X}'\mathbf{y}$ vector (2×1)
+3. Write the normal equations in matrix form
+
+### Part C: Solve for Coefficients
+
+Calculate the least squares estimates:
+
+1. Find $b_1$ using the formula: $b_1 = \frac{\sum x_i y_i - n\bar{x}\bar{y}}{\sum x_i^2 - n\bar{x}^2}$
+2. Find $b_0$ using the formula: $b_0 = \bar{y} - b_1\bar{x}$
+3. Write the fitted regression equation
+
+### Part D: Fitted Values and Residuals
+
+1. Calculate fitted values $\hat{y}_i$ for each observation
+2. Calculate residuals $e_i = y_i - \hat{y}_i$
+3. Verify that $\sum e_i \approx 0$
+
+### Part E: Sum of Squared Errors
+
+Calculate SSE = $\sum e_i^2$
+
+### Part F: Interpretation
+
+1. What does the slope $b_1$ represent in biological terms?
+2. Does the intercept $b_0$ have a meaningful biological interpretation? Why or why not?
+3. Predict the weaning weight for a lamb with birth weight 4.4 kg
+
+---
+
+## Exercise 2: Matrix Operations for Simple Regression
+
+**Type:** Computational
+
+Given the following values from a simple linear regression analysis:
+
+$$
+\mathbf{X}'\mathbf{X} = \begin{bmatrix} 6 & 30 \\ 30 & 160 \end{bmatrix}, \quad
+\mathbf{X}'\mathbf{y} = \begin{bmatrix} 72 \\ 380 \end{bmatrix}
+$$
+
+### Part A: Compute the Inverse
+
+Calculate $(\mathbf{X}'\mathbf{X})^{-1}$ using the formula for a 2×2 matrix inverse:
+
+$$
+\begin{bmatrix} a & b \\ c & d \end{bmatrix}^{-1} = \frac{1}{ad - bc} \begin{bmatrix} d & -b \\ -c & a \end{bmatrix}
+$$
+
+Show all steps including:
+1. Computing the determinant
+2. Applying the inverse formula
+
+### Part B: Solve for Coefficients
+
+Calculate $\mathbf{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$
+
+Show the matrix multiplication step-by-step.
+
+### Part C: Derive From Normal Equations
+
+The normal equations can also be written as:
+$$
+\begin{bmatrix} 6 & 30 \\ 30 & 160 \end{bmatrix} \begin{bmatrix} b_0 \\ b_1 \end{bmatrix} = \begin{bmatrix} 72 \\ 380 \end{bmatrix}
+$$
+
+1. Write out the two equations explicitly
+2. Solve for $b_0$ and $b_1$ algebraically
+3. Verify your answer matches Part B
+
+---
+
+## Exercise 3: Properties of Residuals (Conceptual)
+
+**Type:** Conceptual/Theoretical
+
+### Part A: Prove Residuals Sum to Zero
+
+For a simple linear regression model with an intercept, prove that the residuals always sum to zero:
+
+$$
+\sum_{i=1}^{n} e_i = 0
+$$
+
+**Hint:** Start with the normal equations $\mathbf{X}'\mathbf{e} = \mathbf{0}$ and use the fact that the first column of $\mathbf{X}$ is all ones.
+
+### Part B: Prove Orthogonality Condition
+
+Prove that $\sum_{i=1}^{n} x_i e_i = 0$
+
+**Hint:** Use the second row of the normal equations $\mathbf{X}'\mathbf{e} = \mathbf{0}$.
+
+### Part C: Explain the Meaning
+
+In 2-3 sentences, explain what it means geometrically that the residuals are "orthogonal" to the predictors.
+
+---
+
+## Exercise 4: Pig Feed Efficiency Analysis (Applied)
+
+**Type:** Applied
+
+Use the provided dataset `pig_feed_efficiency.csv` which contains data on daily feed intake (kg/day) and average daily gain (ADG, kg/day) for 20 pigs.
+
+### Part A: Load and Explore Data
+
+1. Load the dataset into R
+2. Create a scatter plot of ADG (y-axis) vs. feed intake (x-axis)
+3. Calculate summary statistics (mean, sd, range) for both variables
+4. Based on the scatter plot, do you expect a positive or negative relationship?
+
+### Part B: Manual Regression
+
+1. Construct the design matrix $\mathbf{X}$ manually
+2. Compute $\mathbf{X}'\mathbf{X}$ and $\mathbf{X}'\mathbf{y}$
+3. Solve for $\mathbf{b}$ using matrix operations
+4. Calculate fitted values and residuals
+5. Calculate SSE
+
+### Part C: Verify with lm()
+
+1. Fit the same model using R's `lm()` function
+2. Compare your manual estimates with `lm()` output
+3. Display the summary statistics
+
+### Part D: Visualization
+
+Create a plot showing:
+- Original data points
+- Fitted regression line
+- Regression equation on the plot
+
+### Part E: Biological Interpretation
+
+1. What does the slope represent in this context?
+2. Is the slope positive or negative? Does this make biological sense?
+3. What would happen to ADG if feed intake increased by 0.5 kg/day?
+4. Based on the model, what feed intake would be needed to achieve an ADG of 1.0 kg/day?
+
+---
+
+## Exercise 5: Understanding the Design Matrix
+
+**Type:** Conceptual
+
+### Part A: Design Matrix Structure
+
+Consider a simple linear regression with n = 3 observations:
+
+| $i$ | $x_i$ | $y_i$ |
+|-----|-------|-------|
+| 1   | 2     | 5     |
+| 2   | 4     | 9     |
+| 3   | 6     | 12    |
+
+1. Write out the complete $3 \times 2$ design matrix $\mathbf{X}$
+2. Write out the response vector $\mathbf{y}$ (3 × 1)
+3. Write out the parameter vector $\boldsymbol{\beta}$ (2 × 1)
+
+### Part B: Matrix Multiplication Practice
+
+1. Calculate $\mathbf{X}'\mathbf{X}$ by hand (show all steps)
+2. Calculate $\mathbf{X}'\mathbf{y}$ by hand (show all steps)
+3. What are the dimensions of each result?
+
+### Part C: Role of the Intercept Column
+
+1. What would happen if we removed the first column (all 1s) from $\mathbf{X}$?
+2. Explain why the intercept column is necessary for a regression model with an intercept
+3. In what situation might we want a regression model WITHOUT an intercept? (This is called "regression through the origin")
+
+### Part D: Interpretation
+
+Consider the model in scalar form: $y_i = \beta_0 + \beta_1 x_i + e_i$
+
+1. Which column of $\mathbf{X}$ corresponds to $\beta_0$?
+2. Which column of $\mathbf{X}$ corresponds to $\beta_1$?
+3. If $\mathbf{X}$ is n×2 and $\boldsymbol{\beta}$ is 2×1, what are the dimensions of $\mathbf{X}\boldsymbol{\beta}$?
+4. Why must the result of $\mathbf{X}\boldsymbol{\beta}$ be the same dimension as $\mathbf{y}$?
+
+---
+
+## Additional Practice (Optional)
+
+### Challenge Problem: Comparison of Models
+
+Using the dairy lactation data from the chapter (`dairy_lactation.csv`):
+
+1. Fit the model as done in the chapter: Milk Yield ~ Days in Milk
+2. Calculate the following for your model:
+   - SSE (sum of squared errors)
+   - SST (total sum of squares) = $\sum (y_i - \bar{y})^2$
+   - R² = 1 - SSE/SST
+3. Interpret the R² value: what percentage of variation in milk yield is explained by days in milk?
+4. Is a linear model appropriate for these data? What might improve the model? (Hint: think about the true shape of lactation curves)
+
+---
+
+## Solutions
+
+Solutions to all exercises are provided in `Week04_Solutions.qmd`.
+
+When working through these exercises:
+
+- Show all work for computational problems
+- Explain your reasoning for conceptual problems
+- Include R code and output for applied problems
+- Check your answers for reasonableness (do the numbers make sense biologically?)
+
+Good luck!

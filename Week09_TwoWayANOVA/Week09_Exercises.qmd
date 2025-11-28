@@ -1,0 +1,385 @@
+---
+title: "Week 9 Exercises: Two-Way ANOVA and Factorial Models"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: false
+---
+
+# Week 9 Exercises: Two-Way ANOVA and Factorial Models
+
+These exercises reinforce the concepts from Week 9: Two-Way ANOVA with interactions, factorial designs, Type I/II/III sums of squares, and effect sizes. They cover computational hand calculations, applied data analysis, and theoretical understanding.
+
+**Total Exercises**: 7 (2-3 computational, 2-3 applied, 1-2 theoretical)
+
+Solutions are provided in `Week09_Solutions.qmd`.
+
+---
+
+## Exercise 1: Small Broiler Factorial (Hand Calculation)
+
+**Type**: Computational (hand calculation)
+
+A poultry researcher conducts a 2×2 factorial experiment to study broiler breast meat yield (% of live weight) with two factors:
+
+- **Factor A (Sex)**: Male, Female (2 levels)
+- **Factor B (Strain)**: Strain1, Strain2 (2 levels)
+
+**Balanced design**: n = 2 birds per cell (total N = 8)
+
+**Data**:
+```
+               Strain1    Strain2
+Male:          22, 23     24, 25
+Female:        20, 21     21, 22
+```
+
+### Part A (4 points)
+Compute the following by hand:
+- Grand mean: $\bar{y}_{...}$
+- Cell means: $\bar{y}_{ij}$ for all four cells (i=Male/Female, j=Strain1/Strain2)
+- Row means (sex main effect): $\bar{y}_{i..}$ for i=Male, Female
+- Column means (strain main effect): $\bar{y}_{.j.}$ for j=Strain1, Strain2
+
+### Part B (6 points)
+Calculate sums of squares by hand for the balanced design:
+
+$$\text{SS(Sex)} = bn \sum_{i=1}^{a} (\bar{y}_{i..} - \bar{y}_{...})^2$$
+
+$$\text{SS(Strain)} = an \sum_{j=1}^{b} (\bar{y}_{.j.} - \bar{y}_{...})^2$$
+
+$$\text{SS(Sex×Strain)} = n \sum_{i=1}^{a} \sum_{j=1}^{b} (\bar{y}_{ij.} - \bar{y}_{i..} - \bar{y}_{.j.} + \bar{y}_{...})^2$$
+
+$$\text{SSE} = \sum_{i=1}^{a} \sum_{j=1}^{b} \sum_{k=1}^{n} (y_{ijk} - \bar{y}_{ij.})^2$$
+
+where a=2 (sex levels), b=2 (strain levels), n=2 (replicates per cell).
+
+### Part C (4 points)
+Construct the complete ANOVA table:
+
+| Source       | df | SS | MS | F |
+|--------------|----|----|----|----|
+| Sex          |    |    |    |    |
+| Strain       |    |    |    |    |
+| Sex×Strain   |    |    |    |    |
+| Error        |    |    |    |    |
+| Total        |    |    |    |    |
+
+### Part D (3 points)
+Test the interaction at α = 0.05. If the interaction is significant, explain what this means biologically. Does the effect of strain depend on sex?
+
+### Part E (3 points)
+Create an interaction plot (can sketch by hand or use R). Do the lines cross? What does this tell you about the interaction?
+
+---
+
+## Exercise 2: Interaction Interpretation
+
+**Type**: Computational/Theoretical
+
+Consider three different two-way ANOVA scenarios with factors A (2 levels) and B (2 levels). Cell means are provided for each scenario.
+
+**Scenario 1**:
+```
+       B1    B2
+A1:    10    15
+A2:    12    17
+```
+
+**Scenario 2**:
+```
+       B1    B2
+A1:    10    15
+A2:    15    10
+```
+
+**Scenario 3**:
+```
+       B1    B2
+A1:    10    15
+A2:    10    20
+```
+
+### Part A (6 points)
+For each scenario:
+1. Compute the main effect of A (average difference A2 - A1)
+2. Compute the main effect of B (average difference B2 - B1)
+3. Compute the simple effect of B at A1 (difference B2 - B1 when at A1)
+4. Compute the simple effect of B at A2 (difference B2 - B1 when at A2)
+
+### Part B (6 points)
+For each scenario, determine if an interaction is present:
+- Calculate: (B2-B1 at A1) - (B2-B1 at A2)
+- If this difference is zero, no interaction; otherwise interaction exists
+- Classify each interaction as: **none**, **ordinal** (lines don't cross), or **disordinal** (lines cross)
+
+### Part C (6 points)
+Explain conceptually: If a significant interaction exists, why can main effects be misleading? Use Scenario 2 as an example to illustrate your answer.
+
+### Part D (2 points)
+Which scenario would you say has the strongest interaction effect? Why?
+
+---
+
+## Exercise 3: Type I vs Type III Sums of Squares
+
+**Type**: Computational (using R)
+
+Use the lamb weaning weight dataset from the lecture: `data/lamb_growth_breed_diet.csv`
+
+**Design**: 2×3 factorial (Breed: Suffolk, Dorset; Diet: Diet1, Diet2, Diet3), balanced, n=2 per cell.
+
+### Part A (5 points)
+Fit the full model with interaction using R. Report three ANOVA tables:
+
+1. Type I SS with model order: `weight_kg ~ breed + diet + breed:diet`
+2. Type I SS with reversed order: `weight_kg ~ diet + breed + breed:diet`
+3. Type III SS using `car::Anova(fit, type=3)`
+
+Show all three tables side by side.
+
+### Part B (4 points)
+Compare the SS values across the three tables:
+- Which effects have **identical** SS across all three tables?
+- Which effects have **different** SS between Type I orderings?
+- Why does the interaction SS remain the same?
+
+### Part C (4 points)
+Explain in your own words: Why does the order of terms matter for Type I SS? What does "sequential" mean in this context?
+
+### Part D (4 points)
+For unbalanced data, which SS type (I, II, or III) would you generally recommend and why? What assumption underlies Type III SS?
+
+### Part E (3 points)
+Verify your Type I SS calculations manually using the projection matrix approach:
+
+$$\text{SS(A)} = \mathbf{y}' \mathbf{H}_A \mathbf{y}$$
+$$\text{SS(B|A)} = \mathbf{y}' (\mathbf{H}_{AB} - \mathbf{H}_A) \mathbf{y}$$
+
+Show that your manual calculation matches R's `anova()` output (Type I).
+
+---
+
+## Exercise 4: Dairy Milk Fat Analysis (Realistic Application)
+
+**Type**: Applied (dataset provided)
+
+Use the dairy milk fat dataset from the lecture: `data/dairy_milk_fat_breed_diet.csv`
+
+**Design**: 2×3 factorial, **unbalanced** (Holstein/Jersey × HighGrain/Balanced/HighForage)
+
+### Part A (4 points)
+Load the data and create a table showing:
+- Sample size (n) for each of the 6 breed×diet combinations
+- Cell means (average fat_pct) for each combination
+- Overall breed means and diet means
+
+### Part B (4 points)
+Fit the full model: `fat_pct ~ breed * diet`
+
+Create an interaction plot using `interaction.plot()`. Describe what you see:
+- Do Jersey cows have higher fat % than Holstein across all diets?
+- Does the diet effect appear consistent across breeds?
+- Is there visual evidence of interaction?
+
+### Part C (5 points)
+Conduct the two-way ANOVA using Type III SS (appropriate for unbalanced data):
+
+```r
+library(car)
+fit <- lm(fat_pct ~ breed * diet, data = dairy)
+Anova(fit, type = 3)
+```
+
+Test the following hypotheses at α = 0.05:
+1. H₀: No breed × diet interaction
+2. H₀: No breed main effect (adjusted for diet)
+3. H₀: No diet main effect (adjusted for breed)
+
+Report F-statistics, p-values, and conclusions for each test.
+
+### Part D (4 points)
+If the interaction is significant, perform **simple effects analysis**:
+
+- Test the effect of diet within Holstein cows only
+- Test the effect of diet within Jersey cows only
+
+```r
+# Holstein subset
+fit_holstein <- lm(fat_pct ~ diet, data = subset(dairy, breed == "Holstein"))
+anova(fit_holstein)
+
+# Jersey subset
+fit_jersey <- lm(fat_pct ~ diet, data = subset(dairy, breed == "Jersey"))
+anova(fit_jersey)
+```
+
+Compare the diet effects across breeds. Does diet affect both breeds equally?
+
+### Part E (3 points)
+Compute **effect sizes** for the main effects and interaction:
+
+- Partial eta-squared (η²ₚ) for breed, diet, and breed×diet
+- Omega-squared (ω²) for the same effects
+
+Interpret: Which effect has the largest practical importance?
+
+### Part F (5 points)
+Perform model diagnostics:
+- Residual vs fitted plot: check for non-constant variance
+- Normal Q-Q plot: check normality assumption
+- Identify any potential outliers (|studentized residuals| > 3)
+- Compute Cook's distance: any influential observations?
+
+Are the ANOVA assumptions reasonably satisfied?
+
+---
+
+## Exercise 5: Design Matrix Construction for Two-Way ANOVA
+
+**Type**: Computational/Theoretical
+
+Consider a small 2×2 factorial with factors A (levels: A1, A2) and B (levels: B1, B2), with n=1 observation per cell (total N=4).
+
+Data:
+```
+y₁₁ = 10  (A1, B1)
+y₁₂ = 15  (A1, B2)
+y₂₁ = 12  (A2, B1)
+y₂₂ = 18  (A2, B2)
+```
+
+### Part A (6 points)
+Construct the design matrix **X** for the **cell means model**:
+$$y_{ijk} = \mu_{ij} + e_{ijk}$$
+
+Show the complete 4×4 matrix explicitly. What is the rank of this matrix?
+
+### Part B (8 points)
+Construct the design matrix **X** for the **effects model** with interaction:
+$$y_{ijk} = \mu + \alpha_i + \beta_j + (\alpha\beta)_{ij} + e_{ijk}$$
+
+With columns: [intercept, α₁, β₁, (αβ)₁₁]
+
+Show the complete 4×4 matrix. What is the rank of this matrix? Why is it not full rank?
+
+### Part C (6 points)
+For the effects model:
+- Compute **X′X** (4×4 matrix)
+- What is the rank of **X′X**?
+- Find a generalized inverse **(X′X)⁻** (you can use R with `MASS::ginv()`)
+- Verify that **(X′X)(X′X)⁻(X′X) = X′X**
+
+---
+
+## Exercise 6: Effect Sizes and Power
+
+**Type**: Theoretical/Computational
+
+This exercise explores effect size measures for two-way ANOVA.
+
+### Part A (6 points)
+Define and distinguish between the following effect size measures:
+
+1. **Eta-squared (η²)**: $\eta^2 = \frac{\text{SS}_{\text{effect}}}{\text{SS}_{\text{total}}}$
+
+2. **Partial eta-squared (η²ₚ)**: $\eta_p^2 = \frac{\text{SS}_{\text{effect}}}{\text{SS}_{\text{effect}} + \text{SS}_{\text{error}}}$
+
+3. **Omega-squared (ω²)**: $\omega^2 = \frac{\text{SS}_{\text{effect}} - df_{\text{effect}} \cdot \text{MS}_{\text{error}}}{\text{SS}_{\text{total}} + \text{MS}_{\text{error}}}$
+
+Explain: Why is ω² generally smaller than η²? Which is considered a less biased estimate of population effect size?
+
+### Part B (8 points)
+Consider the following ANOVA table from a 3×2 factorial experiment (Factor A has 3 levels, Factor B has 2 levels, n=5 per cell, N=30):
+
+| Source  | df | SS   | MS   | F     |
+|---------|----|------|------|-------|
+| A       | 2  | 120  | 60   | 15.0  |
+| B       | 1  | 80   | 80   | 20.0  |
+| A×B     | 2  | 40   | 20   | 5.0   |
+| Error   | 24 | 96   | 4    |       |
+| Total   | 29 | 336  |      |       |
+
+Calculate for **each effect** (A, B, A×B):
+- η² (eta-squared)
+- η²ₚ (partial eta-squared)
+- ω² (omega-squared)
+
+### Part C (6 points)
+Interpret the results from Part B:
+- Which factor has the largest effect size by all three measures?
+- Rank the three effects (A, B, A×B) by practical importance
+- Would you say the A×B interaction is "small," "medium," or "large"? (Use Cohen's guidelines: small ≈ 0.01, medium ≈ 0.06, large ≈ 0.14 for η²ₚ)
+
+---
+
+## Exercise 7: Theoretical Properties of Two-Way ANOVA
+
+**Type**: Theoretical
+
+This exercise explores the mathematical foundations of factorial ANOVA.
+
+### Part A (8 points)
+**Prove** that for a balanced two-way ANOVA with factors A (a levels) and B (b levels), and n replicates per cell, the total sum of squares decomposes as:
+
+$$\text{SST} = \text{SS(A)} + \text{SS(B)} + \text{SS(A×B)} + \text{SSE}$$
+
+**Hint**: Start with the fundamental identity:
+$$y_{ijk} - \bar{y}_{...} = (\bar{y}_{i..} - \bar{y}_{...}) + (\bar{y}_{.j.} - \bar{y}_{...}) + (\bar{y}_{ij.} - \bar{y}_{i..} - \bar{y}_{.j.} + \bar{y}_{...}) + (y_{ijk} - \bar{y}_{ij.})$$
+
+Square both sides and sum over all i, j, k. Show that all cross-product terms vanish due to orthogonality in the balanced design.
+
+### Part B (6 points)
+Explain why the orthogonality property (cross-products = 0) holds for **balanced** designs but **not** for unbalanced designs.
+
+What does "orthogonal" mean in the context of ANOVA? How does this relate to the design matrix **X**?
+
+### Part C (6 points)
+Show that the expected value of MSE is σ² under the model assumptions:
+
+$$E(\text{MSE}) = E\left(\frac{\text{SSE}}{ab(n-1)}\right) = \sigma^2$$
+
+**Hint**: Use the fact that $E(\text{SSE}) = E[\sum_{ijk}(y_{ijk} - \bar{y}_{ij.})^2] = ab(n-1)\sigma^2$
+
+### Part D (5 points)
+Under H₀: no A×B interaction (all (αβ)ᵢⱼ = 0), show that:
+
+$$E(\text{MS(A×B)}) = \sigma^2$$
+
+But under Hₐ: interaction exists, show that:
+
+$$E(\text{MS(A×B)}) = \sigma^2 + \frac{n \sum_{ij}(\alpha\beta)_{ij}^2}{(a-1)(b-1)}$$
+
+This justifies using F = MS(A×B) / MSE to test for interaction.
+
+---
+
+## Additional Notes
+
+**Datasets Required**:
+- `data/lamb_growth_breed_diet.csv` (provided in Week09_TwoWayANOVA/data/)
+- `data/dairy_milk_fat_breed_diet.csv` (provided in Week09_TwoWayANOVA/data/)
+
+**R Packages Needed**:
+```r
+library(MASS)      # For ginv()
+library(car)       # For Anova(..., type=3)
+library(ggplot2)   # For visualization (optional)
+```
+
+**Submission Guidelines**:
+- Show all work for hand calculations
+- Include R code for computational exercises
+- Provide clear interpretations in biological context
+- For theoretical proofs, show all steps
+
+**Grading**: Each exercise is worth 20 points, for a total of 140 points.
+
+**Estimated Time**: 6-8 hours total
+
+---
+
+**Navigation**:
+← [Back to Week 9 Lecture](Week09_TwoWayANOVA.qmd) | [Solutions](Week09_Solutions.qmd) →

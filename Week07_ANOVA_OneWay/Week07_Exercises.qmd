@@ -1,0 +1,292 @@
+---
+title: "Week 7 Exercises: One-Way ANOVA"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: false
+---
+
+# Week 7 Exercises: Analysis of Variance (One-Way)
+
+These exercises reinforce the concepts from Week 7: One-Way ANOVA. They cover computational hand calculations, applied data analysis, and theoretical understanding.
+
+**Total Exercises**: 7 (2-3 computational, 2-3 applied, 1-2 theoretical)
+
+Solutions are provided in `Week07_Solutions.qmd`.
+
+---
+
+## Exercise 1: Egg Production Across Layer Strains
+
+**Type**: Computational (hand calculation)
+
+A poultry producer wants to compare annual egg production across three genetic strains of layer hens. Each strain has 4 birds (balanced design, n=12 total).
+
+**Data**:
+```
+Strain A: 280, 285, 278, 282 eggs/year
+Strain B: 265, 270, 268, 267
+Strain C: 290, 295, 288, 292
+```
+
+### Part A (3 points)
+Construct the response vector **y** (12×1) and the design matrix **X** (12×3) for the **cell means model**.
+
+### Part B (3 points)
+Compute **X′X** and **X′y** by hand. Verify that **X′X** is diagonal.
+
+### Part C (4 points)
+Solve the normal equations **X′Xb = X′y** to find the parameter estimates **b**. What do these estimates represent?
+
+### Part D (6 points)
+Calculate the following by hand:
+- Grand mean: $\bar{y}_{..}$
+- Group means: $\bar{y}_{1.}$, $\bar{y}_{2.}$, $\bar{y}_{3.}$
+- SST (total sum of squares)
+- SS(Strains) (between-group sum of squares)
+- SSE (error sum of squares)
+- Verify: SST = SS(Strains) + SSE
+
+### Part E (4 points)
+Construct the complete ANOVA table with:
+- Source (Strains, Error, Total)
+- df (degrees of freedom)
+- SS (sum of squares)
+- MS (mean squares)
+- F-statistic
+- p-value (use R to compute from F-distribution)
+
+### Part F (5 points)
+Test $H_0: \mu_1 = \mu_2 = \mu_3$ at $\alpha = 0.05$. State your conclusion and interpret the result in biological terms. Which strain(s) appear to have the highest/lowest production?
+
+---
+
+## Exercise 2: Design Matrix Properties
+
+**Type**: Computational/Theoretical
+
+Consider a one-way ANOVA with 4 groups having sample sizes n=[3, 4, 5, 4] (total n=16, unbalanced).
+
+### Part A (5 points)
+Construct the **cell means model** design matrix **X** (16×4). Show the complete matrix explicitly.
+
+### Part B (4 points)
+Compute **X′X** and verify it is diagonal. What are the diagonal elements? How do they relate to the sample sizes?
+
+### Part C (6 points)
+**Prove** that the cell means model design matrix **X** is always full rank (i.e., rank(**X**) = g) as long as each group has at least one observation ($n_i \geq 1$).
+
+**Hint**: Show that the columns of **X** are linearly independent.
+
+### Part D (5 points)
+Explain why the cell means model avoids the rank deficiency problem that affects the effects model. What property of the cell means design matrix ensures unique parameter estimates?
+
+---
+
+## Exercise 3: Sum of Squares Decomposition
+
+**Type**: Theoretical
+
+This exercise explores the fundamental ANOVA decomposition.
+
+### Part A (8 points)
+**Prove algebraically** that SST = SS(Treatments) + SSE.
+
+**Hint**: Start with the identity:
+$$y_{ij} - \bar{y}_{..} = (\bar{y}_{i.} - \bar{y}_{..}) + (y_{ij} - \bar{y}_{i.})$$
+
+Square both sides, sum over all $i$ and $j$, and show the cross-product term vanishes.
+
+### Part B (4 points)
+Show that the sum of residuals within each group is zero:
+$$\sum_{j=1}^{n_i} (y_{ij} - \bar{y}_{i.}) = 0$$
+
+Explain why this implies the overall sum of residuals is also zero.
+
+### Part C (4 points)
+Express SSE in matrix form: SSE = **e′e** where **e = y - ŷ**.
+
+Also show that SSE = **y′y - b′X′y** for the cell means model.
+
+### Part D (4 points)
+**Prove** that the degrees of freedom also partition:
+$$n - 1 = (g - 1) + (n - g)$$
+
+Explain the interpretation of each term: why is df(Treatments) = g-1? Why is df(Error) = n-g?
+
+---
+
+## Exercise 4: Swine Litter Size Comparison
+
+**Type**: Applied (dataset provided)
+
+A swine breeding company evaluates four genetic lines for litter size (number of piglets born alive). The data are in `data/litter_size_genetics.csv`.
+
+### Part A (3 points)
+Load the data and compute summary statistics by genetic line:
+- Sample size per line
+- Mean litter size per line
+- Standard deviation per line
+- Min and max litter size per line
+
+### Part B (3 points)
+Create a boxplot showing litter size distribution by genetic line. Check for outliers visually. Are there any observations that appear unusual?
+
+### Part C (5 points)
+Fit one-way ANOVA using:
+1. Your custom `anova_oneway()` function from the lecture
+2. Base R `lm()` with cell means coding
+3. Base R `aov()` function
+
+Verify all three methods give identical ANOVA tables.
+
+### Part D (4 points)
+Present the complete ANOVA table and test $H_0:$ all lines have equal mean litter size at $\alpha = 0.05$.
+
+State your conclusion clearly: Do the genetic lines differ significantly in litter size?
+
+### Part E (6 points)
+Interpret the results for a swine breeding program:
+- Which line has the highest mean litter size?
+- What is the practical difference between the best and worst lines?
+- If each additional piglet born alive is worth $50 in revenue, calculate the economic difference between lines over 100 litters.
+
+### Part F (4 points)
+Based on these results, which genetic line would you recommend? Are there any other considerations (beyond litter size) that might influence this decision?
+
+---
+
+## Exercise 5: Balanced vs. Unbalanced Designs
+
+**Type**: Conceptual
+
+### Part A (4 points)
+List **three advantages** of balanced designs (equal sample sizes) in one-way ANOVA. For each advantage, explain why it matters in practice.
+
+### Part B (4 points)
+Explain why **X′X** is diagonal in the balanced cell means model. What changes when the design becomes unbalanced?
+
+### Part C (5 points)
+With unbalanced data:
+- Is **X′X** still diagonal for the cell means model?
+- What effect does unequal sample size have on the precision of group mean estimates?
+- How does this relate to the diagonal elements of **X′X**?
+
+### Part D (7 points)
+In practice, livestock trials are often unbalanced due to:
+- Animals dying or becoming sick
+- Equipment failure losing observations
+- Unequal recruitment across groups
+
+Discuss:
+1. Can we still conduct valid ANOVA with unbalanced data?
+2. What complications arise in interpretation?
+3. What strategies can researchers use to minimize the impact of unbalanced data?
+
+---
+
+## Exercise 6: Unbalanced Swine Growth Study
+
+**Type**: Computational/Applied
+
+A swine nutrition study compares average daily gain (ADG, kg/day) across 4 genetic lines, but the design is unbalanced due to mortality. Data are in `data/swine_growth_unbalanced.csv`.
+
+Sample sizes: LineA (n=8), LineB (n=6), LineC (n=10), LineD (n=5). Total n=29.
+
+### Part A (5 points)
+Construct the design matrix **X** (29×4) for the cell means model. You don't need to write all 29 rows, but show the structure clearly and indicate which rows correspond to which lines.
+
+### Part B (5 points)
+Compute **X′X** (4×4) explicitly. Show that it is diagonal but with **different** diagonal elements. What are these elements and what do they represent?
+
+### Part C (4 points)
+Solve the normal equations to obtain group mean estimates. Verify your answer against simple arithmetic means for each line.
+
+### Part D (6 points)
+Conduct the complete ANOVA analysis:
+- Build the ANOVA table
+- Test $H_0:$ all lines have equal mean ADG
+- Report F-statistic, degrees of freedom, and p-value
+
+### Part E (5 points)
+Compare this unbalanced analysis with a hypothetical balanced design:
+- Calculate the standard error for each group mean: SE($\bar{y}_{i.}$) = $\sqrt{MSE/n_i}$
+- Which line has the least precise estimate? Why?
+- If you could add observations to make the design more balanced, which line(s) would you prioritize?
+
+### Part F (5 points)
+Discuss the practical implications of unbalanced data in this study:
+- Does the unbalanced design affect our ability to detect differences between lines?
+- Are the parameter estimates still unbiased?
+- What caution should be exercised in interpreting the results?
+
+---
+
+## Exercise 7: ANOVA as Regression
+
+**Type**: Conceptual/Computational
+
+This exercise reinforces the connection between ANOVA and regression.
+
+### Part A (4 points)
+In your own words, explain the statement: **"ANOVA is regression with categorical predictors."**
+
+What is the same between ANOVA and regression? What is different?
+
+### Part B (6 points)
+Using the egg production data from **Exercise 1**:
+
+1. Fit the **cell means model** using `lm()` with the formula `eggs ~ strain - 1`
+2. Fit the **effects model** using `lm()` with the formula `eggs ~ strain` (with intercept)
+3. Extract the coefficients from both models
+
+Compare the two sets of coefficients. How do they relate to each other?
+
+### Part C (5 points)
+Demonstrate that both parameterizations produce:
+- Identical fitted values
+- Identical residuals
+- Identical SSE
+- Identical F-test for overall treatment effect
+
+Show R code and output supporting your answer.
+
+### Part D (4 points)
+Compare the design matrices from both models:
+- Cell means: **X** is 12×3
+- Effects (with sum-to-zero): **X** is 12×3 (after constraint)
+
+How do the matrices differ? Which model would you prefer for interpretation and why?
+
+### Part E (6 points)
+Consider the broader context of the **general linear model**: y = Xβ + e.
+
+Discuss how this framework unifies:
+- Simple linear regression (Week 4)
+- Multiple regression (Week 6)
+- One-way ANOVA (Week 7)
+- Future topics (two-way ANOVA, ANCOVA)
+
+What is the key insight that makes all these models "the same"?
+
+---
+
+## Summary
+
+These exercises cover:
+
+✓ **Computational skills**: Hand calculations, matrix operations, ANOVA tables
+✓ **Applied analysis**: Real livestock datasets, biological interpretation
+✓ **Theoretical understanding**: Proofs, conceptual connections, design properties
+
+**Total Points**: 175 points across 7 exercises
+
+**Estimated Time**: 8-10 hours for complete, thorough solutions
+
+---
+
+**Return to**: [Week 7 Lecture](Week07_ANOVA_OneWay.qmd)
+
+**Solutions**: [Week 7 Solutions](Week07_Solutions.qmd)

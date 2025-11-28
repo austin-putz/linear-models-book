@@ -1,0 +1,223 @@
+---
+title: "Week 5: Solutions"
+author: "Claude"
+date: "today"
+format:
+  html:
+    theme: cosmo
+    embed-resources: true
+    code-copy: true
+---
+
+### Solution to Question 1
+
+**Prove that the hat matrix, $\mathbf{H} = \mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'$, is symmetric.**
+
+To prove symmetry, we must show that $\mathbf{H}' = \mathbf{H}$.
+
+Let's take the transpose of $\mathbf{H}$:
+$$
+\mathbf{H}' = [\mathbf{X}(\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}']'
+$$
+
+Using the rule $(\mathbf{ABC})' = \mathbf{C}'\mathbf{B}'\mathbf{A}'$:
+$$
+\mathbf{H}' = (\mathbf{X}')' [(\mathbf{X}'\mathbf{X})^{-1}]' (\mathbf{X})'
+$$
+
+We know that $(\mathbf{A}')' = \mathbf{A}$, so $(\mathbf{X}')' = \mathbf{X}$.
+$$
+\mathbf{H}' = \mathbf{X} [(\mathbf{X}'\mathbf{X})^{-1}]' \mathbf{X}'
+$$
+
+Next, we use the property that the inverse of a symmetric matrix is also symmetric. The matrix $\mathbf{X}'\mathbf{X}$ is symmetric because $(\mathbf{X}'\mathbf{X})' = \mathbf{X}'(\mathbf{X}')' = \mathbf{X}'\mathbf{X}$. Therefore, its inverse, $(\mathbf{X}'\mathbf{X})^{-1}$, is also symmetric. This means:
+$$
+[(\mathbf{X}'\mathbf{X})^{-1}]' = (\mathbf{X}'\mathbf{X})^{-1}
+$$
+
+Substituting this back into our equation for $\mathbf{H}'$:
+$$
+\mathbf{H}' = \mathbf{X} (\mathbf{X}'\mathbf{X})^{-1} \mathbf{X}'
+$$
+
+This is the original definition of $\mathbf{H}$. Thus, we have shown that $\mathbf{H}' = \mathbf{H}$, and the hat matrix is symmetric.
+
+---
+
+### Solution to Question 2
+
+**Prove that the residual-forming matrix, $(\mathbf{I} - \mathbf{H})$, is idempotent.**
+
+To prove idempotency, we must show that the matrix multiplied by itself equals itself.
+$$
+(\mathbf{I} - \mathbf{H})(\mathbf{I} - \mathbf{H}) \stackrel{?}{=} (\mathbf{I} - \mathbf{H})
+$$
+
+Let's expand the left side:
+$$
+\begin{aligned}
+(\mathbf{I} - \mathbf{H})(\mathbf{I} - \mathbf{H}) &= \mathbf{I}(\mathbf{I} - \mathbf{H}) - \mathbf{H}(\mathbf{I} - \mathbf{H}) \\
+&= \mathbf{I}\mathbf{I} - \mathbf{I}\mathbf{H} - \mathbf{H}\mathbf{I} + \mathbf{H}\mathbf{H} \\
+&= \mathbf{I} - \mathbf{H} - \mathbf{H} + \mathbf{H}\mathbf{H}
+\end{aligned}
+$$
+
+We know from the properties of the hat matrix that it is idempotent, meaning $\mathbf{H}\mathbf{H} = \mathbf{H}$. Substituting this in:
+$$
+\begin{aligned}
+&= \mathbf{I} - \mathbf{H} - \mathbf{H} + \mathbf{H} \\
+&= \mathbf{I} - \mathbf{H}
+\end{aligned}
+$$
+
+The result is equal to the original matrix, so we have proven that $(\mathbf{I} - \mathbf{H})$ is idempotent.
+
+---
+
+### Solution to Question 3
+
+**Hand Calculation Practice.**
+
+#### a. Construct matrices
+
+$$
+\boldsymbol{y} = \begin{pmatrix} 0.25 \\ 0.28 \\ 0.30 \\ 0.31 \\ 0.33 \end{pmatrix}, \quad
+\mathbf{X} = \begin{pmatrix} 1 & 150 \\ 1 & 160 \\ 1 & 170 \\ 1 & 180 \\ 1 & 190 \end{pmatrix}
+$$
+
+#### b. Calculate $\mathbf{X}'\mathbf{X}$ and its inverse
+
+$$
+\sum x_i = 850, \quad \sum x_i^2 = 145500
+$$
+$$
+\mathbf{X}'\mathbf{X} = \begin{pmatrix} n & \sum x_i \\ \sum x_i & \sum x_i^2 \end{pmatrix} = \begin{pmatrix} 5 & 850 \\ 850 & 145500 \end{pmatrix}
+$$
+The determinant is $det(\mathbf{X}'\mathbf{X}) = (5)(145500) - (850)(850) = 727500 - 722500 = 5000$.
+The inverse is:
+$$
+(\mathbf{X}'\mathbf{X})^{-1} = \frac{1}{5000} \begin{pmatrix} 145500 & -850 \\ -850 & 5 \end{pmatrix} = \begin{pmatrix} 29.1 & -0.17 \\ -0.17 & 0.001 \end{pmatrix}
+$$
+
+#### c. Calculate $\mathbf{X}'\boldsymbol{y}$
+
+$$
+\sum y_i = 1.47, \quad \sum x_i y_i = (150 \times 0.25) + \dots + (190 \times 0.33) = 250.7
+$$
+$$
+\mathbf{X}'\boldsymbol{y} = \begin{pmatrix} \sum y_i \\ \sum x_i y_i \end{pmatrix} = \begin{pmatrix} 1.47 \\ 250.7 \end{pmatrix}
+$$
+
+#### d. Solve for $\boldsymbol{b}$
+
+$$
+\boldsymbol{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\boldsymbol{y} = \begin{pmatrix} 29.1 & -0.17 \\ -0.17 & 0.001 \end{pmatrix} \begin{pmatrix} 1.47 \\ 250.7 \end{pmatrix} = \begin{pmatrix} (29.1)(1.47) + (-0.17)(250.7) \\ (-0.17)(1.47) + (0.001)(250.7) \end{pmatrix}
+$$
+$$
+\boldsymbol{b} = \begin{pmatrix} 42.777 - 42.619 \\ -0.2499 + 0.2507 \end{pmatrix} = \begin{pmatrix} 0.158 \\ 0.0008 \end{pmatrix}
+$$
+So, $b_0 = 0.158$ and $b_1 = 0.0008$.
+
+#### e. Calculate Sum of Squares
+
+$$ \boldsymbol{b}'\mathbf{X}'\boldsymbol{y} = \begin{pmatrix} 0.158 & 0.0008 \end{pmatrix} \begin{pmatrix} 1.47 \\ 250.7 \end{pmatrix} = 0.23226 + 0.20056 = 0.43282 $$
+$$ \boldsymbol{y}'\boldsymbol{y} = 0.25^2 + 0.28^2 + 0.30^2 + 0.31^2 + 0.33^2 = 0.4359 $$
+$$ \bar{y} = 1.47 / 5 = 0.294 $$
+-   $SSE = \boldsymbol{y}'\boldsymbol{y} - \boldsymbol{b}'\mathbf{X}'\boldsymbol{y} = 0.4359 - 0.43282 = 0.00308$
+-   $SST = \boldsymbol{y}'\boldsymbol{y} - n\bar{y}^2 = 0.4359 - 5(0.294)^2 = 0.4359 - 0.43218 = 0.00372$
+-   $SSM = SST - SSE = 0.00372 - 0.00308 = 0.00064$
+
+#### f. Calculate $\hat{\sigma}^2$
+
+$$
+\hat{\sigma}^2 = MSE = \frac{SSE}{n-p} = \frac{0.00308}{5-2} = \frac{0.00308}{3} = 0.0010267
+$$
+
+#### g. Calculate the standard error for $b_1$
+
+$$
+\widehat{Var}(b_1) = \hat{\sigma}^2 \times [(\mathbf{X}'\mathbf{X})^{-1}]_{2,2} = 0.0010267 \times 0.001 = 0.0000010267
+$$
+$$
+se(b_1) = \sqrt{0.0000010267} \approx 0.001013
+$$
+
+---
+
+### Solution to Question 4
+
+**Understanding the Gauss-Markov Theorem.**
+
+#### a. Linearity of $\tilde{\mu}$
+
+The estimator $\tilde{\mu} = \frac{y_1 + y_2}{2}$ can be written as a linear combination of all observations:
+$$
+\tilde{\mu} = (0.5)y_1 + (0.5)y_2 + (0)y_3 + \dots + (0)y_n = \sum c_i y_i
+$$
+Since it is a weighted sum of the $y_i$, it is a linear estimator.
+
+#### b. Unbiasedness of $\tilde{\mu}$
+
+We check if $E(\tilde{\mu}) = \mu$.
+$$
+E(\tilde{\mu}) = E[\frac{y_1 + y_2}{2}] = \frac{1}{2}(E[y_1] + E[y_2])
+$$
+Since $E(y_i) = \mu$ for all $i$:
+$$
+E(\tilde{\mu}) = \frac{1}{2}(\mu + \mu) = \frac{1}{2}(2\mu) = \mu
+$$
+The estimator is unbiased.
+
+#### c. Variance of the LS estimator, $\hat{\mu}$
+
+The LS estimator is $\hat{\mu} = \bar{y} = \frac{1}{n}\sum y_i$.
+$$
+Var(\hat{\mu}) = Var(\frac{1}{n}\sum y_i) = \frac{1}{n^2} Var(\sum y_i)
+$$
+Assuming independence, $Var(\sum y_i) = \sum Var(y_i) = \sum \sigma^2 = n\sigma^2$.
+$$
+Var(\hat{\mu}) = \frac{1}{n^2} (n\sigma^2) = \frac{\sigma^2}{n}
+$$
+
+#### d. Variance of the alternative estimator, $\tilde{\mu}$
+
+$$
+Var(\tilde{\mu}) = Var(\frac{y_1 + y_2}{2}) = \frac{1}{4} Var(y_1 + y_2) = \frac{1}{4}(Var(y_1) + Var(y_2))
+$$
+$$
+Var(\tilde{\mu}) = \frac{1}{4}(\sigma^2 + \sigma^2) = \frac{2\sigma^2}{4} = \frac{\sigma^2}{2}
+$$
+
+#### e. Comparison
+
+We are comparing $Var(\hat{\mu}) = \frac{\sigma^2}{n}$ with $Var(\tilde{\mu}) = \frac{\sigma^2}{2}$.
+As long as the sample size $n > 2$, then $\frac{1}{n} < \frac{1}{2}$, which means:
+$$
+\frac{\sigma^2}{n} < \frac{\sigma^2}{2} \implies Var(\hat{\mu}) < Var(\tilde{\mu})
+$$
+The variance of the least squares estimator ($\bar{y}$) is smaller than the variance of the alternative linear unbiased estimator. This demonstrates the "Best" property of BLUE: the LS estimator has the minimum variance among all linear unbiased estimators. Our alternative estimator ignored perfectly good data (from $y_3$ to $y_n$), and the price was a higher variance and less precision.
+
+---
+
+### Solution to Question 5
+
+**Construct a 95% confidence interval for $\beta_1$.**
+
+From Question 3, we have:
+-   $b_1 = 0.0008$
+-   $se(b_1) = 0.001013$
+-   Degrees of freedom = $n - p = 5 - 2 = 3$
+-   Critical t-value: $t_{0.025, 3} = 3.182$
+
+The formula for the confidence interval is $b_1 \pm t_{crit} \times se(b_1)$.
+$$
+CI = 0.0008 \pm (3.182 \times 0.001013)
+$$
+$$
+CI = 0.0008 \pm 0.003224
+$$
+$$
+95\% \text{ CI for } \beta_1 = (-0.00242, 0.00402)
+$$
+
+**Conclusion**: Since the 95% confidence interval contains zero, we do not have statistically significant evidence (at $\alpha=0.05$) to conclude that there is a non-zero linear relationship between protein intake and average daily gain in this small sample. The true slope could plausibly be zero.

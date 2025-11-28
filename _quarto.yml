@@ -32,7 +32,7 @@ book:
 
     - part: "Diagnostics and Advanced Topics"
       chapters:
-        - Week11_Diagnostics/Week11_Diagnostics.qmd
+        - Week11_Diagnostics/Week11_ModelDiagnostics.qmd
         - Week12_NonFullRank/Week12_NonFullRank.qmd
         - Week13_SpecialTopics1/Week13_SpecialTopics1.qmd
         - Week14_SpecialTopics2/Week14_SpecialTopics2.qmd

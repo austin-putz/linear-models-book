@@ -1,0 +1,100 @@
+---
+title: "Week 8 Exercises: Contrasts and Estimable Functions"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: false
+---
+
+## Conceptual Questions
+
+### Question 1: Estimability Proof
+
+Prove that in a one-way ANOVA effects model with the sum-to-zero constraint ($\sum_{i=1}^{g} \alpha_i = 0$), the contrast $\alpha_i - \alpha_j$ is estimable even though the individual $\alpha_i$ parameters are not uniquely estimable.
+
+*Hint*: Show that the contrast vector is in the row space of the design matrix $\mathbf{X}$.
+
+### Question 2: Orthogonal Contrasts
+
+Explain why a set of $g-1$ orthogonal contrasts completely partitions the treatment sum of squares in a balanced one-way ANOVA. What property of orthogonal vectors makes this possible? What happens if the design is unbalanced?
+
+### Question 3: Genetic Evaluation Context
+
+In a genetic evaluation context, explain the difference between:
+- Testing "Sire A is different from Sire B" (a contrast)
+- Estimating "Sire A has a breeding value of +10 kg" (potentially non-estimable)
+
+Why is the first statement testable while the second may not be uniquely estimable?
+
+## Computational Problems
+
+### Problem 1: Swine Litter Size
+
+Three sow breeds are compared for litter size. Data (pigs per litter):
+
+- Yorkshire: 11, 12, 11
+- Landrace: 10, 11, 10
+- Duroc: 9, 10, 9
+
+a. Fit the cell means model and obtain breed mean estimates
+b. Test $H_0$: Yorkshire = Landrace using a contrast $\mathbf{c} = [1, -1, 0]'$
+c. Test $H_0$: Yorkshire = $\frac{1}{2}$(Landrace + Duroc)
+d. Construct 95% confidence intervals for each contrast
+e. Verify that the contrasts in (b) and (c) are orthogonal
+
+### Problem 2: Non-Orthogonal Contrasts
+
+Using dairy herd data with unbalanced sample sizes:
+- Herd 1: n = 8, mean = 32.5 kg/day
+- Herd 2: n = 10, mean = 34.2 kg/day
+- Herd 3: n = 6, mean = 30.8 kg/day
+- Herd 4: n = 12, mean = 33.1 kg/day
+- MSE = 4.5, df = 32
+
+a. Define two contrasts that are NOT orthogonal
+b. Show computationally that their sums of squares do NOT sum to SS(Herds)
+c. Compute the correlation between the two contrast estimates
+
+### Problem 3: Verify Estimability
+
+Create a design matrix $\mathbf{X}$ for a one-way ANOVA effects model (not full rank).
+
+a. Define $\mathbf{c}_1$ = vector for an individual parameter (e.g., $\mu$ or $\alpha_1$)
+b. Define $\mathbf{c}_2$ = vector for an estimable contrast (e.g., $\alpha_1 - \alpha_2$)
+c. Use the `is_estimable()` function to test both
+d. Use different generalized inverses and show that $\mathbf{c}_1'\mathbf{b}$ changes but $\mathbf{c}_2'\mathbf{b}$ remains constant
+
+## Applied Problems
+
+### Problem 1: Broiler Strain Comparison
+
+A dataset is provided comparing body weight at 42 days across 6 broiler strains (data available on course website).
+
+a. Design 4 biologically meaningful contrasts. At least one should compare fast-growing commercial strains vs. heritage breeds.
+b. Test each contrast and report results (estimate, SE, t-statistic, p-value)
+c. Interpret results biologically
+d. Report which contrasts are significant at $\alpha = 0.05$
+
+### Problem 2: Sheep Breed Evaluation
+
+Five sheep breeds are compared for weaning weight:
+- Dorset, Suffolk, Hampshire, Rambouillet, Merino
+
+Research question: "Are Dorset and Suffolk (meat breeds) similar to each other, and together different from the other breeds (wool/dual-purpose)?"
+
+a. Formulate this as a set of orthogonal contrasts
+b. Test the complete set
+c. Create a visualization showing breed means and contrast results
+d. Write a brief report (1 paragraph) interpreting the results for a sheep producer
+
+## Notes
+
+Solutions to all exercises are available in Week08_Solutions.qmd.
+
+---
+
+**Main Chapter**: [Week 8: Contrasts](Week08_Contrasts.qmd)
+
+**Solutions**: [Week 8 Solutions](Week08_Solutions.qmd)

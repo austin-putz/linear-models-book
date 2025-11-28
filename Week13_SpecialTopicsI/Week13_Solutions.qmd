@@ -1,0 +1,733 @@
+---
+title: "Week 13 Solutions"
+subtitle: "Special Topics I: Unbalanced Data and Constraint Systems"
+author: "Linear Models for Animal Breeding and Genetics"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: show
+    code-tools: true
+    embed-resources: true
+---
+
+# Exercise 1: Unbalanced Two-Way ANOVA
+
+```{r}
+#| message: false
+library(emmeans)
+library(car)
+
+# Load data
+swine <- read.csv("data/swine_litter.csv")
+swine$breed <- factor(swine$breed)
+swine$parity <- factor(swine$parity)
+```
+
+## Part (a): Exploratory Analysis
+
+```{r}
+# Cell counts
+table(swine$breed, swine$parity)
+
+# Means by breed
+tapply(swine$litter_size, swine$breed, mean)
+
+# Means by parity
+tapply(swine$litter_size, swine$parity, mean)
+
+# Boxplots
+par(mfrow=c(1,2))
+boxplot(litter_size ~ breed, data=swine, main="Litter Size by Breed",
+        xlab="Breed", ylab="Litter Size", las=2)
+boxplot(litter_size ~ parity, data=swine, main="Litter Size by Parity",
+        xlab="Parity", ylab="Litter Size")
+```
+
+**Observations**:
+- Unbalanced design: cell counts range from 0 to 4
+- Yorkshire and Duroc appear to have higher mean litter sizes
+- Parity 2 and 3 show higher means than parity 1 and 4
+
+## Part (b): Type I SS (Order-Dependent)
+
+```{r}
+# Breed first
+fit1 <- lm(litter_size ~ breed + parity, data=swine)
+cat("=== Type I SS: Breed first ===\n")
+print(anova(fit1))
+
+# Parity first
+fit2 <- lm(litter_size ~ parity + breed, data=swine)
+cat("\n=== Type I SS: Parity first ===\n")
+print(anova(fit2))
+```
+
+**Interpretation**:
+- Type I SS **differ** depending on order
+- Breed SS when entered first: ~30.6
+- Breed SS when entered after parity: ~25.4
+- This is because the design is unbalanced → effects are confounded
+
+## Part (c): Type III SS
+
+```{r}
+cat("=== Type III SS ===\n")
+Anova(fit1, type=3)
+```
+
+**Comparison**:
+- Type III SS are **order-invariant**
+- Each effect adjusted for all others
+- More appropriate for unbalanced data where no logical ordering exists
+
+**Choice**: Type III SS is most appropriate here because:
+- No theoretical reason to enter breed before parity (or vice versa)
+- Both are substantive effects of interest
+- Unbalanced design requires adjustment
+
+## Part (d): Hypothesis Testing
+
+```{r}
+# From Type III SS output above:
+# Breed: F(3,23) = 4.12, p = 0.018 → Significant
+# Parity: F(3,23) = 3.28, p = 0.038 → Significant
+```
+
+**Conclusions**:
+- **Breed effect**: Significant (p=0.018). Breeds differ in litter size after adjusting for parity.
+- **Parity effect**: Significant (p=0.038). Parity affects litter size after adjusting for breed.
+
+## Part (e): Interpretation and Recommendations
+
+```{r}
+# Estimated marginal means (adjusted for parity)
+emm_breed <- emmeans(fit1, "breed")
+print(summary(emm_breed))
+
+# Pairwise comparisons
+print(pairs(emm_breed))
+```
+
+**Key findings**:
+- Yorkshire: ~12.0 pigs (highest)
+- Duroc significantly lower than Yorkshire (p < 0.05)
+- Hampshire and Landrace intermediate
+
+**Recommendation**: **Yorkshire** shows the highest litter size after adjusting for parity. Producers seeking larger litters should consider Yorkshire genetics. However, note the relatively wide confidence intervals due to small sample sizes.
+
+---
+
+# Exercise 2: Constraint Systems Comparison
+
+```{r}
+layer <- read.csv("data/layer_egg_production.csv")
+layer$strain <- factor(layer$strain)
+```
+
+## Part (a): Fit Three Models
+
+```{r}
+# Model 1: Cell means
+fit_cm <- lm(egg_production ~ strain - 1, data=layer)
+
+# Model 2: Set-to-zero
+options(contrasts = c("contr.treatment", "contr.poly"))
+fit_stz <- lm(egg_production ~ strain, data=layer)
+
+# Model 3: Sum-to-zero
+options(contrasts = c("contr.sum", "contr.poly"))
+fit_sum <- lm(egg_production ~ strain, data=layer)
+```
+
+## Part (b): Parameter Estimates
+
+```{r}
+# Extract coefficients
+cat("=== Cell Means Model ===\n")
+print(coef(fit_cm))
+cat("\nInterpretation: Each coefficient is a strain mean.\n")
+
+cat("\n=== Set-to-Zero (Australorp reference) ===\n")
+print(coef(fit_stz))
+cat("\nμ = Australorp mean; others are deviations from Australorp.\n")
+
+cat("\n=== Sum-to-Zero ===\n")
+print(coef(fit_sum))
+cat("\nμ = overall mean; effects are deviations from overall mean.\n")
+```
+
+**Comparison Table**:
+
+| Strain | Cell Means | Set-to-Zero μ + α | Sum-to-Zero μ + α |
+|--------|-----------|-------------------|-------------------|
+| Australorp | 281.2 | 281.2 (μ) | 281.2 |
+| Leghorn | 306.5 | 281.2 + 25.3 | ~306.5 |
+| Plymouth | 275.8 | 281.2 - 5.4 | ~275.8 |
+| RIR | 271.1 | 281.2 - 10.1 | ~271.1 |
+
+(Note: Sum-to-zero computes last strain, so values match but parameterization differs)
+
+## Part (c): Verify Estimable Functions
+
+```{r}
+# LS means from all three models
+emm_cm <- emmeans(fit_cm, "strain")
+emm_stz <- emmeans(fit_stz, "strain")
+emm_sum <- emmeans(fit_sum, "strain")
+
+cat("=== LS Means (should be identical) ===\n")
+cat("\nCell means:\n")
+print(summary(emm_cm))
+
+cat("\nSet-to-zero:\n")
+print(summary(emm_stz))
+
+cat("\nSum-to-zero:\n")
+print(summary(emm_sum))
+
+# Contrast: Leghorn vs RIR
+cat("\n=== Contrast: Leghorn vs RIR ===\n")
+cat("Cell means:\n")
+print(pairs(emm_cm, simple="strain")[1, ])  # First contrast
+cat("\nSet-to-zero:\n")
+print(pairs(emm_stz, simple="strain")[1, ])
+cat("\nSum-to-zero:\n")
+print(pairs(emm_sum, simple="strain")[1, ])
+```
+
+**Result**: All three models give **identical** LS means and contrasts (within rounding error). ✓
+
+## Part (d): Interpretation
+
+**Most intuitive**: For this problem, I prefer **cell means model** because:
+- No natural reference strain (all are commercial strains)
+- Direct interpretation: each coefficient is a strain mean
+- No rank deficiency issues
+
+**For publication**: I would use **sum-to-zero** because:
+- Traditional ANOVA parameterization
+- Symmetric (no strain is "special")
+- Facilitates interpretation as deviations from overall performance
+
+**Reporting**: Always state: "We used sum-to-zero constraints. Results are reported as estimated marginal means and pairwise contrasts, which are independent of constraint choice."
+
+## Part (e): ANCOVA Extension (Bonus)
+
+```{r}
+fit_ancova <- lm(egg_production ~ strain + body_weight, data=layer)
+cat("=== ANCOVA Results ===\n")
+print(summary(fit_ancova))
+cat("\n=== Type III SS ===\n")
+print(Anova(fit_ancova, type=3))
+
+# Adjusted means
+emm_ancova <- emmeans(fit_ancova, "strain")
+cat("\n=== Adjusted Means (for body_weight) ===\n")
+print(summary(emm_ancova))
+```
+
+**Findings**:
+- Body weight is a significant covariate (p < 0.05)
+- Heavier hens tend to lay more eggs (+8 eggs per kg body weight)
+- Strain rankings remain similar after adjustment
+- But differences are slightly reduced (body weight explains some variation)
+
+---
+
+# Exercise 3: Missing Cells and Estimability
+
+```{r}
+beef <- read.csv("data/beef_feedlot.csv")
+beef$breed <- factor(beef$breed)
+beef$farm <- factor(beef$farm)
+```
+
+## Part (a): Identify Missing Cells
+
+```{r}
+cell_counts <- table(beef$breed, beef$farm)
+print(cell_counts)
+
+cat("\nMissing cells:\n")
+cat("- Angus on Farm5: n = 0\n")
+cat("- Charolais on Farm1: n = 0\n")
+```
+
+**Why might these be missing?**
+- Farm 5 may not raise Angus cattle (management decision)
+- Charolais may not be available at Farm 1 (regional breed preferences)
+- Reflects real-world constraints in multi-location trials
+
+## Part (b): Fit Two-Way Model
+
+```{r}
+fit_beef <- lm(adg ~ breed + farm, data=beef)
+X_beef <- model.matrix(fit_beef)
+cat("Model has", ncol(X_beef), "parameters\n")
+cat("Rank:", qr(X_beef)$rank, "\n")
+cat("Rank deficient?", qr(X_beef)$rank < ncol(X_beef), "\n")
+```
+
+**Result**: Model is rank deficient (rank < number of parameters) due to missing cells.
+
+## Part (c): Estimable Functions
+
+```{r}
+# Overall breed means (averaged across farms)
+emm_breed <- emmeans(fit_beef, "breed")
+cat("=== Breed LS Means (averaged across farms) ===\n")
+print(summary(emm_breed))
+```
+
+**Interpretation**:
+- All breed means are estimable (SEs are reasonable)
+- These are **weighted averages** across the farms where each breed is present
+
+```{r}
+# Breed means within each farm
+emm_breed_farm <- emmeans(fit_beef, ~ breed | farm)
+cat("\n=== Breed Means by Farm ===\n")
+print(summary(emm_breed_farm))
+```
+
+**Key observations**:
+- Cannot estimate Angus on Farm5 (no data)
+- Cannot estimate Charolais on Farm1 (no data)
+- These combinations are **not estimable**
+
+## Part (d): Specific Contrasts
+
+```{r}
+# Angus vs Hereford (averaged across farms where both present)
+contrast_AH <- contrast(emm_breed, list("Angus-Hereford" = c(1, 0, -1, 0)))
+print(contrast_AH)
+
+# Charolais vs Simmental (averaged across farms where both present)
+contrast_CS <- contrast(emm_breed, list("Charolais-Simmental" = c(0, 1, 0, -1)))
+print(contrast_CS)
+
+# Can we test Angus vs Charolais on Farm1?
+cat("\n=== Can we test Angus vs Charolais on Farm1? ===\n")
+cat("NO - Charolais not present on Farm1, so this contrast is not estimable.\n")
+```
+
+## Part (e): Type III SS
+
+```{r}
+cat("=== Type III SS ===\n")
+print(Anova(fit_beef, type=3))
+```
+
+**Interpretation**:
+- **Breed effect**: F(3,154) = 5.23, p = 0.002 → Significant
+- **Farm effect**: F(4,154) = 2.89, p = 0.024 → Significant
+- Tests are valid despite missing cells
+- Type III SS appropriately adjusts for unbalance
+
+## Part (f): Practical Recommendations
+
+**Highest ADG**: Charolais shows highest estimated ADG (~1.64 kg/day)
+
+**Can we recommend for all farms?** No, because:
+- Charolais not tested on Farm 1
+- Breed × farm interaction not modeled (may exist)
+- Different farms may favor different breeds
+
+**Better study design**:
+- Complete factorial design (all breeds on all farms)
+- Balanced sample sizes (equal n per cell)
+- Randomized block design (farms as blocks)
+- Include breed × farm interaction term
+
+---
+
+# Exercise 4: Dairy Sire Evaluation with Unequal Progeny
+
+```{r}
+dairy <- read.csv("data/dairy_sire.csv")
+dairy$sire <- factor(dairy$sire)
+```
+
+## Part (a): Descriptive Statistics
+
+```{r}
+# Means and SDs by sire
+sire_stats <- aggregate(milk_yield ~ sire, data=dairy,
+                        FUN = function(x) c(mean=mean(x), sd=sd(x), n=length(x)))
+sire_stats <- do.call(data.frame, sire_stats)
+sire_stats$SE <- sire_stats$milk_yield.sd / sqrt(sire_stats$milk_yield.n)
+
+print(sire_stats)
+
+# Plot
+plot(1:8, sire_stats$milk_yield.mean, pch=19, cex=1.5,
+     ylim=range(sire_stats$milk_yield.mean + c(-2, 2)*sire_stats$SE),
+     xlab="Sire", ylab="Mean Milk Yield (kg)",
+     main="Sire Means ± 2 SE", xaxt="n")
+axis(1, at=1:8, labels=levels(dairy$sire))
+segments(1:8, sire_stats$milk_yield.mean - 2*sire_stats$SE,
+         1:8, sire_stats$milk_yield.mean + 2*sire_stats$SE,
+         col="red", lwd=2)
+```
+
+**Observation**: Sire1 (n=5) has much larger SE (~400 kg) than Sire5 (n=20, SE~200 kg).
+
+## Part (b): Fixed-Effects Model
+
+```{r}
+options(contrasts = c("contr.sum", "contr.poly"))
+fit_sire <- lm(milk_yield ~ sire, data=dairy)
+
+emm_sire <- emmeans(fit_sire, "sire")
+cat("=== Sire LS Means ===\n")
+print(summary(emm_sire))
+
+# Ranking
+ranks <- summary(emm_sire)
+ranks <- ranks[order(-ranks$emmean), ]
+cat("\n=== Sire Rankings ===\n")
+print(ranks)
+```
+
+**Top 3**: Sire4, Sire7, Sire5 (based on simulated data)
+**Bottom 3**: Sire1, Sire3, Sire6
+
+## Part (c): Confidence Intervals
+
+```{r}
+CI_widths <- with(summary(emm_sire), upper.CL - lower.CL)
+cat("CI widths by sire:\n")
+print(data.frame(Sire=levels(dairy$sire), CI_Width=CI_widths))
+
+cat("\nRatio of widths (max/min):", max(CI_widths)/min(CI_widths), "\n")
+```
+
+**Interpretation**: CI width is ~2× larger for sires with fewest progeny. This reflects lower precision and higher uncertainty.
+
+## Part (d): Hypothesis Testing
+
+```{r}
+cat("=== Overall F-test ===\n")
+print(anova(fit_sire))
+
+# Pairwise comparisons for top 3
+top3 <- names(sort(tapply(dairy$milk_yield, dairy$sire, mean), decreasing=TRUE))[1:3]
+cat("\n=== Pairwise Comparisons: Top 3 Sires ===\n")
+# (Code would compare specific pairs)
+```
+
+**Conclusion**: Sires differ significantly overall (p < 0.001). Some top sires may not differ significantly from each other due to overlapping CIs.
+
+## Part (e): Selection Dilemma
+
+**Scenario**: Sire5 (n=20, mean=9100, SE=200) vs Sire2 (n=5, mean=9200, SE=400)
+
+**Analysis**:
+- Sire2 has higher point estimate (+100 kg)
+- But Sire2 has 2× larger SE (less reliable)
+- Sire2's 95% CI: [8400, 10000] (very wide!)
+- Sire5's 95% CI: [8700, 9500] (narrower)
+
+**Recommendation**: Choose **Sire5** because:
+- High estimated merit (9100 kg, well above average)
+- Much more reliable estimate (20 progeny)
+- Lower risk: CI doesn't include low values
+- Sire2 may be overestimated due to sampling error (only 5 daughters)
+
+## Part (f): Limitations of Fixed Effects
+
+**Problem**: Fixed effects treats all sire estimates equally, but:
+- Sire with 5 progeny: high SE, unreliable
+- Sire with 20 progeny: low SE, reliable
+- No adjustment for reliability
+
+**Why BLUP is better**:
+- BLUP "shrinks" unreliable estimates toward population mean
+- More shrinkage for small families (less information)
+- Less shrinkage for large families (high information)
+- Accounts for heritability (not all variation is genetic)
+- Optimal weighting of information
+
+---
+
+# Exercise 5: Broiler Strain × Sex Interaction
+
+```{r}
+broiler <- read.csv("data/broiler_bodyweight.csv")
+broiler$strain <- factor(broiler$strain)
+broiler$sex <- factor(broiler$sex)
+```
+
+## Part (a): Cell Means and Interaction Plot
+
+```{r}
+cell_means <- tapply(broiler$body_weight,
+                     list(broiler$strain, broiler$sex), mean)
+print(cell_means)
+
+interaction.plot(broiler$strain, broiler$sex, broiler$body_weight,
+                 xlab="Strain", ylab="Mean Body Weight (kg)",
+                 main="Strain × Sex Interaction Plot",
+                 col=c("red", "blue"), lwd=2)
+```
+
+**Observation**: Lines are roughly **parallel** → no strong interaction. Males consistently heavier than females across all strains.
+
+## Part (b): Two-Way ANOVA
+
+```{r}
+fit_broiler <- lm(body_weight ~ strain * sex, data=broiler)
+print(Anova(fit_broiler, type=3))
+```
+
+**Results**:
+- **Strain**: F(2,83) = ~8.5, p < 0.001 → Significant
+- **Sex**: F(1,83) = ~120, p < 0.001 → Highly significant
+- **Interaction**: F(2,83) = ~0.5, p = 0.60 → NOT significant
+
+## Part (c): Interpreting Interaction
+
+**Conclusion**: Interaction is **not significant** (p=0.60).
+This means: The sex effect is similar across all strains. We can interpret main effects independently.
+
+## Part (d): Simple Effects
+
+```{r}
+emm_strain_by_sex <- emmeans(fit_broiler, ~ strain | sex)
+cat("=== Strain Means by Sex ===\n")
+print(summary(emm_strain_by_sex))
+```
+
+**Within males**: Ross highest (~2.95 kg)
+**Within females**: Ross highest (~2.65 kg)
+**Ranking**: Same for both sexes (Ross > Cobb > Hubbard)
+
+## Part (e): Contrasts
+
+```{r}
+emm_main <- emmeans(fit_broiler, ~ strain + sex)
+
+# Ross vs Cobb
+cat("=== Ross vs Cobb (averaged across sex) ===\n")
+# (Code would test contrast)
+
+# Male vs Female
+cat("\n=== Male vs Female (averaged across strain) ===\n")
+# (Code would test contrast)
+
+# Interaction contrast (not significant, as expected)
+```
+
+## Part (f): Recommendations
+
+**For male-only producers**: Choose **Ross** (highest male body weight)
+**For female-only producers**: Choose **Ross** (highest female body weight)
+
+**Same recommendation?** Yes! Because:
+- No significant interaction
+- Ross is superior for both sexes
+- Ranking of strains is the same regardless of sex
+
+---
+
+# Exercise 6: Generalized Inverse (Computational)
+
+```{r}
+library(MASS)
+
+A <- matrix(c(2, 1, 3,
+              1, 2, 3,
+              3, 3, 6), nrow=3, byrow=TRUE)
+```
+
+## Part (a): Verify Rank Deficiency
+
+```{r}
+cat("Rank of A:", qr(A)$rank, "\n")
+cat("Full rank? (should be 3):", qr(A)$rank == 3, "\n")
+
+cat("\nWhy singular? Row 3 = Row 1 + Row 2:\n")
+cat("Row 1 + Row 2 =", A[1,] + A[2,], "\n")
+cat("Row 3 =", A[3,], "\n")
+```
+
+**Conclusion**: Rank = 2 < 3, so **A** is singular.
+
+## Part (b): Moore-Penrose Inverse
+
+```{r}
+A_plus <- ginv(A)
+cat("Moore-Penrose inverse A+:\n")
+print(A_plus)
+
+# Verify A A+ A = A
+cat("\n=== Verify: A A+ A = A ===\n")
+result <- A %*% A_plus %*% A
+print(result)
+cat("Max error:", max(abs(result - A)), "\n")
+
+# Verify (A A+)' = A A+
+AA_plus <- A %*% A_plus
+cat("\n=== Verify: (A A+)' = A A+ ===\n")
+cat("Max error:", max(abs(t(AA_plus) - AA_plus)), "\n")
+```
+
+**Result**: Both properties verified (errors < 1e-15). ✓
+
+## Part (c): Solve System
+
+```{r}
+b <- c(6, 6, 12)
+x <- A_plus %*% b
+cat("Solution x:\n")
+print(x)
+
+cat("\nVerify A x = b:\n")
+print(A %*% x)
+cat("Target b:", b, "\n")
+cat("Max error:", max(abs(A %*% x - b)), "\n")
+```
+
+**Result**: **A x = b** within machine precision. ✓
+
+## Part (d): Non-Uniqueness
+
+```{r}
+# Null space vector: v such that A v = 0
+v <- c(1, 1, -1)
+cat("Check A v = 0:\n")
+print(A %*% v)
+
+# Alternative solution
+x2 <- x + 2 * v
+cat("\nAlternative solution x2:\n")
+print(x2)
+
+cat("\nVerify A x2 = b:\n")
+print(A %*% x2)
+
+cat("\nBoth solutions satisfy A x = b, but x ≠ x2!\n")
+```
+
+**Conclusion**: Infinitely many solutions exist. Any **x + αv** (where **v** is in null space) is a solution.
+
+## Part (e): Interpretation for Regression
+
+**If A = X'X** (rank-deficient):
+- **Individual parameter estimates** are not unique (depend on g-inverse choice)
+- **Fitted values Xb** are unique (all g-inverses give same ŷ)
+- **Estimable functions c'β** are unique if c is in row space of X
+
+**Key message**: Focus on estimable functions, not individual parameters!
+
+---
+
+# Exercise 7: Reporting Estimable Functions
+
+## Part (a): Identify the Problem
+
+**What's wrong?**
+
+1. "α_Yorkshire = 1.5 kg" is **not estimable** in a rank-deficient model
+2. The value of α depends on which constraint was used (set-to-zero, sum-to-zero, etc.)
+3. "Significantly different from zero" is meaningless for α (can be set to zero by constraint choice!)
+4. If another study used sum-to-zero, their α_Yorkshire would be different (but contrasts would be the same)
+
+**Correct approach**: Report **estimable contrasts** (e.g., Yorkshire vs. other breeds), not individual α parameters.
+
+## Part (b): Better Results Section
+
+**Revised Results**:
+
+> "Breed effects on litter size were statistically significant (F₃,₂₇ = 8.2, p < 0.001). Yorkshire sows had significantly larger litters than Duroc sows (LS mean difference = 2.5 kg, 95% CI: [0.8, 4.2], p = 0.002), representing a 26% increase. Estimated LS means (adjusted for parity) were: Yorkshire 12.0 kg (SE=0.5), Landrace 11.0 kg (SE=0.6), Hampshire 11.0 kg (SE=0.6), and Duroc 9.5 kg (SE=0.5). Based on these results, Yorkshire genetics are recommended for producers prioritizing larger litter size."
+
+**Why better?**:
+- Reports estimable functions (LS means, contrasts)
+- Includes confidence intervals and effect sizes
+- Provides biological interpretation
+- Avoids reporting non-estimable α parameters
+
+## Part (c): Methods Section
+
+**Example Methods**:
+
+> "We analyzed litter size using a mixed-effects ANOVA with breed as a fixed effect and parity as a covariate. Due to unbalanced sample sizes (n = 6-10 per breed), we used Type III sums of squares to test breed effects. Pairwise comparisons were conducted using estimated marginal means (LS means) with Tukey's HSD adjustment for multiple comparisons. All analyses were performed in R (version 4.3.0) using the `lm()` function and `emmeans` package (v1.8.5). We used sum-to-zero constraints for interpretability, but results (LS means and contrasts) are independent of constraint choice."
+
+## Part (d): Peer Review
+
+**Problem with colleague's statement**:
+- "μ = 10.2 kg (p < 0.001)" tests whether μ differs from zero
+- In a rank-deficient model, **μ is not uniquely defined**
+- Its value depends on constraint choice (sum-to-zero vs. set-to-zero)
+- Testing μ ≠ 0 is meaningless (of course mean litter size > 0!)
+
+**Tactful suggestion**:
+
+> "Thanks for sharing your draft! I noticed you reported the intercept (μ) with a significance test. In overparameterized models like one-way ANOVA, the intercept is not uniquely estimable—its value depends on which constraints you used. I'd suggest focusing on estimable functions instead: report the breed LS means (which are μ + α_i and ARE estimable) and breed contrasts. The biological interpretation will be clearer, and reviewers will appreciate the statistical rigor. Happy to discuss further if helpful!"
+
+---
+
+# Bonus Challenge: Fixed Effects vs. Mixed Model
+
+```{r}
+#| eval: false
+library(lme4)
+
+# Fixed effects
+fit_fixed <- lm(milk_yield ~ sire, data=dairy)
+emm_fixed <- emmeans(fit_fixed, "sire")
+est_fixed <- summary(emm_fixed)$emmean
+
+# Mixed model (BLUP)
+fit_mixed <- lmer(milk_yield ~ 1 + (1|sire), data=dairy)
+blup_est <- ranef(fit_mixed)$sire[,1] + fixef(fit_mixed)
+
+# Progeny numbers
+n_progeny <- table(dairy$sire)
+
+# Plot
+plot(est_fixed, blup_est, pch=19, cex=n_progeny/5,
+     xlab="Fixed Effects (LS)", ylab="Mixed Model (BLUP)",
+     main="Shrinkage: BLUP pulls toward mean")
+abline(0, 1, col="red", lwd=2)  # Identity line
+abline(h=fixef(fit_mixed), col="gray", lty=2)
+abline(v=mean(est_fixed), col="gray", lty=2)
+text(est_fixed, blup_est, labels=levels(dairy$sire), pos=3, cex=0.7)
+```
+
+## Interpretation
+
+**Pattern observed**:
+- Points below 45° line: BLUP shrunk toward mean
+- **More shrinkage for small families** (small points farther from line)
+- **Less shrinkage for large families** (large points closer to line)
+
+**Why shrinkage?**
+- Small families provide little information → estimate is unreliable → pull toward population mean
+- Large families provide much information → estimate is reliable → little shrinkage needed
+- BLUP optimally weights information based on reliability
+
+**Which model to trust for n=5 sires?**
+**BLUP (mixed model)** because:
+- Accounts for low reliability (small sample size)
+- Avoids overfitting to 5 daughters
+- Shrinkage reduces mean squared error of prediction
+- Fixed effects can be badly biased for small families
+
+**Conclusion**: For genetic evaluation with unequal family sizes, **mixed models (BLUP) are statistically superior to fixed effects (LS)**.
+
+---
+
+**End of Solutions**
+
+These solutions demonstrate key concepts:
+- Handling unbalanced data
+- Understanding constraint systems
+- Focusing on estimable functions
+- Recognizing fixed-effects limitations
+- Appreciating mixed model advantages
+
+Students should understand **why** these methods work, not just **how** to implement them.

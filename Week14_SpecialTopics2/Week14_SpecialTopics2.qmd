@@ -1,7 +1,1944 @@
-# Week 14: Special Topics II {#sec-week14}
+---
+title: "Week 14: Special Topics II"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    code-tools: true
+---
 
-## Coming Soon
-Content under development for polynomial regression, weighted least squares, and mixed model preview.
+## Learning Objectives
+
+After completing this week's material, you will be able to:
+
+- Fit polynomial regression models to capture nonlinear relationships, such as animal growth curves.
+- Apply weighted least squares when error variances are heterogeneous or known to differ.
+- Understand when and how to use regression through the origin (no-intercept models).
+- Recognize the distinction between fixed and random effects.
+- Preview mixed model equations and understand how they extend the least squares framework to accommodate random effects and genetic evaluation (BLUP).
+
+---
+
+## Conceptual Introduction
+
+Throughout this course, we have built a solid foundation in linear models with fixed effects. We've mastered simple and multiple regression, ANOVA, contrasts, and diagnostics. This week, we explore four specialized extensions that push the boundaries of what we can accomplish with the linear model framework.
+
+**Polynomial Regression** allows us to model nonlinear relationships—such as growth curves or lactation curves—while staying within the linear model framework. By including powers of predictors ($x$, $x^2$, $x^3$, etc.), we can capture curves, peaks, and inflection points that are essential in animal science.
+
+**Weighted Least Squares (WLS)** addresses a violation of the classical Gauss-Markov assumptions: when observations have different variances (heteroscedasticity). This is common when working with pen averages, grouped data, or measurements with known reliability differences. WLS gives less weight to noisier observations and more weight to precise ones.
+
+**Regression Through the Origin** (no-intercept models) applies when theory dictates that the response must be zero when the predictor is zero. While this seems straightforward, it requires careful consideration and comes with important caveats about interpretation.
+
+**Mixed Models** represent the bridge between this course and advanced genetic evaluation methods. By introducing **random effects**—parameters treated as random variables rather than fixed unknowns—we can model animal breeding structures, account for family relationships, and preview **Best Linear Unbiased Prediction (BLUP)**. While a full treatment of mixed models requires a separate course, understanding their structure and connection to what we've learned is crucial for animal breeding applications.
+
+These four topics share a common thread: they extend the least squares framework to handle real-world complexities in animal science data. By the end of this week, you'll have a powerful toolkit for addressing a wide range of practical problems in livestock genetics and management.
+
+---
+
+## Polynomial Regression: Modeling Growth Curves {#sec-polynomial}
+
+### Introduction to Polynomial Regression
+
+Many biological processes in animal science are inherently nonlinear. Animals don't grow linearly—they follow sigmoid curves. Lactation doesn't increase linearly—milk yield rises to a peak and then declines. Feed efficiency changes with age in complex ways.
+
+Polynomial regression provides a flexible way to model these curved relationships while staying firmly within the linear model framework. The key insight: although the relationship between $y$ and $x$ is nonlinear, the model is still **linear in the parameters** $\beta_0, \beta_1, \beta_2, \ldots$
+
+### Mathematical Theory
+
+The **polynomial regression model** of degree $k$ is:
+
+$$
+y_i = \beta_0 + \beta_1 x_i + \beta_2 x_i^2 + \beta_3 x_i^3 + \cdots + \beta_k x_i^k + e_i
+$$
+
+where:
+
+- $y_i$: response variable (e.g., weight, milk yield)
+- $x_i$: predictor variable (e.g., age, days in milk)
+- $\beta_0, \beta_1, \ldots, \beta_k$: parameters to be estimated
+- $k$: degree of the polynomial
+- $e_i$: random error, $e_i \sim N(0, \sigma^2)$
+
+::: {.callout-note}
+## Why This is Still a "Linear" Model
+
+Although we have $x^2$, $x^3$, etc., the model is **linear in the parameters** $\boldsymbol{\beta}$. We can write it in matrix form:
+
+$$
+\boldsymbol{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{e}
+$$
+
+where $\mathbf{X}$ includes columns for $1, x, x^2, x^3, \ldots, x^k$. All our least squares theory applies!
+:::
+
+#### Matrix Form
+
+For a quadratic model ($k=2$), the design matrix is:
+
+$$
+\mathbf{X} = \begin{bmatrix}
+1 & x_1 & x_1^2 \\
+1 & x_2 & x_2^2 \\
+\vdots & \vdots & \vdots \\
+1 & x_n & x_n^2
+\end{bmatrix}_{n \times 3}
+$$
+
+The normal equations are:
+
+$$
+\mathbf{X}'\mathbf{X}\boldsymbol{b} = \mathbf{X}'\boldsymbol{y}
+$$
+
+And the solution is:
+
+$$
+\boldsymbol{b} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\boldsymbol{y}
+$$
+
+#### Choosing the Polynomial Degree
+
+How do we decide whether to use $k=1$ (linear), $k=2$ (quadratic), $k=3$ (cubic), etc.?
+
+**Method 1: Sequential F-tests**
+
+Fit models of increasing degree and test whether adding the next term significantly reduces SSE:
+
+- Fit $k=1$: Compute $SSE_1$
+- Fit $k=2$: Compute $SSE_2$
+- Test: $H_0: \beta_2 = 0$ using $F = \frac{(SSE_1 - SSE_2)/1}{SSE_2/(n-3)}$
+
+**Method 2: Adjusted R²**
+
+Choose the model that maximizes:
+
+$$
+\bar{R}^2 = 1 - \frac{SSE/(n-p)}{SST/(n-1)}
+$$
+
+Adjusted $R^2$ penalizes adding parameters that don't substantially improve fit.
+
+**Method 3: Biological Plausibility**
+
+Statistical significance isn't everything! A cubic model might fit better statistically, but does it make biological sense? For growth curves, we typically expect smooth, sigmoid curves—not wild oscillations.
+
+::: {.callout-warning}
+## The Collinearity Problem
+
+High-degree polynomials create severe collinearity. The columns $x$, $x^2$, $x^3$ are highly correlated, leading to:
+
+- Large standard errors for parameter estimates
+- Unstable estimates (small data changes → large estimate changes)
+- Ill-conditioned $\mathbf{X}'\mathbf{X}$ matrices
+
+**Solution**: Use **orthogonal polynomials** (next section).
+:::
+
+#### Orthogonal Polynomials
+
+Orthogonal polynomials are constructed so that the columns of $\mathbf{X}$ are uncorrelated. In R, the `poly()` function creates these automatically.
+
+**Benefits**:
+
+- Reduced collinearity (VIF near 1.0)
+- More stable estimates
+- Tests for individual terms are independent
+- Numerical stability
+
+**Trade-off**: Coefficients are harder to interpret directly (they're in a transformed space).
+
+### Small Numerical Example: Broiler Weight vs. Age
+
+Let's analyze broiler growth using a small dataset where we can see all the matrix operations.
+
+```{r}
+#| echo: true
+#| message: false
+
+# Load data
+broiler <- read.csv("data/broiler_growth.csv")
+broiler
+```
+
+```{r}
+#| echo: true
+
+# Visualize the data
+library(ggplot2)
+ggplot(broiler, aes(x = age_days, y = weight_g)) +
+  geom_point(size = 3) +
+  labs(title = "Broiler Weight vs. Age",
+       x = "Age (days)",
+       y = "Weight (g)") +
+  theme_minimal()
+```
+
+The relationship is clearly nonlinear! Let's fit linear, quadratic, and cubic models.
+
+#### Fitting Linear Model (k=1)
+
+```{r}
+#| echo: true
+
+# Linear model
+fit1 <- lm(weight_g ~ age_days, data = broiler)
+summary(fit1)
+```
+
+```{r}
+#| echo: true
+
+# Manual calculation to verify
+X1 <- cbind(1, broiler$age_days)
+y <- broiler$weight_g
+
+# Normal equations: X'Xb = X'y
+XtX1 <- t(X1) %*% X1
+Xty1 <- t(X1) %*% y
+b1 <- solve(XtX1) %*% Xty1
+
+cat("Manual estimates:\n")
+print(b1)
+
+# SSE for linear model
+y_hat1 <- X1 %*% b1
+e1 <- y - y_hat1
+SSE1 <- sum(e1^2)
+cat("\nSSE (linear):", SSE1, "\n")
+```
+
+#### Fitting Quadratic Model (k=2)
+
+```{r}
+#| echo: true
+
+# Quadratic model
+fit2 <- lm(weight_g ~ age_days + I(age_days^2), data = broiler)
+summary(fit2)
+```
+
+```{r}
+#| echo: true
+
+# Manual calculation
+X2 <- cbind(1, broiler$age_days, broiler$age_days^2)
+XtX2 <- t(X2) %*% X2
+Xty2 <- t(X2) %*% y
+b2 <- solve(XtX2) %*% Xty2
+
+cat("Manual estimates (quadratic):\n")
+print(b2)
+
+# SSE for quadratic model
+y_hat2 <- X2 %*% b2
+e2 <- y - y_hat2
+SSE2 <- sum(e2^2)
+cat("\nSSE (quadratic):", SSE2, "\n")
+```
+
+#### Fitting Cubic Model (k=3)
+
+```{r}
+#| echo: true
+
+# Cubic model
+fit3 <- lm(weight_g ~ age_days + I(age_days^2) + I(age_days^3), data = broiler)
+summary(fit3)
+
+# SSE
+SSE3 <- sum(residuals(fit3)^2)
+cat("SSE (cubic):", SSE3, "\n")
+```
+
+#### Model Comparison
+
+```{r}
+#| echo: true
+
+# Compare models with ANOVA
+anova(fit1, fit2, fit3)
+```
+
+```{r}
+#| echo: true
+
+# Compare adjusted R²
+cat("Adjusted R²:\n")
+cat("  Linear:   ", summary(fit1)$adj.r.squared, "\n")
+cat("  Quadratic:", summary(fit2)$adj.r.squared, "\n")
+cat("  Cubic:    ", summary(fit3)$adj.r.squared, "\n")
+```
+
+**Interpretation**: The quadratic model provides a substantial improvement over linear ($F$ test highly significant), but adding the cubic term provides minimal additional improvement. The quadratic model is preferred based on parsimony and biological plausibility.
+
+#### Visualizing the Fits
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 6
+
+# Create prediction data
+age_pred <- seq(7, 42, length.out = 100)
+pred_data <- data.frame(age_days = age_pred)
+
+# Predictions from each model
+pred_data$linear <- predict(fit1, newdata = pred_data)
+pred_data$quadratic <- predict(fit2, newdata = pred_data)
+pred_data$cubic <- predict(fit3, newdata = pred_data)
+
+# Plot
+ggplot(broiler, aes(x = age_days, y = weight_g)) +
+  geom_point(size = 3, color = "black") +
+  geom_line(data = pred_data, aes(y = linear, color = "Linear"), linewidth = 1) +
+  geom_line(data = pred_data, aes(y = quadratic, color = "Quadratic"), linewidth = 1) +
+  geom_line(data = pred_data, aes(y = cubic, color = "Cubic"), linewidth = 1) +
+  scale_color_manual(values = c("Linear" = "blue",
+                                 "Quadratic" = "red",
+                                 "Cubic" = "green")) +
+  labs(title = "Comparing Polynomial Models",
+       subtitle = "Broiler Growth Curve",
+       x = "Age (days)",
+       y = "Weight (g)",
+       color = "Model") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+#### Making Predictions
+
+Let's predict weight at day 49 using the quadratic model:
+
+```{r}
+#| echo: true
+
+# Predict at day 49
+new_data <- data.frame(age_days = 49)
+pred_49 <- predict(fit2, newdata = new_data, interval = "prediction")
+cat("Predicted weight at day 49:\n")
+print(pred_49)
+```
+
+::: {.callout-tip}
+## Interpretation of Quadratic Coefficients
+
+For the quadratic model: $y = \beta_0 + \beta_1 x + \beta_2 x^2$
+
+- $\beta_0$: Intercept (weight at day 0, often not biologically meaningful)
+- $\beta_1$: Linear component of growth rate
+- $\beta_2$: Curvature term
+  - If $\beta_2 > 0$: growth rate is increasing (accelerating growth)
+  - If $\beta_2 < 0$: growth rate is decreasing (decelerating growth)
+
+In our example, $\beta_2 > 0$, indicating accelerating growth typical of young broilers.
+:::
+
+### Realistic Livestock Application: Dairy Lactation Curve
+
+Dairy lactation curves are a classic application of polynomial regression. Milk yield typically:
+
+1. Rises rapidly after calving
+2. Reaches a peak around 60-90 days
+3. Gradually declines through the rest of lactation
+
+Let's analyze a larger dataset (n=60) of milk yield measurements at various days in milk.
+
+```{r}
+#| echo: true
+#| message: false
+
+# Load lactation data
+lactation <- read.csv("data/lactation_curve.csv")
+
+# Quick look at the data
+head(lactation, 10)
+cat("\nDataset dimensions:", nrow(lactation), "observations\n")
+```
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 6
+
+# Visualize lactation curve
+ggplot(lactation, aes(x = days_in_milk, y = milk_yield_kg)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "loess", se = FALSE, color = "gray50", linetype = "dashed") +
+  labs(title = "Dairy Lactation Curve",
+       subtitle = "Milk Yield vs. Days in Milk (n=60)",
+       x = "Days in Milk (DIM)",
+       y = "Milk Yield (kg/day)") +
+  theme_minimal()
+```
+
+#### Fit Multiple Polynomial Degrees
+
+```{r}
+#| echo: true
+
+# Fit 2nd and 3rd degree polynomials
+fit_lac2 <- lm(milk_yield_kg ~ days_in_milk + I(days_in_milk^2), data = lactation)
+fit_lac3 <- lm(milk_yield_kg ~ days_in_milk + I(days_in_milk^2) + I(days_in_milk^3),
+               data = lactation)
+
+# Compare models
+anova(fit_lac2, fit_lac3)
+```
+
+```{r}
+#| echo: true
+
+# Model summaries
+summary(fit_lac2)
+```
+
+```{r}
+#| echo: true
+
+# Check for collinearity
+library(car)
+vif(fit_lac2)
+```
+
+::: {.callout-warning}
+## High VIF Values Detected
+
+VIF values above 10 indicate problematic collinearity. The raw polynomial terms `days_in_milk` and `days_in_milk^2` are highly correlated, leading to unstable estimates.
+
+**Solution**: Use orthogonal polynomials.
+:::
+
+#### Using Orthogonal Polynomials
+
+```{r}
+#| echo: true
+
+# Fit with orthogonal polynomials
+fit_lac2_orth <- lm(milk_yield_kg ~ poly(days_in_milk, 2), data = lactation)
+fit_lac3_orth <- lm(milk_yield_kg ~ poly(days_in_milk, 3), data = lactation)
+
+cat("Orthogonal polynomials are constructed to be uncorrelated by design.\n")
+cat("This eliminates collinearity problems!\n")
+```
+
+Much better! Orthogonal polynomials have VIF near 1.0 by construction—no collinearity problems.
+
+```{r}
+#| echo: true
+
+# Compare orthogonal models
+anova(fit_lac2_orth, fit_lac3_orth)
+```
+
+The 3rd degree term is not significant. The quadratic (2nd degree) model is sufficient.
+
+#### Visualize Fitted Lactation Curve
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 6
+
+# Create prediction data
+dim_pred <- seq(5, 300, length.out = 100)
+pred_lac <- data.frame(days_in_milk = dim_pred)
+
+# Predictions
+pred_lac$quadratic <- predict(fit_lac2, newdata = pred_lac)
+pred_lac$quadratic_orth <- predict(fit_lac2_orth, newdata = pred_lac)
+
+# Plot
+ggplot(lactation, aes(x = days_in_milk, y = milk_yield_kg)) +
+  geom_point(alpha = 0.4) +
+  geom_line(data = pred_lac, aes(y = quadratic),
+            color = "blue", linewidth = 1.2) +
+  labs(title = "Fitted Lactation Curve (Quadratic Model)",
+       subtitle = "Blue line: y = β₀ + β₁x + β₂x²",
+       x = "Days in Milk (DIM)",
+       y = "Milk Yield (kg/day)") +
+  theme_minimal()
+```
+
+#### Finding Peak Lactation
+
+For a quadratic model $y = \beta_0 + \beta_1 x + \beta_2 x^2$, the peak occurs at:
+
+$$
+x_{peak} = -\frac{\beta_1}{2\beta_2}
+$$
+
+```{r}
+#| echo: true
+
+# Extract coefficients
+b0 <- coef(fit_lac2)[1]
+b1 <- coef(fit_lac2)[2]
+b2 <- coef(fit_lac2)[3]
+
+# Calculate peak day
+peak_day <- -b1 / (2 * b2)
+peak_yield <- b0 + b1 * peak_day + b2 * peak_day^2
+
+cat("Peak lactation occurs at day:", round(peak_day, 1), "\n")
+cat("Peak milk yield:", round(peak_yield, 1), "kg/day\n")
+```
+
+::: {.callout-note}
+## Biological Interpretation
+
+The peak lactation at ~60 days in milk is consistent with dairy cattle physiology. After calving, milk production rises rapidly as the cow enters peak lactation, then gradually declines due to:
+
+- Declining mammary cell numbers
+- Reduced feed intake relative to energy demands
+- Pregnancy (if the cow is bred back)
+
+Understanding lactation curves is essential for:
+
+- Feeding management (peak energy demands)
+- Breeding decisions (when to rebreed)
+- Culling decisions (persistency of lactation)
+- Genetic evaluation (lactation curve shape is heritable)
+:::
+
+### Summary: Polynomial Regression
+
+**When to use**:
+
+- Nonlinear relationships (growth, lactation, feed efficiency curves)
+- Curved response patterns with clear peaks or inflections
+- Biological processes that follow polynomial-like trajectories
+
+**Key considerations**:
+
+- Start with low degrees (k=2 or k=3); higher degrees rarely justified
+- Use sequential F-tests or adjusted R² to select degree
+- Check biological plausibility—don't overfit!
+- Use orthogonal polynomials to avoid collinearity
+- Remember: polynomial approximations work well locally but may behave poorly outside the data range (extrapolation risky)
+
+---
+
+## Weighted Least Squares: Handling Heterogeneous Variance {#sec-wls}
+
+### Introduction to Weighted Least Squares
+
+The Gauss-Markov assumptions include **homoscedasticity**: constant error variance, $Var(e_i) = \sigma^2$ for all $i$. But this assumption is often violated in animal science:
+
+- **Pen averages**: Pens with more animals have less variable means
+- **Grouped data**: Groups with different sample sizes have different precision
+- **Repeated measures**: Variance may increase over time
+- **Measurement error**: Some measurements are more reliable than others
+
+When variances differ across observations (**heteroscedasticity**), ordinary least squares (OLS) is still unbiased but **no longer efficient**. Weighted least squares (WLS) provides **better** estimates by giving less weight to noisy observations and more weight to precise ones.
+
+### Mathematical Theory
+
+#### The Heteroscedastic Model
+
+Assume:
+
+$$
+Var(e_i) = \sigma_i^2
+$$
+
+The error variances differ across observations. In matrix form:
+
+$$
+Var(\boldsymbol{e}) = \mathbf{V} = \begin{bmatrix}
+\sigma_1^2 & 0 & \cdots & 0 \\
+0 & \sigma_2^2 & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & \sigma_n^2
+\end{bmatrix}
+$$
+
+(Note: We assume errors are still independent, just with different variances.)
+
+#### Weighted Least Squares Criterion
+
+Instead of minimizing $\sum e_i^2$, we minimize a **weighted** sum:
+
+$$
+S(\boldsymbol{b}) = \sum w_i e_i^2 = \sum w_i (y_i - \mathbf{x}_i'\boldsymbol{b})^2
+$$
+
+where $w_i$ is the weight for observation $i$.
+
+**How to choose weights?**
+
+If we know the variances $\sigma_i^2$, the optimal weights are:
+
+$$
+w_i = \frac{1}{\sigma_i^2}
+$$
+
+Give more weight to observations with smaller variance (more precise), and less weight to noisy observations.
+
+#### WLS in Matrix Form
+
+Define the **weight matrix** $\mathbf{W}$:
+
+$$
+\mathbf{W} = \begin{bmatrix}
+w_1 & 0 & \cdots & 0 \\
+0 & w_2 & \cdots & 0 \\
+\vdots & \vdots & \ddots & \vdots \\
+0 & 0 & \cdots & w_n
+\end{bmatrix}
+$$
+
+The weighted sum of squares is:
+
+$$
+S(\boldsymbol{b}) = (\boldsymbol{y} - \mathbf{X}\boldsymbol{b})'\mathbf{W}(\boldsymbol{y} - \mathbf{X}\boldsymbol{b})
+$$
+
+Taking the derivative and setting to zero gives the **weighted normal equations**:
+
+$$
+\mathbf{X}'\mathbf{W}\mathbf{X}\boldsymbol{b} = \mathbf{X}'\mathbf{W}\boldsymbol{y}
+$$
+
+::: {.callout-important}
+## WLS Solution
+
+The weighted least squares estimator is:
+
+$$
+\boldsymbol{b}_{WLS} = (\mathbf{X}'\mathbf{W}\mathbf{X})^{-1}\mathbf{X}'\mathbf{W}\boldsymbol{y}
+$$
+
+And its variance is:
+
+$$
+Var(\boldsymbol{b}_{WLS}) = (\mathbf{X}'\mathbf{W}\mathbf{X})^{-1}
+$$
+
+(No $\sigma^2$ multiplier because weights already account for variance differences!)
+:::
+
+#### Properties of WLS Estimators
+
+Under the assumptions $E(\boldsymbol{e}) = \mathbf{0}$ and $Var(\boldsymbol{e}) = \mathbf{V}$:
+
+1. **Unbiased**: $E(\boldsymbol{b}_{WLS}) = \boldsymbol{\beta}$
+2. **Efficient**: WLS has smaller variance than OLS when weights are correct
+3. **BLUE**: WLS is the Best Linear Unbiased Estimator under heteroscedasticity
+
+#### When Weights are Known vs. Estimated
+
+**Case 1: Weights Known**
+
+- Example: Pen averages where $Var(\bar{y}_i) = \sigma^2 / n_i$, so $w_i = n_i$
+- Example: Measurements with known measurement error variances
+
+**Case 2: Weights Estimated**
+
+- Estimate variance function from data (e.g., $\sigma_i^2 = \sigma^2 x_i$)
+- Use residuals from OLS fit to estimate weights
+- Iteratively reweighted least squares (IRLS)
+
+### Small Numerical Example: Pen Average ADG
+
+Suppose we have 5 pens of pigs, and we've measured the average daily gain (ADG) for each pen. Pens have different numbers of pigs, so the pen averages have different variances.
+
+```{r}
+#| echo: true
+
+# Load pen data
+pen_data <- read.csv("data/pen_avg_adg.csv")
+pen_data
+```
+
+Since these are pen **averages**, the variance of $\bar{y}_i$ is:
+
+$$
+Var(\bar{y}_i) = \frac{\sigma^2}{n_i}
+$$
+
+where $n_i$ is the number of pigs in pen $i$. Therefore, the appropriate weight is:
+
+$$
+w_i = n_i
+$$
+
+Let's fit both OLS and WLS models to compare.
+
+#### Ordinary Least Squares (Unweighted)
+
+```{r}
+#| echo: true
+
+# OLS regression (ignoring pen size)
+fit_ols <- lm(adg_kg_day ~ 1, data = pen_data)
+summary(fit_ols)
+```
+
+```{r}
+#| echo: true
+
+# Manual calculation
+X <- matrix(1, nrow = 5, ncol = 1)  # Just intercept
+y <- pen_data$adg_kg_day
+
+# OLS: b = (X'X)^{-1}X'y
+b_ols <- solve(t(X) %*% X) %*% t(X) %*% y
+cat("OLS estimate (simple mean):", b_ols, "\n")
+```
+
+#### Weighted Least Squares
+
+```{r}
+#| echo: true
+
+# WLS regression (weighted by pen size)
+fit_wls <- lm(adg_kg_day ~ 1, data = pen_data, weights = pen_size)
+summary(fit_wls)
+```
+
+```{r}
+#| echo: true
+
+# Manual WLS calculation
+W <- diag(pen_data$pen_size)  # Weight matrix
+
+# WLS: b = (X'WX)^{-1}X'Wy
+XtWX <- t(X) %*% W %*% X
+XtWy <- t(X) %*% W %*% y
+b_wls <- solve(XtWX) %*% XtWy
+
+cat("WLS estimate (weighted mean):", b_wls, "\n")
+
+# This is equivalent to the weighted mean
+weighted_mean <- sum(pen_data$adg_kg_day * pen_data$pen_size) / sum(pen_data$pen_size)
+cat("Verification (weighted mean):", weighted_mean, "\n")
+```
+
+#### Comparison
+
+```{r}
+#| echo: true
+
+# Compare estimates
+cat("OLS estimate:", coef(fit_ols), "\n")
+cat("WLS estimate:", coef(fit_wls), "\n")
+cat("Difference:  ", coef(fit_wls) - coef(fit_ols), "\n")
+
+# Compare standard errors
+cat("\nOLS SE:", summary(fit_ols)$coefficients[1, 2], "\n")
+cat("WLS SE:", summary(fit_wls)$coefficients[1, 2], "\n")
+```
+
+**Interpretation**: The WLS estimate gives more weight to pens with more pigs (more reliable averages). The standard error is also smaller for WLS, reflecting the more efficient use of information.
+
+### Realistic Livestock Application: Feed Efficiency by Diet
+
+We have feed conversion ratio (FCR) data from 30 pens across 3 diets. Pen sizes vary from 5 to 15 pigs. We expect variance to be inversely proportional to pen size.
+
+```{r}
+#| echo: true
+
+# Load feed efficiency data
+feed_data <- read.csv("data/feed_efficiency_pens.csv")
+head(feed_data, 10)
+```
+
+```{r}
+#| echo: true
+
+# Summary by diet
+library(dplyr)
+feed_summary <- feed_data %>%
+  group_by(diet) %>%
+  summarise(
+    n_pens = n(),
+    mean_fcr = mean(fcr),
+    sd_fcr = sd(fcr),
+    mean_pen_size = mean(pen_size)
+  )
+feed_summary
+```
+
+#### Check for Heteroscedasticity
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 6
+
+# Fit OLS model
+fit_feed_ols <- lm(fcr ~ diet, data = feed_data)
+
+# Residual plot
+feed_data$residuals <- residuals(fit_feed_ols)
+feed_data$fitted <- fitted(fit_feed_ols)
+
+ggplot(feed_data, aes(x = pen_size, y = abs(residuals))) +
+  geom_point(size = 2) +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Checking for Heteroscedasticity",
+       subtitle = "Are residuals related to pen size?",
+       x = "Pen Size",
+       y = "|Residuals|") +
+  theme_minimal()
+```
+
+There's a slight negative relationship: larger pens tend to have smaller residuals (more stable averages). This suggests WLS is appropriate.
+
+#### Fit Weighted Least Squares Model
+
+```{r}
+#| echo: true
+
+# WLS model weighted by pen size
+fit_feed_wls <- lm(fcr ~ diet, data = feed_data, weights = pen_size)
+
+# Compare models
+cat("OLS estimates:\n")
+print(coef(fit_feed_ols))
+
+cat("\nWLS estimates:\n")
+print(coef(fit_feed_wls))
+```
+
+```{r}
+#| echo: true
+
+# Compare standard errors
+cat("\nOLS standard errors:\n")
+print(summary(fit_feed_ols)$coefficients[, 2])
+
+cat("\nWLS standard errors:\n")
+print(summary(fit_feed_wls)$coefficients[, 2])
+```
+
+The WLS standard errors are smaller, reflecting more efficient estimation.
+
+#### ANOVA Comparison
+
+```{r}
+#| echo: true
+
+# Test for diet effect
+cat("OLS ANOVA:\n")
+anova(fit_feed_ols)
+
+cat("\nWLS ANOVA:\n")
+anova(fit_feed_wls)
+```
+
+Both models detect a significant diet effect, but the WLS F-statistic is larger (more power) due to more efficient use of information.
+
+#### Visualize Results
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 6
+
+# Calculate diet means (OLS vs WLS)
+diet_means <- feed_data %>%
+  group_by(diet) %>%
+  summarise(
+    ols_mean = mean(fcr),
+    wls_mean = weighted.mean(fcr, pen_size)
+  )
+
+# Plot
+library(tidyr)
+diet_means_long <- diet_means %>%
+  pivot_longer(cols = c(ols_mean, wls_mean),
+               names_to = "method",
+               values_to = "fcr")
+
+ggplot(diet_means_long, aes(x = diet, y = fcr, fill = method)) +
+  geom_col(position = "dodge") +
+  scale_fill_manual(values = c("ols_mean" = "lightblue", "wls_mean" = "darkblue"),
+                    labels = c("OLS (Unweighted)", "WLS (Weighted)")) +
+  labs(title = "Feed Conversion Ratio by Diet",
+       subtitle = "Comparing OLS and WLS Estimates",
+       x = "Diet",
+       y = "FCR (Feed:Gain)",
+       fill = "Method") +
+  theme_minimal()
+```
+
+::: {.callout-note}
+## When to Use WLS in Animal Science
+
+**Common scenarios**:
+
+1. **Pen/group averages**: Weight by group size ($w_i = n_i$)
+2. **Progeny means**: Sires with different numbers of offspring
+3. **Repeated measures**: Weight by number of measurements
+4. **Known measurement error**: Weight by inverse of measurement variance
+5. **Heterogeneous environments**: Different farms, years, or conditions
+
+**Diagnostic**: Always check residual plots! Plot residuals vs. fitted values and vs. potential variance predictors.
+:::
+
+### Summary: Weighted Least Squares
+
+**When to use**:
+
+- Error variances differ across observations (heteroscedasticity)
+- Working with averages/summaries from groups of different sizes
+- Measurements with known or estimable precision differences
+
+**Key points**:
+
+- Weights should be $w_i = 1/\sigma_i^2$ (inverse variance)
+- WLS is BLUE under heteroscedasticity (OLS is not)
+- Always verify weights are appropriate (diagnostic plots)
+- In R: `lm(y ~ x, weights = w)`
+
+**Benefits**:
+
+- More efficient estimates (smaller standard errors)
+- Correct inference (valid hypothesis tests)
+- Properly accounts for information quality
+
+---
+
+## Regression Through the Origin: No-Intercept Models {#sec-no-intercept}
+
+### Introduction
+
+In standard linear regression, we fit:
+
+$$
+y_i = \beta_0 + \beta_1 x_i + e_i
+$$
+
+The intercept $\beta_0$ represents the expected value of $y$ when $x=0$.
+
+But sometimes, **theory dictates** that $y$ must be zero when $x$ is zero. For example:
+
+- Zero feed intake → zero milk production
+- Zero dose → zero response
+- Zero time → zero growth
+
+In these cases, forcing the line through the origin makes biological sense. The model becomes:
+
+$$
+y_i = \beta_1 x_i + e_i
+$$
+
+This is called **regression through the origin** or a **no-intercept model**.
+
+::: {.callout-warning}
+## Use With Extreme Caution!
+
+While appealing in theory, no-intercept models should be used **rarely** and only when:
+
+1. There's strong theoretical justification
+2. The intercept in a standard model is very close to zero
+3. You understand the consequences for $R^2$ and residuals
+
+Forcing a regression through the origin when inappropriate can badly distort the fit!
+:::
+
+### Mathematical Theory
+
+#### Model and Matrix Form
+
+The no-intercept model is:
+
+$$
+y_i = \beta_1 x_i + e_i, \quad i = 1, \ldots, n
+$$
+
+In matrix form:
+
+$$
+\boldsymbol{y} = \mathbf{X}\boldsymbol{\beta} + \boldsymbol{e}
+$$
+
+where:
+
+$$
+\mathbf{X} = \begin{bmatrix}
+x_1 \\
+x_2 \\
+\vdots \\
+x_n
+\end{bmatrix}_{n \times 1}, \quad
+\boldsymbol{\beta} = \begin{bmatrix}
+\beta_1
+\end{bmatrix}_{1 \times 1}
+$$
+
+Note: $\mathbf{X}$ has **no column of ones**!
+
+#### Normal Equations
+
+$$
+\mathbf{X}'\mathbf{X}\boldsymbol{b} = \mathbf{X}'\boldsymbol{y}
+$$
+
+Expanding:
+
+$$
+\left(\sum_{i=1}^n x_i^2\right) b_1 = \sum_{i=1}^n x_i y_i
+$$
+
+::: {.callout-important}
+## Solution for No-Intercept Model
+
+$$
+b_1 = \frac{\sum_{i=1}^n x_i y_i}{\sum_{i=1}^n x_i^2}
+$$
+
+Compare with the standard formula:
+
+$$
+b_1 = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}{\sum (x_i - \bar{x})^2}
+$$
+
+These are **different** unless $\bar{x} = \bar{y} = 0$!
+:::
+
+#### Critical Differences from Standard Regression
+
+1. **Residuals don't sum to zero**: $\sum e_i \neq 0$ in general
+2. **$R^2$ definition changes**: Standard $R^2 = 1 - SSE/SST$ can be negative or misleading
+3. **Different degrees of freedom**: $df = n - 1$ (only 1 parameter estimated)
+4. **Fitted line forced through (0,0)**: Can cause poor fit if intercept should be nonzero
+
+### Small Numerical Example: Milk Production vs. Feed Intake
+
+Biological constraint: If a cow eats zero feed, she produces zero milk (ignoring body tissue mobilization).
+
+```{r}
+#| echo: true
+
+# Load milk-feed data
+milk_feed <- read.csv("data/milk_feed.csv")
+milk_feed
+```
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 6
+
+# Visualize
+ggplot(milk_feed, aes(x = feed_intake_kg, y = milk_production_kg)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE, color = "blue", linewidth = 1) +
+  geom_smooth(method = "lm", formula = y ~ x - 1, se = FALSE,
+              color = "red", linewidth = 1, linetype = "dashed") +
+  geom_abline(intercept = 0, slope = 0, linetype = "dotted") +
+  expand_limits(x = 0, y = 0) +
+  labs(title = "Milk Production vs. Feed Intake",
+       subtitle = "Blue: standard model | Red: no-intercept model",
+       x = "Feed Intake (kg/day)",
+       y = "Milk Production (kg/day)") +
+  theme_minimal()
+```
+
+#### Standard Model (With Intercept)
+
+```{r}
+#| echo: true
+
+# Standard linear regression
+fit_with_int <- lm(milk_production_kg ~ feed_intake_kg, data = milk_feed)
+summary(fit_with_int)
+```
+
+```{r}
+#| echo: true
+
+# Manual calculation
+X_int <- cbind(1, milk_feed$feed_intake_kg)
+y <- milk_feed$milk_production_kg
+
+b_int <- solve(t(X_int) %*% X_int) %*% t(X_int) %*% y
+cat("Manual estimates (with intercept):\n")
+print(b_int)
+```
+
+**Interpretation**: Intercept is 1.71 kg/day. This suggests there's some "baseline" milk production even before accounting for feed intake (biologically questionable).
+
+#### No-Intercept Model
+
+```{r}
+#| echo: true
+
+# No-intercept regression
+fit_no_int <- lm(milk_production_kg ~ feed_intake_kg - 1, data = milk_feed)
+# or equivalently: lm(milk_production_kg ~ 0 + feed_intake_kg, data = milk_feed)
+summary(fit_no_int)
+```
+
+```{r}
+#| echo: true
+
+# Manual calculation
+X_no_int <- matrix(milk_feed$feed_intake_kg, ncol = 1)
+
+b_no_int <- solve(t(X_no_int) %*% X_no_int) %*% t(X_no_int) %*% y
+cat("Manual estimate (no intercept):\n")
+print(b_no_int)
+
+# Verify formula
+b1_formula <- sum(milk_feed$feed_intake_kg * milk_feed$milk_production_kg) /
+               sum(milk_feed$feed_intake_kg^2)
+cat("Using formula: b₁ = Σ(xᵢyᵢ) / Σ(xᵢ²) =", b1_formula, "\n")
+```
+
+**Interpretation**: For each kg of feed intake, milk production increases by 1.46 kg/day. The line is forced through the origin.
+
+#### Compare Residuals
+
+```{r}
+#| echo: true
+
+# Residuals from both models
+residuals_with <- residuals(fit_with_int)
+residuals_no <- residuals(fit_no_int)
+
+cat("Residuals WITH intercept:\n")
+print(round(residuals_with, 2))
+cat("Sum:", sum(residuals_with), "\n\n")
+
+cat("Residuals NO intercept:\n")
+print(round(residuals_no, 2))
+cat("Sum:", sum(residuals_no), "(NOT zero!)\n")
+```
+
+::: {.callout-note}
+## Key Observation
+
+With a standard intercept model, residuals always sum to zero: $\sum e_i = 0$.
+
+For no-intercept models, this is **not** guaranteed! Residuals can have a systematic bias.
+:::
+
+#### Compare SSE and $R^2$
+
+```{r}
+#| echo: true
+
+# Sum of squared errors
+SSE_with <- sum(residuals_with^2)
+SSE_no <- sum(residuals_no^2)
+
+cat("SSE (with intercept):", SSE_with, "\n")
+cat("SSE (no intercept): ", SSE_no, "\n\n")
+
+# R²
+R2_with <- summary(fit_with_int)$r.squared
+R2_no <- summary(fit_no_int)$r.squared
+
+cat("R² (with intercept):", R2_with, "\n")
+cat("R² (no intercept): ", R2_no, "\n")
+```
+
+::: {.callout-warning}
+## $R^2$ is NOT Comparable!
+
+For no-intercept models, $R^2$ is calculated differently and can exceed 1.0 or be misleading. **Do not compare** $R^2$ values between models with and without intercept!
+
+The definition changes because SST (total sum of squares) changes:
+
+- With intercept: $SST = \sum(y_i - \bar{y})^2$
+- No intercept: $SST = \sum y_i^2$ (no mean correction)
+:::
+
+### Realistic Livestock Application: Broiler Gain vs. Feed
+
+We have weight gain and feed intake data for 40 broilers. Does it make sense to force through the origin?
+
+```{r}
+#| echo: true
+
+# Load broiler gain-feed data
+broiler_feed <- read.csv("data/broiler_gain_feed.csv")
+head(broiler_feed, 10)
+```
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 6
+
+# Visualize with both models
+ggplot(broiler_feed, aes(x = feed_intake_kg, y = weight_gain_kg)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", se = TRUE, color = "blue", fill = "lightblue") +
+  geom_smooth(method = "lm", formula = y ~ x - 1, se = TRUE,
+              color = "red", fill = "pink", linetype = "dashed") +
+  expand_limits(x = 0, y = 0) +
+  labs(title = "Broiler Weight Gain vs. Feed Intake (n=40)",
+       subtitle = "Blue: standard model | Red: no-intercept model",
+       x = "Feed Intake (kg)",
+       y = "Weight Gain (kg)") +
+  theme_minimal()
+```
+
+#### Fit Both Models
+
+```{r}
+#| echo: true
+
+# Standard model
+fit_broiler_std <- lm(weight_gain_kg ~ feed_intake_kg, data = broiler_feed)
+
+# No-intercept model
+fit_broiler_no <- lm(weight_gain_kg ~ feed_intake_kg - 1, data = broiler_feed)
+
+# Compare coefficients
+cat("Standard model:\n")
+print(coef(fit_broiler_std))
+
+cat("\nNo-intercept model:\n")
+print(coef(fit_broiler_no))
+```
+
+```{r}
+#| echo: true
+
+# Is the intercept significantly different from zero?
+cat("Standard model summary:\n")
+print(summary(fit_broiler_std)$coefficients)
+```
+
+**Interpretation**: The intercept is `r round(coef(fit_broiler_std)[1], 3)` with SE = `r round(summary(fit_broiler_std)$coefficients[1,2], 3)`. The t-test ($p$ = `r round(summary(fit_broiler_std)$coefficients[1,4], 4)`) shows the intercept is **not significantly different from zero**.
+
+This suggests the no-intercept model might be reasonable here.
+
+#### Diagnostic Comparison
+
+```{r}
+#| echo: true
+#| fig-width: 10
+#| fig-height: 5
+
+# Residual plots side by side
+par(mfrow = c(1, 2))
+
+# Standard model
+plot(fitted(fit_broiler_std), residuals(fit_broiler_std),
+     main = "Standard Model Residuals",
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red", lty = 2)
+
+# No-intercept model
+plot(fitted(fit_broiler_no), residuals(fit_broiler_no),
+     main = "No-Intercept Model Residuals",
+     xlab = "Fitted Values", ylab = "Residuals")
+abline(h = 0, col = "red", lty = 2)
+```
+
+Both residual plots look reasonable—no strong patterns or heteroscedasticity.
+
+::: {.callout-tip}
+## Decision Framework: Should You Use No-Intercept?
+
+Ask these questions:
+
+1. **Theory**: Does $y=0$ when $x=0$ make biological sense?
+   - Yes: Feed → production relationships (with caveats)
+   - No: Most growth curves, many dose-response curves
+
+2. **Data**: Is the intercept close to zero in a standard model?
+   - If intercept ≈ 0 and not significant → no-intercept may be OK
+   - If intercept significantly different from 0 → keep it!
+
+3. **Fit**: Do diagnostic plots look similar for both models?
+   - Check residual patterns
+   - Check influential observations
+
+4. **Context**: What's the consequence of being wrong?
+   - If forcing through origin distorts predictions → don't do it
+   - If it's theoretically necessary → justify carefully
+
+**General advice**: Start with a standard model. Only remove the intercept if there's strong justification.
+:::
+
+### Summary: Regression Through the Origin
+
+**When to consider**:
+
+- Strong theoretical reason that $y=0$ when $x=0$
+- Intercept in standard model is near zero and not significant
+- Used in specific applications (calibration, certain physical models)
+
+**Critical warnings**:
+
+- $R^2$ values not comparable between models
+- Residuals don't sum to zero
+- Can badly distort fit if intercept should be nonzero
+- **Use sparingly and justify carefully!**
+
+**R syntax**:
+
+- `lm(y ~ x - 1)` or `lm(y ~ 0 + x)`
+
+---
+
+## Preview of Mixed Models: The Bridge to BLUP {#sec-mixed-models}
+
+### Introduction: Fixed Effects vs. Random Effects
+
+Throughout this entire course, we've been fitting **fixed effects models**. The parameters $\beta_0, \beta_1, \ldots, \beta_p$ are treated as **fixed unknown constants** that we estimate from data.
+
+But in animal breeding and genetics, we often encounter **random effects**:
+
+- **Animal genetic effects**: Breeding values for thousands of animals
+- **Sire/dam effects**: Parental contributions to offspring performance
+- **Herd/year effects**: Environmental factors sampled from a population
+- **Litter/pen effects**: Group-level variation
+
+Random effects are **parameters treated as random variables** with a distribution. Instead of estimating a fixed value for each animal, we estimate:
+
+1. The **variance** of breeding values in the population
+2. **Predictions** of individual breeding values (BLUPs) that "borrow strength" from relatives
+
+This is the foundation of **genetic evaluation**, **Estimated Progeny Differences (EPDs)**, and **Genomic Selection**.
+
+::: {.callout-note}
+## Why This Matters for Animal Breeding
+
+In dairy cattle genetic evaluation:
+
+- Fixed effects: herd, year-season, age, stage of lactation
+- Random effects: animal breeding values (10,000s of animals!)
+
+Treating animal effects as fixed would:
+
+- Require estimating 10,000+ parameters
+- Give poor estimates for animals with little data
+- Not account for family relationships (pedigree)
+
+Treating them as random:
+
+- Estimates 2 parameters: additive genetic variance and residual variance
+- Provides BLUPs that "shrink" toward the mean for animals with little data
+- Incorporates pedigree relationships (relatedness matrix)
+
+This is why **BLUP (Best Linear Unbiased Prediction)** revolutionized animal breeding in the 1970s-1980s.
+:::
+
+### The Mixed Model Framework
+
+The general **linear mixed model** is:
+
+$$
+\boldsymbol{y} = \mathbf{X}\boldsymbol{\beta} + \mathbf{Z}\boldsymbol{u} + \boldsymbol{e}
+$$
+
+where:
+
+- $\boldsymbol{y}$: vector of observations (n × 1)
+- $\mathbf{X}$: design matrix for **fixed effects** (n × p)
+- $\boldsymbol{\beta}$: vector of **fixed effects** parameters (p × 1)
+- $\mathbf{Z}$: incidence matrix for **random effects** (n × q)
+- $\boldsymbol{u}$: vector of **random effects** (q × 1), with $\boldsymbol{u} \sim N(\mathbf{0}, \mathbf{G})$
+- $\boldsymbol{e}$: vector of residual errors (n × 1), with $\boldsymbol{e} \sim N(\mathbf{0}, \mathbf{R})$
+
+**Key assumptions**:
+
+- $E(\boldsymbol{u}) = \mathbf{0}$ (random effects are zero on average)
+- $Var(\boldsymbol{u}) = \mathbf{G}$ (variance-covariance matrix for random effects)
+- $Var(\boldsymbol{e}) = \mathbf{R}$ (variance-covariance matrix for residuals)
+- $\boldsymbol{u}$ and $\boldsymbol{e}$ are independent
+
+::: {.callout-important icon=true}
+## NOTATION EXTENSION
+
+This is the first time in the course we introduce **random effects notation**:
+
+- **$\boldsymbol{u}$**: vector of random effects (lowercase bold)
+- **$\mathbf{Z}$**: incidence matrix for random effects (uppercase bold)
+- **$\mathbf{G}$**: variance-covariance matrix for random effects (uppercase bold)
+- **$\mathbf{R}$**: variance-covariance matrix for residuals (uppercase bold)
+
+Compare with what we've used all course:
+
+- **$\boldsymbol{\beta}$**: vector of **fixed** effects (known to exist, unknown value)
+- **$\mathbf{X}$**: design matrix for **fixed** effects
+- $\sigma^2\mathbf{I}$: simple residual variance structure (now generalized to $\mathbf{R}$)
+:::
+
+### Henderson's Mixed Model Equations (MME)
+
+In 1949, Charles Henderson derived the equations that simultaneously solve for fixed effects ($\boldsymbol{\beta}$) and predict random effects ($\boldsymbol{u}$).
+
+For the general case:
+
+$$
+\begin{bmatrix}
+\mathbf{X}'\mathbf{R}^{-1}\mathbf{X} & \mathbf{X}'\mathbf{R}^{-1}\mathbf{Z} \\
+\mathbf{Z}'\mathbf{R}^{-1}\mathbf{X} & \mathbf{Z}'\mathbf{R}^{-1}\mathbf{Z} + \mathbf{G}^{-1}
+\end{bmatrix}
+\begin{bmatrix}
+\hat{\boldsymbol{\beta}} \\
+\hat{\boldsymbol{u}}
+\end{bmatrix}
+=
+\begin{bmatrix}
+\mathbf{X}'\mathbf{R}^{-1}\boldsymbol{y} \\
+\mathbf{Z}'\mathbf{R}^{-1}\boldsymbol{y}
+\end{bmatrix}
+$$
+
+This looks intimidating! But notice the similarity to our familiar normal equations:
+
+$$
+\mathbf{X}'\mathbf{X}\boldsymbol{b} = \mathbf{X}'\boldsymbol{y}
+$$
+
+The MME are an **augmented** version that includes:
+
+- Equations for fixed effects (top row)
+- Equations for random effects (bottom row)
+- A "penalty" term $\mathbf{G}^{-1}$ that shrinks random effects toward zero
+
+**Simplified Case**: When $\mathbf{R} = \sigma^2\mathbf{I}$ and $\mathbf{G} = \sigma_u^2\mathbf{I}$, the MME simplify to:
+
+$$
+\begin{bmatrix}
+\mathbf{X}'\mathbf{X} & \mathbf{X}'\mathbf{Z} \\
+\mathbf{Z}'\mathbf{X} & \mathbf{Z}'\mathbf{Z} + \lambda\mathbf{I}
+\end{bmatrix}
+\begin{bmatrix}
+\hat{\boldsymbol{\beta}} \\
+\hat{\boldsymbol{u}}
+\end{bmatrix}
+=
+\begin{bmatrix}
+\mathbf{X}'\boldsymbol{y} \\
+\mathbf{Z}'\boldsymbol{y}
+\end{bmatrix}
+$$
+
+where $\lambda = \sigma^2 / \sigma_u^2$ is the **variance ratio**.
+
+::: {.callout-note}
+## Interpreting $\lambda$
+
+The variance ratio $\lambda = \sigma^2 / \sigma_u^2$ controls the amount of shrinkage:
+
+- **Large $\lambda$** (residual variance >> random effect variance): Heavy shrinkage toward zero
+- **Small $\lambda$** (random effect variance large): Little shrinkage, random effects estimates closer to fixed effects estimates
+
+In animal breeding: $\lambda$ relates to **heritability**!
+
+$$
+h^2 = \frac{\sigma_u^2}{\sigma_u^2 + \sigma^2}
+$$
+
+High heritability → small $\lambda$ → less shrinkage (genetics matters more than noise).
+:::
+
+### Properties of Henderson's Solutions
+
+Solving the MME gives:
+
+1. **$\hat{\boldsymbol{\beta}}$**: BLUE (Best Linear Unbiased Estimator) of fixed effects
+2. **$\hat{\boldsymbol{u}}$**: BLUP (Best Linear Unbiased Predictor) of random effects
+
+**BLUP properties**:
+
+- **Best**: Minimum mean squared error (MSE) among linear predictors
+- **Linear**: Linear function of observations $\boldsymbol{y}$
+- **Unbiased**: $E(\hat{\boldsymbol{u}} - \boldsymbol{u}) = \mathbf{0}$
+- **Predictor** (not "estimator"): We're predicting realized values of random variables
+
+::: {.callout-important}
+## Connection to This Course
+
+Everything you've learned applies to mixed models:
+
+- The $\mathbf{X}'\mathbf{X}$ and $\mathbf{X}'\boldsymbol{y}$ terms are exactly what we've been computing!
+- Matrix algebra: transpose, multiplication, inversion—all the same
+- Rank deficiency, generalized inverses, estimable functions—all relevant
+- Residuals, SSE, diagnostics—all extend naturally
+
+**The only addition**: An extra set of equations for random effects with a shrinkage penalty $\mathbf{G}^{-1}$.
+
+This course has given you the foundation to understand and implement mixed models!
+:::
+
+### Small Numerical Example: Simple Sire Model
+
+Let's fit a simple sire model where we compare treating sire as fixed vs. random.
+
+**Data**: 5 sires with 3-5 daughters each (n=20 total cows).
+
+```{r}
+#| echo: true
+
+# Load sire data
+sire_data <- read.csv("data/simple_sire_model.csv")
+sire_data
+```
+
+```{r}
+#| echo: true
+
+# Summary by sire
+sire_summary <- sire_data %>%
+  group_by(sire) %>%
+  summarise(
+    n_daughters = n(),
+    mean_yield = mean(milk_yield),
+    sd_yield = sd(milk_yield)
+  )
+sire_summary
+```
+
+#### Fixed Effects Model (What We've Been Doing)
+
+```{r}
+#| echo: true
+
+# Treat sire as fixed effect
+fit_sire_fixed <- lm(milk_yield ~ sire, data = sire_data)
+summary(fit_sire_fixed)
+```
+
+```{r}
+#| echo: true
+
+# Get all sire estimates (using cell means model for clarity)
+fit_sire_fixed_means <- lm(milk_yield ~ sire - 1, data = sire_data)
+sire_fixed_estimates <- coef(fit_sire_fixed_means)
+names(sire_fixed_estimates) <- levels(factor(sire_data$sire))
+sire_fixed_estimates
+```
+
+These are the **daughter averages** for each sire—no shrinkage, no borrowing of strength.
+
+#### Random Effects Model (Mixed Model)
+
+```{r}
+#| echo: true
+#| message: false
+
+# Treat sire as random effect
+library(lme4)
+fit_sire_random <- lmer(milk_yield ~ 1 + (1|sire), data = sire_data)
+summary(fit_sire_random)
+```
+
+```{r}
+#| echo: true
+
+# Variance components
+vc <- as.data.frame(VarCorr(fit_sire_random))
+sigma_u <- vc$sdcor[1]  # SD of sire effects
+sigma_e <- vc$sdcor[2]  # Residual SD
+
+cat("Random effect SD (sire):", sigma_u, "\n")
+cat("Residual SD:            ", sigma_e, "\n")
+cat("Variance ratio (λ):     ", sigma_e^2 / sigma_u^2, "\n")
+```
+
+```{r}
+#| echo: true
+
+# BLUPs (Best Linear Unbiased Predictions)
+sire_blups <- ranef(fit_sire_random)$sire[,1]
+overall_mean <- fixef(fit_sire_random)
+sire_random_predictions <- overall_mean + sire_blups
+
+names(sire_random_predictions) <- rownames(ranef(fit_sire_random)$sire)
+sire_random_predictions
+```
+
+#### Compare Fixed vs. Random Estimates
+
+```{r}
+#| echo: true
+#| fig-width: 8
+#| fig-height: 6
+
+# Create comparison data frame
+sire_comparison <- data.frame(
+  sire = names(sire_fixed_estimates),
+  n_daughters = sire_summary$n_daughters,
+  fixed_effect = as.numeric(sire_fixed_estimates),
+  random_effect = as.numeric(sire_random_predictions)
+)
+
+# Plot comparison
+ggplot(sire_comparison, aes(x = sire)) +
+  geom_point(aes(y = fixed_effect, color = "Fixed Effects"), size = 3) +
+  geom_point(aes(y = random_effect, color = "Random Effects (BLUP)"), size = 3) +
+  geom_hline(yintercept = overall_mean, linetype = "dashed", color = "gray50") +
+  geom_text(aes(x = 1.5, y = overall_mean + 1.5,
+                label = paste("Overall mean =", round(overall_mean, 1))),
+            color = "gray30") +
+  scale_color_manual(values = c("Fixed Effects" = "blue",
+                                  "Random Effects (BLUP)" = "red")) +
+  labs(title = "Comparing Fixed Effects vs. Random Effects (BLUP)",
+       subtitle = "Notice shrinkage toward the population mean",
+       x = "Sire",
+       y = "Predicted Milk Yield (kg/day)",
+       color = "Method") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+::: {.callout-note}
+## Observing Shrinkage
+
+Notice how the **BLUP estimates (red) are pulled toward the population mean** compared to fixed effects (blue). This shrinkage is:
+
+- **Larger** for sires with **fewer daughters** (less information → more shrinkage)
+- **Smaller** for sires with **more daughters** (more information → less shrinkage)
+
+This is **"borrowing strength"**: Using information about the population distribution to improve predictions for individuals with sparse data.
+
+This is exactly what happens in genetic evaluation: young bulls with few daughters get more shrinkage than proven bulls with many daughters.
+:::
+
+```{r}
+#| echo: true
+
+# Quantify shrinkage
+sire_comparison$shrinkage <- sire_comparison$fixed_effect - sire_comparison$random_effect
+sire_comparison$shrinkage_pct <- (sire_comparison$shrinkage /
+                                   (sire_comparison$fixed_effect - overall_mean)) * 100
+
+cat("Shrinkage by sire:\n")
+print(sire_comparison[, c("sire", "n_daughters", "shrinkage", "shrinkage_pct")])
+```
+
+Sires with fewer daughters experience more shrinkage—exactly as BLUP theory predicts!
+
+### Realistic Livestock Application: Dairy Sire Evaluation
+
+Now let's examine a more realistic scenario: 10 sires with varying numbers of daughters (3 to 25 per sire, n=100 total).
+
+```{r}
+#| echo: true
+
+# Load dairy sire evaluation data
+dairy_sire <- read.csv("data/dairy_sire_eval.csv")
+
+# Summary by sire
+dairy_summary <- dairy_sire %>%
+  group_by(sire) %>%
+  summarise(
+    n_daughters = n(),
+    mean_yield = mean(milk_yield),
+    sd_yield = sd(milk_yield)
+  ) %>%
+  arrange(n_daughters)
+
+dairy_summary
+```
+
+```{r}
+#| echo: true
+
+# Fixed effects model
+fit_dairy_fixed <- lm(milk_yield ~ sire - 1, data = dairy_sire)
+dairy_fixed_est <- coef(fit_dairy_fixed)
+
+# Random effects model
+fit_dairy_random <- lmer(milk_yield ~ 1 + (1|sire), data = dairy_sire)
+
+# Extract estimates
+dairy_overall_mean <- fixef(fit_dairy_random)
+dairy_blups <- ranef(fit_dairy_random)$sire[,1]
+dairy_random_pred <- dairy_overall_mean + dairy_blups
+```
+
+```{r}
+#| echo: true
+
+# Variance components
+dairy_vc <- as.data.frame(VarCorr(fit_dairy_random))
+cat("Sire variance (σ²ᵤ):", round(dairy_vc$vcov[1], 2), "\n")
+cat("Residual variance (σ²):", round(dairy_vc$vcov[2], 2), "\n")
+cat("Variance ratio (λ):", round(dairy_vc$vcov[2] / dairy_vc$vcov[1], 2), "\n")
+
+# Approximate heritability (sire model gives 1/4 h²)
+h2_approx <- 4 * dairy_vc$vcov[1] / (dairy_vc$vcov[1] + dairy_vc$vcov[2])
+cat("Approximate heritability:", round(h2_approx, 2), "\n")
+```
+
+#### Visualize Shrinkage by Information Level
+
+```{r}
+#| echo: true
+#| fig-width: 10
+#| fig-height: 6
+
+# Comparison dataframe
+dairy_comp <- data.frame(
+  sire = levels(factor(dairy_sire$sire)),
+  n_daughters = dairy_summary$n_daughters,
+  fixed = as.numeric(dairy_fixed_est),
+  blup = as.numeric(dairy_random_pred)
+)
+
+dairy_comp$shrinkage <- abs(dairy_comp$fixed - dairy_comp$blup)
+
+# Plot: shrinkage vs. information
+ggplot(dairy_comp, aes(x = n_daughters, y = shrinkage)) +
+  geom_point(size = 3, color = "darkred") +
+  geom_smooth(method = "loess", se = FALSE, color = "blue") +
+  labs(title = "Shrinkage Increases with Less Information",
+       subtitle = "Sires with fewer daughters experience more shrinkage toward population mean",
+       x = "Number of Daughters",
+       y = "Absolute Shrinkage (Fixed - BLUP)") +
+  theme_minimal()
+```
+
+Perfect! As predicted by theory, shrinkage is **inversely related** to information: sires with fewer daughters get pulled more strongly toward the population mean.
+
+```{r}
+#| echo: true
+#| fig-width: 10
+#| fig-height: 7
+
+# Plot fixed vs. BLUP estimates
+dairy_comp_long <- dairy_comp %>%
+  select(sire, n_daughters, fixed, blup) %>%
+  pivot_longer(cols = c(fixed, blup), names_to = "method", values_to = "estimate")
+
+ggplot(dairy_comp_long, aes(x = reorder(sire, n_daughters), y = estimate,
+                             color = method, group = method)) +
+  geom_point(size = 3) +
+  geom_line(aes(group = sire), color = "gray70") +
+  geom_hline(yintercept = dairy_overall_mean, linetype = "dashed", color = "black") +
+  scale_color_manual(values = c("fixed" = "blue", "blup" = "red"),
+                     labels = c("Fixed Effects", "BLUP")) +
+  labs(title = "Fixed Effects vs. BLUP for 10 Dairy Sires",
+       subtitle = "Ordered by number of daughters (left = few, right = many)",
+       x = "Sire (ordered by information)",
+       y = "Predicted Milk Yield (kg/day)",
+       color = "Method") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom")
+```
+
+::: {.callout-important}
+## Why BLUP Matters in Animal Breeding
+
+This demonstrates the power of BLUP for genetic evaluation:
+
+1. **Young sires** (few daughters): Fixed effects unreliable, BLUP provides "regularized" estimates
+2. **Proven sires** (many daughters): Fixed and BLUP estimates converge (data speaks for itself)
+3. **Variance components**: Estimate 2 parameters (σ²ᵤ, σ²) instead of 10 sire effects
+4. **Heritability**: Can estimate from variance components
+5. **Selection decisions**: BLUP provides more accurate sire rankings
+
+**In practice**:
+
+- Add pedigree: $\mathbf{G} = \mathbf{A}\sigma_u^2$ (relationship matrix)
+- Add genomics: $\mathbf{G} = \mathbf{G}_{genomic}$ (marker-based relationships)
+- Multiple traits, correlated effects, heterogeneous variances...
+
+All build on the foundation you've learned in this course!
+:::
+
+### Connection to Estimated Progeny Differences (EPDs)
+
+In livestock breeding, **EPDs (Estimated Progeny Differences)** are essentially BLUPs:
+
+- EPD for a sire = 2 × (sire BLUP)
+- Represents expected difference in offspring performance
+- Accounts for number of progeny (reliability)
+- Incorporates pedigree relationships
+- Regresses toward breed average for unproven sires
+
+The EPDs you see in bull catalogs, sow selection indexes, and chicken breeding programs all come from mixed model equations—direct descendants of what we've studied this week!
+
+### Summary: Mixed Models Preview
+
+**Key concepts**:
+
+- **Fixed effects**: Parameters with fixed unknown values (this entire course)
+- **Random effects**: Parameters as random variables with a distribution
+- **Mixed models**: Combine fixed and random effects in one framework
+- **Henderson's MME**: Augmented normal equations that solve for both
+- **BLUP**: Best Linear Unbiased Prediction—optimal predictor of random effects
+- **Shrinkage**: Random effects pulled toward population mean (more shrinkage = less information)
+
+**Why it matters**:
+
+- Foundation of modern genetic evaluation
+- Handles large numbers of effects efficiently
+- Accounts for relationships (pedigree, genomics)
+- Provides accuracy measures (reliability, repeatability)
+
+**What you're ready for**:
+
+- Advanced mixed models course
+- Quantitative genetics
+- Genomic selection methods
+- Variance component estimation
+- BLUP implementation
+
+This course has prepared you with the matrix algebra, least squares theory, and linear model framework to understand and apply these advanced methods!
+
+---
+
+## Exercises {#sec-exercises}
+
+### Exercise 1: Polynomial Regression (Hand Calculation)
+
+You have the following data on pig weight (kg) vs. age (weeks):
+
+| Age (weeks) | Weight (kg) |
+|-------------|-------------|
+| 4           | 8           |
+| 8           | 22          |
+| 12          | 45          |
+
+**(a)** Fit a quadratic model $y = \beta_0 + \beta_1 x + \beta_2 x^2 + e$ by hand. Construct the $\mathbf{X}$ matrix, compute $\mathbf{X}'\mathbf{X}$ and $\mathbf{X}'\boldsymbol{y}$, and solve for $\boldsymbol{b}$.
+
+**(b)** Predict the weight at age 16 weeks.
+
+**(c)** Does the quadratic term ($\beta_2$) appear necessary based on the data pattern? Explain.
+
+---
+
+### Exercise 2: Weighted Least Squares (Pen Averages)
+
+You have average daily gain (ADG, kg/day) data from 4 pens:
+
+| Pen | ADG  | Pen Size |
+|-----|------|----------|
+| 1   | 0.90 | 10       |
+| 2   | 0.88 | 5        |
+| 3   | 0.93 | 15       |
+| 4   | 0.85 | 8        |
+
+**(a)** Calculate the unweighted mean ADG (OLS estimate).
+
+**(b)** Calculate the weighted mean ADG (WLS estimate) using weights $w_i = n_i$ (pen size).
+
+**(c)** Which estimate is more reliable and why?
+
+---
+
+### Exercise 3: Regression Through the Origin (Theoretical)
+
+Consider the no-intercept model $y_i = \beta_1 x_i + e_i$.
+
+**(a)** Prove that the residuals do not necessarily sum to zero: $\sum e_i \neq 0$ in general.
+
+**(b)** Show that the fitted values $\hat{y}_i = b_1 x_i$ and observed values $y_i$ do not necessarily have the same mean: $\bar{\hat{y}} \neq \bar{y}$ in general.
+
+**(c)** Explain why this property makes no-intercept models problematic if the true intercept is nonzero.
+
+---
+
+### Exercise 4: Polynomial Model Selection (Applied)
+
+Using the lactation curve dataset (`lactation_curve.csv`):
+
+**(a)** Fit linear, quadratic, and cubic models for milk yield vs. days in milk.
+
+**(b)** Use `anova()` to test whether the quadratic term is needed. Report the F-statistic and p-value.
+
+**(c)** Use `anova()` to test whether the cubic term (given quadratic is included) is needed.
+
+**(d)** Compare adjusted R² for all three models. Which model would you recommend and why?
+
+**(e)** Calculate VIF for the quadratic model with raw polynomials vs. orthogonal polynomials. Comment on collinearity.
+
+---
+
+### Exercise 5: Weighted Least Squares (Applied)
+
+Using the feed efficiency dataset (`feed_efficiency_pens.csv`):
+
+**(a)** Fit an OLS model: `fcr ~ diet` (unweighted).
+
+**(b)** Fit a WLS model: `fcr ~ diet` weighted by `pen_size`.
+
+**(c)** Create a residual plot for the OLS model: plot |residuals| vs. pen size. Is there evidence of heteroscedasticity?
+
+**(d)** Compare standard errors for diet effects between OLS and WLS. Which are smaller and why?
+
+**(e)** Test the hypothesis $H_0$: no diet effect using both models. Do your conclusions differ?
+
+---
+
+### Exercise 6: No-Intercept Model (Applied)
+
+Using the broiler gain-feed dataset (`broiler_gain_feed.csv`):
+
+**(a)** Fit a standard linear model: `weight_gain_kg ~ feed_intake_kg`.
+
+**(b)** Test whether the intercept is significantly different from zero.
+
+**(c)** Fit a no-intercept model: `weight_gain_kg ~ feed_intake_kg - 1`.
+
+**(d)** Compare predictions at feed intake = 2.5 kg for both models.
+
+**(e)** Plot both fitted lines on the same graph (extending to the origin). Which model seems more biologically plausible?
+
+---
+
+### Exercise 7: Mixed Models (Conceptual)
+
+Consider a sheep breeding program with 20 rams, each with 5-15 offspring tested for weaning weight.
+
+**(a)** Write out the mixed model equation for this scenario. Define all components ($\boldsymbol{y}$, $\mathbf{X}$, $\boldsymbol{\beta}$, $\mathbf{Z}$, $\boldsymbol{u}$, $\boldsymbol{e}$).
+
+**(b)** What are the fixed effects and what are the random effects?
+
+**(c)** Explain conceptually why treating ram as a random effect is preferable to treating it as a fixed effect.
+
+**(d)** If a ram has only 5 offspring while most have 15, how will the BLUP for this ram differ from the fixed effect estimate? Explain the shrinkage concept.
+
+**(e)** If the estimated variance components are $\sigma_u^2 = 4$ kg² and $\sigma^2 = 16$ kg², calculate the variance ratio $\lambda$ and approximate heritability $h^2$.
+
+---
+
+## Summary and Looking Ahead {#sec-summary}
+
+This week, we explored four powerful extensions of the linear model framework:
+
+**Polynomial Regression** enables us to model curved relationships common in animal science—growth curves, lactation curves, and response surfaces—while maintaining the linear model structure. Key takeaways: start with low degrees, use orthogonal polynomials to combat collinearity, and always prioritize biological plausibility over statistical fit.
+
+**Weighted Least Squares** addresses heteroscedasticity by optimally weighting observations according to their precision. This is essential when working with grouped data, pen averages, or measurements with varying reliability. WLS provides more efficient estimates and valid inference when variances differ across observations.
+
+**Regression Through the Origin** applies in special cases where theory dictates $y=0$ when $x=0$. While appealing, it requires careful justification and comes with important caveats about residual properties and $R^2$ interpretation. Use sparingly!
+
+**Mixed Models** bridge the gap between this course and advanced genetic evaluation methods. By introducing random effects, we can efficiently handle large numbers of effects, account for population structure, and preview BLUP—the foundation of modern animal breeding. Understanding the connection between the normal equations and Henderson's MME shows how everything we've learned naturally extends to this powerful framework.
+
+### Skills You've Gained
+
+After completing this week, you can:
+
+- Fit and interpret polynomial models for nonlinear biological relationships
+- Apply weighted least squares when error variances are heterogeneous
+- Understand when (and when not) to use no-intercept models
+- Explain the distinction between fixed and random effects
+- Recognize the structure of mixed model equations and their connection to least squares
+- Understand conceptually how BLUP works and why it matters for breeding
+
+### Connection to Week 15
+
+Next week, the **Capstone Project** integrates all concepts from Weeks 1-14. You'll:
+
+- Analyze a comprehensive multi-factor livestock dataset
+- Build design matrices for complex models
+- Handle rank deficiency and unbalanced data
+- Conduct hypothesis tests with contrasts
+- Perform full diagnostic analysis
+- Build your own least squares solver package
+- (Optional) Preview BLUP application with pedigree
+
+Everything comes together: matrix algebra, least squares theory, ANOVA, regression, diagnostics, and now these special topics. You're ready!
+
+---
 
 **Previous**: [Week 13: Special Topics I](../Week13_SpecialTopics1/Week13_SpecialTopics1.qmd)
+
 **Next**: [Week 15: Capstone Project](../Week15_Capstone/Week15_Capstone.qmd)

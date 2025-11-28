@@ -1,0 +1,406 @@
+---
+title: "Week 13 Exercises"
+subtitle: "Special Topics I: Unbalanced Data and Constraint Systems"
+author: "Linear Models for Animal Breeding and Genetics"
+date: today
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: show
+    code-tools: true
+    embed-resources: true
+---
+
+# Instructions {.unnumbered}
+
+These exercises focus on **practical application** of Week 13 concepts:
+- Strategic approaches to unbalanced data
+- Different constraint systems
+- Estimable vs. non-estimable functions
+- Fixed-effects limitations in genetic evaluation
+
+**Datasets**: All datasets are in the `data/` subfolder. See `data/README.md` for descriptions.
+
+**Software**: Use R for all exercises. You may use `lm()`, `emmeans`, `car::Anova()`, and related functions.
+
+**What to submit**:
+1. R code (well-commented)
+2. Output (tables, plots)
+3. Written interpretations (answer questions in complete sentences)
+
+**Collaboration**: Discuss concepts with classmates, but write your own code and interpretations.
+
+---
+
+# Exercise 1: Unbalanced Two-Way ANOVA (Applied)
+
+## Background
+
+Load the swine litter size dataset:
+
+```{r}
+#| eval: false
+swine <- read.csv("data/swine_litter.csv")
+str(swine)
+table(swine$breed, swine$parity)
+```
+
+This dataset has litter size (pigs born alive) for sows of 4 breeds across 4 parities.
+
+## Tasks
+
+a) **Exploratory analysis**:
+   - Create a table of cell counts (breed × parity)
+   - Calculate mean litter size by breed and by parity
+   - Create box plots: litter size by breed, and litter size by parity
+
+b) **Fit a two-way ANOVA** model: `litter_size ~ breed + parity` (no interaction for now)
+   - Use Type I SS (default `anova()`). Fit breed first, then parity second.
+   - Then fit parity first, breed second.
+   - Compare the SS values. Do they differ? Why or why not?
+
+c) **Type III SS**:
+   - Use `car::Anova(fit, type=3)` to get Type III SS.
+   - Compare Type III SS to the Type I SS from part (b).
+   - Which SS type is more appropriate for this dataset? Explain.
+
+d) **Hypothesis testing**:
+   - Test H₀: No breed effect (after accounting for parity)
+   - Test H₀: No parity effect (after accounting for breed)
+   - Report F-statistics and p-values.
+   - What are your conclusions?
+
+e) **Interpretation**:
+   - Use `emmeans` to get estimated marginal means for breed (adjusted for parity).
+   - Conduct pairwise comparisons (all breeds).
+   - Which breed(s) have significantly higher litter size?
+   - Provide a brief recommendation: which breed should producers select for larger litters?
+
+---
+
+# Exercise 2: Constraint Systems Comparison (Applied)
+
+## Background
+
+Load the layer egg production dataset:
+
+```{r}
+#| eval: false
+layer <- read.csv("data/layer_egg_production.csv")
+table(layer$strain)
+```
+
+You'll analyze egg production across 4 layer strains using **three different constraint systems**.
+
+## Tasks
+
+a) **Fit three models** for `egg_production ~ strain`:
+   1. **Cell means model**: `lm(egg_production ~ strain - 1)`
+   2. **Set-to-zero constraint**: `options(contrasts = c("contr.treatment", "contr.poly")); lm(egg_production ~ strain)`
+   3. **Sum-to-zero constraint**: `options(contrasts = c("contr.sum", "contr.poly")); lm(egg_production ~ strain)`
+
+b) **Extract parameter estimates** from all three models:
+   - Cell means model: What do the coefficients represent?
+   - Set-to-zero: What is μ? What is the reference strain?
+   - Sum-to-zero: What is μ? How do you interpret the strain effects?
+   - Create a table comparing the parameter estimates across the three methods.
+
+c) **Verify estimable functions are identical**:
+   - Use `emmeans(fit, "strain")` for each of the three models.
+   - Extract the estimated means (LS means).
+   - Show that all three models give **identical** strain means.
+   - Compute the contrast "Leghorn_White vs Rhode_Island_Red" for each model using `pairs()`.
+   - Show that this contrast is **identical** across models.
+
+d) **Interpretation**:
+   - Which parameterization do you find most intuitive for this problem?
+   - If you were writing a journal article, which constraint would you use, and how would you report the results?
+   - Why is it important to state which constraint you used?
+
+e) **ANCOVA extension** (optional bonus):
+   - Refit the model including `body_weight` as a covariate: `egg_production ~ strain + body_weight`
+   - Is body weight a significant predictor?
+   - Do the strain rankings change after adjusting for body weight?
+
+---
+
+# Exercise 3: Missing Cells and Estimability (Applied)
+
+## Background
+
+Load the beef feedlot dataset:
+
+```{r}
+#| eval: false
+beef <- read.csv("data/beef_feedlot.csv")
+table(beef$breed, beef$farm)
+```
+
+This dataset has **missing cells**: No Angus on Farm 5, and no Charolais on Farm 1.
+
+## Tasks
+
+a) **Identify missing cells**:
+   - Create a table of cell counts (breed × farm).
+   - Which breed × farm combinations are missing?
+   - Why might these cells be missing in a real study?
+
+b) **Fit a two-way model**: `adg ~ breed + farm`
+   - Check the rank of the design matrix: `qr(model.matrix(fit))$rank`
+   - How many parameters are in the model?
+   - Is the model rank-deficient?
+
+c) **Estimable functions**:
+   - Use `emmeans(fit, "breed")` to get breed means (averaged across farms).
+   - Are these means estimable for ALL breeds? (Hint: Check if SEs are reasonable)
+   - Try `emmeans(fit, ~ breed | farm)` to get breed means **within each farm**.
+   - For which farm × breed combinations can you NOT estimate a mean? Why?
+
+d) **Specific contrasts**:
+   - Test: Angus vs. Hereford, averaged across farms where both are present.
+   - Test: Charolais vs. Simmental, averaged across farms where both are present.
+   - Can you test "Angus vs. Charolais on Farm 1"? Why or why not?
+
+e) **Type III SS**:
+   - Compute Type III SS for breed and farm effects.
+   - Are the tests valid despite the missing cells?
+   - Interpret the results: Do breeds differ? Do farms differ?
+
+f) **Practical recommendation**:
+   - Based on your analysis, which breed has the highest ADG?
+   - Can you confidently recommend this breed for ALL farms? Why or why not?
+   - How would you design a better study to avoid estimability issues?
+
+---
+
+# Exercise 4: Dairy Sire Evaluation with Unequal Progeny (Applied)
+
+## Background
+
+Load the dairy sire dataset:
+
+```{r}
+#| eval: false
+dairy <- read.csv("data/dairy_sire.csv")
+table(dairy$sire)
+```
+
+This dataset has **highly unequal progeny numbers**: 5 to 20 daughters per sire.
+
+## Tasks
+
+a) **Descriptive statistics**:
+   - Calculate mean milk yield and SD for each sire.
+   - Calculate SE of the mean for each sire: SE = SD / √n.
+   - Create a plot showing sire means with error bars (± 2 SE).
+   - Which sire has the largest SE? Why?
+
+b) **Fit fixed-effects model**:
+   - Fit: `milk_yield ~ sire` (use sum-to-zero constraints).
+   - Extract sire LS means using `emmeans(fit, "sire")`.
+   - Rank sires from best to worst (highest to lowest milk yield).
+   - Report the top 3 and bottom 3 sires.
+
+c) **Confidence intervals and precision**:
+   - Extract 95% confidence intervals for each sire's LS mean.
+   - Compare the CI width for the sire with the fewest progeny vs. the most progeny.
+   - What is the ratio of CI widths?
+   - Why does this matter for selection decisions?
+
+d) **Hypothesis testing**:
+   - Test: Do sires differ overall? (F-test from ANOVA)
+   - Conduct pairwise comparisons for the top 3 sires.
+   - Are the top 3 sires significantly different from each other?
+   - What does this tell you about selection certainty?
+
+e) **Selection dilemma**:
+   - Suppose Sire 5 ranks #1 with 20 progeny, and Sire 2 ranks #2 with only 5 progeny.
+   - Compare their LS means and SEs.
+   - If you had to choose one sire for an AI program, which would you choose? Justify your answer based on both estimated merit and reliability.
+
+f) **Limitations of fixed effects** (conceptual):
+   - Fixed-effects LS treats each sire mean as a "daughter average."
+   - What problem arises when progeny numbers vary 4-fold (5 vs. 20)?
+   - Why would a mixed model (BLUP) be better for this situation? (No calculation needed, just explain conceptually)
+
+---
+
+# Exercise 5: Broiler Strain × Sex Interaction (Applied)
+
+## Background
+
+Load the broiler body weight dataset:
+
+```{r}
+#| eval: false
+broiler <- read.csv("data/broiler_bodyweight.csv")
+table(broiler$strain, broiler$sex)
+```
+
+This is a 3 × 2 factorial design (3 strains, 2 sexes), unbalanced but all cells present.
+
+## Tasks
+
+a) **Cell means**:
+   - Calculate mean body weight for each strain × sex combination.
+   - Create an **interaction plot**: x-axis = strain, y-axis = mean body weight, separate lines for male vs. female.
+   - Do the lines appear parallel or do they cross? What does this suggest?
+
+b) **Two-way ANOVA with interaction**:
+   - Fit: `body_weight ~ strain * sex`
+   - Use Type III SS (`car::Anova(fit, type=3)`).
+   - Report F-statistics and p-values for:
+     - Main effect of strain
+     - Main effect of sex
+     - Strain × sex interaction
+   - Is the interaction significant (α = 0.05)?
+
+c) **Interpreting interaction**:
+   - If interaction is significant: Describe the nature of the interaction. Does one strain show a larger sex effect than others?
+   - If interaction is not significant: Can you interpret main effects independently?
+
+d) **Simple effects analysis**:
+   - Use `emmeans(fit, ~ strain | sex)` to get strain means separately for males and females.
+   - Within males: Which strain has the highest body weight?
+   - Within females: Which strain has the highest body weight?
+   - Is the ranking of strains the same for both sexes?
+
+e) **Contrasts**:
+   - Test: Ross vs. Cobb, averaged across sexes.
+   - Test: Male vs. Female, averaged across strains.
+   - Test: Is the sex effect different for Ross vs. Cobb? (This is an interaction contrast)
+
+f) **Practical recommendation**:
+   - For a broiler producer raising **male birds only**, which strain would you recommend?
+   - For a producer raising **female birds only**?
+   - Does your recommendation differ by sex? Why or why not?
+
+---
+
+# Exercise 6: Generalized Inverse (Computational)
+
+## Background
+
+Consider the rank-deficient matrix:
+
+$$\mathbf{A} = \begin{bmatrix}
+2 & 1 & 3 \\
+1 & 2 & 3 \\
+3 & 3 & 6
+\end{bmatrix}$$
+
+## Tasks
+
+a) **Verify rank deficiency**:
+   - Compute the rank of **A** using `qr(A)$rank` in R.
+   - What is the rank? Is it full rank?
+   - Explain why this matrix is singular (look at row 3).
+
+b) **Compute Moore-Penrose inverse**:
+   - Use `MASS::ginv(A)` to compute the Moore-Penrose inverse **A⁺**.
+   - Verify the first property: **A A⁺ A = A** (check in R).
+   - Verify the third property: **(A A⁺)' = A A⁺** (symmetric).
+
+c) **Solve a system**:
+   - Consider the system **A x = b** where **b** = [6, 6, 12]'.
+   - Compute a solution: **x = A⁺ b**.
+   - Verify that **A x = b** (within rounding error).
+
+d) **Non-uniqueness**:
+   - The solution in part (c) is not unique because **A** is rank-deficient.
+   - Find a different solution **x₂** by adding a vector in the null space of **A**.
+   - (Hint: The null space of **A** is spanned by vectors such that **A v = 0**. Try v = [1, 1, -1]'.)
+   - Verify that both **x** and **x₂** satisfy **A x = b**.
+
+e) **Interpretation**:
+   - If **A** were the normal equations matrix **X'X** from a regression, what would non-uniqueness mean for parameter estimates?
+   - What quantity would be unique (estimable) despite non-unique parameters?
+
+---
+
+# Exercise 7: Reporting Estimable Functions (Conceptual/Applied)
+
+## Background
+
+You're writing a Methods section for a journal article. You analyzed an unbalanced one-way ANOVA using R's `lm()` with default settings (set-to-zero constraints).
+
+## Tasks
+
+a) **Identify the problem**:
+   Read this (intentionally bad) Results section:
+
+   > "We found significant breed effects (F₃,₄₆ = 8.2, p < 0.001). The breed effect for Yorkshire was α_Yorkshire = 1.5 kg (SE = 0.4), which was significantly different from zero (p < 0.001). This indicates that Yorkshire sows have superior litter size compared to other breeds."
+
+   - What is **wrong** with this interpretation?
+   - Why is α_Yorkshire not a meaningful parameter to report?
+   - What would happen if a different study used sum-to-zero constraints?
+
+b) **Write a better Results section**:
+   Suppose you have these results from `emmeans`:
+   - Breed LS means: Yorkshire 12.0 (SE=0.5), Landrace 11.0 (SE=0.6), Duroc 9.5 (SE=0.5), Hampshire 11.0 (SE=0.6)
+   - Contrast Yorkshire vs. Duroc: difference = 2.5 kg, SE=0.7, p=0.002
+   - Overall F-test: F₃,₂₇ = 8.2, p < 0.001
+
+   Rewrite the Results section **correctly**, reporting only estimable functions.
+
+c) **Methods section**:
+   Write a brief Methods section (2-3 sentences) describing:
+   - The statistical model you used
+   - Which constraint system (if applicable)
+   - Which SS type (if multi-factor)
+   - Which software and packages
+   - How you handled unbalanced data
+
+d) **Peer review**:
+   A colleague sends you their draft manuscript. They report:
+   > "The intercept was μ = 10.2 kg (p < 0.001), indicating that the overall mean litter size is significantly greater than zero."
+
+   - Is this a meaningful statement for a rank-deficient model? Why or why not?
+   - How would you tactfully suggest they revise this?
+
+---
+
+# Bonus Challenge (Optional)
+
+## Comparing Fixed Effects vs. Mixed Model
+
+Using the `dairy_sire.csv` dataset:
+
+a) Fit a **fixed-effects model**: `lm(milk_yield ~ sire)`
+
+b) Fit a **mixed model**: `lmer(milk_yield ~ 1 + (1|sire))` using the `lme4` package
+
+c) Extract sire estimates from both models:
+   - Fixed effects: `emmeans(fit_fixed, "sire")`
+   - Mixed model: `ranef(fit_mixed)$sire + fixef(fit_mixed)`
+
+d) Create a scatter plot: x-axis = fixed effects estimates, y-axis = mixed model (BLUP) estimates
+   - Add a 45° reference line
+   - Make point size proportional to progeny number
+   - What pattern do you observe?
+
+e) Interpretation:
+   - Which sires show the most shrinkage (distance from 45° line)?
+   - Why does the mixed model "pull" some estimates toward the mean?
+   - Which model would you trust more for sires with only 5 progeny? Why?
+
+---
+
+# Submission Checklist {.unnumbered}
+
+Before submitting, ensure you have:
+
+- [ ] Completed all required tasks (Exercises 1-7)
+- [ ] Provided R code (well-commented and reproducible)
+- [ ] Included all output (tables, plots)
+- [ ] Written interpretations in complete sentences
+- [ ] Answered all "why" and "explain" questions
+- [ ] Checked that your code runs without errors
+- [ ] Stated any assumptions or decisions made
+- [ ] Saved your work as: `Lastname_Week13_Exercises.html` (or .pdf)
+
+---
+
+**Good luck! These exercises will solidify your understanding of unbalanced data, constraints, and estimability—essential skills for real-world genetic evaluation.**

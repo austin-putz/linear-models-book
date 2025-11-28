@@ -1,0 +1,364 @@
+---
+title: "Week 12 Exercises: Unequal Subclass Numbers & Non-Full Rank Models"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    number-sections: true
+    code-fold: false
+    code-tools: true
+---
+
+# Instructions
+
+These exercises cover rank deficiency, generalized inverses, estimability, and analysis of unbalanced data. Work through them systematically, showing all calculations for computational problems.
+
+**Exercise Types**:
+
+- **Computational**: Hand calculations with small datasets
+- **Applied**: Analyze provided datasets using R
+- **Theoretical**: Prove properties or explain concepts
+
+**Solutions**: Full worked solutions are provided in `Week12_Solutions.qmd`.
+
+---
+
+# Exercise 1: Rank Deficiency by Hand (Computational)
+
+**Scenario**: Four pig farms are comparing feed efficiency. Due to practical constraints, sample sizes are unequal:
+
+- Farm 1: n = 5 pigs
+- Farm 2: n = 3 pigs
+- Farm 3: n = 4 pigs
+- Farm 4: n = 2 pigs
+
+Total: n = 14 observations
+
+## Part A: Cell Means Design Matrix
+
+Build the design matrix **X** for the cell means model: $y_{ij} = \mu_i + e_{ij}$.
+
+- What are the dimensions of **X**?
+- What is the rank of **X**?
+- Is **X** full rank?
+
+## Part B: Effects Model Design Matrix
+
+Build the design matrix **X** for the effects model: $y_{ij} = \mu + \alpha_i + e_{ij}$.
+
+- What are the dimensions of **X**?
+- What is the rank of **X**?
+- Is **X** full rank?
+- Explain why **X** is or is not full rank.
+
+## Part C: Compare **X'X** Matrices
+
+Compute **X'X** for both models (cell means and effects).
+
+- For cell means: What is the structure of **X'X**? (Hint: Is it diagonal?)
+- For effects: What is $\det(\mathbf{X}'\mathbf{X})$?
+
+## Part D: Interpretation
+
+Explain in 2-3 sentences why the cell means model is always full rank but the effects model may not be.
+
+---
+
+# Exercise 2: G-Inverse Computation (Computational)
+
+Consider the following $3 \times 3$ matrix:
+
+$$
+\mathbf{A} = \begin{bmatrix}
+4 & 2 & 2 \\
+2 & 2 & 0 \\
+2 & 0 & 2
+\end{bmatrix}
+$$
+
+## Part A: Check Singularity
+
+- Compute $\det(\mathbf{A})$. Is **A** singular?
+- What is $r(\mathbf{A})$?
+
+## Part B: Find a G-Inverse by Row Reduction
+
+Use row reduction or another method to find a generalized inverse $\mathbf{A}^-$ satisfying $\mathbf{A}\mathbf{A}^-\mathbf{A} = \mathbf{A}$.
+
+**Hint**: One approach is to set the last row and column to zero except for the diagonal:
+
+$$
+\mathbf{A}^- = \begin{bmatrix}
+a & b & 0 \\
+c & d & 0 \\
+0 & 0 & 0
+\end{bmatrix}
+$$
+
+Find $a, b, c, d$ such that $\mathbf{A}\mathbf{A}^-\mathbf{A} = \mathbf{A}$.
+
+## Part C: Verify the Property
+
+Show by matrix multiplication that your $\mathbf{A}^-$ satisfies $\mathbf{A}\mathbf{A}^-\mathbf{A} = \mathbf{A}$.
+
+## Part D: Find a Different G-Inverse
+
+Using R, compute the Moore-Penrose inverse with `ginv(A)`. Compare it to your answer in Part B.
+
+## Part E: Non-Uniqueness
+
+Show that $\mathbf{A}\mathbf{A}^-$ is different for the two g-inverses, demonstrating non-uniqueness.
+
+---
+
+# Exercise 3: Estimability Testing (Theoretical/Computational)
+
+Consider a 4-group effects model: $y_{ij} = \mu + \alpha_i + e_{ij}$ with groups $i = 1, 2, 3, 4$.
+
+The design matrix **X** is $n \times 5$ (columns for $\mu, \alpha_1, \alpha_2, \alpha_3, \alpha_4$) but has rank $r(\mathbf{X}) = 4 < 5$.
+
+## Part A: Non-Estimable Functions
+
+List **three** functions of $\boldsymbol{\beta} = [\mu, \alpha_1, \alpha_2, \alpha_3, \alpha_4]'$ that are **NOT estimable**.
+
+Explain why each is not estimable.
+
+## Part B: Estimable Functions
+
+List **three** functions of $\boldsymbol{\beta}$ that **ARE estimable**.
+
+Explain why each is estimable (use the row space criterion if possible).
+
+## Part C: Prove Estimability
+
+**Prove** that $\alpha_1 - \alpha_2$ is estimable.
+
+Use the criterion: $\mathbf{c}'\boldsymbol{\beta}$ is estimable iff $\mathbf{c}' = \mathbf{a}'\mathbf{X}$ for some vector **a**.
+
+## Part D: Test with Two G-Inverses
+
+Suppose you solve the normal equations using two different g-inverses, obtaining:
+
+- Solution 1: $\mathbf{b}_1 = [5.0, 2.0, 1.5, 3.0, 1.0]'$
+- Solution 2: $\mathbf{b}_2 = [6.0, 1.0, 0.5, 2.0, 0.0]'$
+
+Show that $\alpha_1 - \alpha_2$ gives the same value for both solutions (i.e., it's estimable).
+
+## Part E: Implement `is_estimable()` in R
+
+Write an R function `is_estimable(c, X)` that tests whether $\mathbf{c}'\boldsymbol{\beta}$ is estimable.
+
+Test it on:
+
+- $\mathbf{c}_1 = [1, 0, 0, 0, 0]'$ (should return FALSE)
+- $\mathbf{c}_2 = [0, 1, -1, 0, 0]'$ (should return TRUE)
+
+---
+
+# Exercise 4: Dairy Herds (Unbalanced) – Applied
+
+**Data**: `dairy_herds_unbalanced.csv`
+
+Four dairy herds are compared for milk yield (kg/day). Sample sizes are unequal:
+
+- Herd 1: n = 12
+- Herd 2: n = 8
+- Herd 3: n = 15
+- Herd 4: n = 10
+
+Total: n = 45 cows
+
+## Part A: Exploratory Analysis
+
+1. Load the data and compute summary statistics (mean, SD, n) by herd.
+2. Create a boxplot of milk yield by herd.
+3. Does the unbalanced design appear to favor any particular herd?
+
+## Part B: Cell Means Model
+
+1. Fit the cell means model: `lm(milk_yield ~ herd - 1)`
+2. Extract herd means and standard errors.
+3. Verify that the estimates match the sample means computed in Part A.
+
+## Part C: Effects Model with Constraints
+
+1. Fit the effects model: `lm(milk_yield ~ herd)`
+2. What constraint does R use by default? (Hint: Which herd is the reference?)
+3. Interpret the coefficients: What does each represent?
+
+## Part D: Test Contrasts
+
+Test the following contrasts:
+
+1. **Herd 1 vs. Herd 2**: Is the difference significant?
+2. **Herd 3 vs. Average of Herds 1, 2, 4**: Construct contrast $\mathbf{c} = [?, ?, ?, ?]$ and test.
+3. **Best vs. Worst herd**: Which herd has highest milk yield? Lowest? Test the difference.
+
+Compute t-statistics and p-values for each.
+
+## Part E: Management Interpretation
+
+Based on your analysis, which herd(s) have superior milk production?
+
+If you were a farm consultant, what would you recommend investigating to understand the differences?
+
+---
+
+# Exercise 5: Missing Cells (Lambs) – Applied
+
+**Data**: `lamb_breed_environment.csv`
+
+Three sheep breeds are evaluated in three environments, but not all breed × environment combinations exist:
+
+- 9 possible cells (3 breeds × 3 environments)
+- 2 cells have **no observations** (missing cells)
+
+Total: n ≈ 72 lambs with complete data in 7 cells
+
+**Response**: Weaning weight (kg)
+
+## Part A: Identify Missing Cells
+
+1. Load the data.
+2. Create a table: `table(breed, environment)`.
+3. Which two breed × environment combinations have n = 0?
+
+## Part B: Additive Model (Breed + Environment)
+
+1. Fit: `lm(weaning_weight ~ breed + environment)`
+2. Use Type III SS (`car::Anova(fit, type=3)`) to test:
+   - Breed effect (adjusted for environment)
+   - Environment effect (adjusted for breed)
+3. Are both significant?
+
+## Part C: Interaction Model (Breed × Environment)
+
+1. Fit: `lm(weaning_weight ~ breed * environment)`
+2. Check the output: Which interaction parameters are `NA`? Why?
+3. Test whether the interaction is significant using `anova(fit_additive, fit_interaction)`.
+
+## Part D: Estimable Comparisons with `emmeans`
+
+1. Compute estimated marginal means for breed: `emmeans(fit_additive, "breed")`
+2. Perform pairwise breed comparisons: `pairs(emm_breed)`
+3. Which breed differences are estimable? Explain.
+
+## Part E: Interpretation
+
+If some breed × environment interactions cannot be estimated due to missing cells, what does this mean for:
+
+1. Comparing breeds overall (averaged across environments)?
+2. Comparing breeds within specific environments?
+3. Practical breeding decisions?
+
+---
+
+# Exercise 6: Constraint Systems (Theoretical)
+
+Consider a 3-group effects model with observations:
+
+- Group 1: $y = [10, 12, 11]$ (n₁ = 3, mean = 11.0)
+- Group 2: $y = [8, 9]$ (n₂ = 2, mean = 8.5)
+- Group 3: $y = [14]$ (n₃ = 1, mean = 14.0)
+
+Model: $y_{ij} = \mu + \alpha_i + e_{ij}$
+
+## Part A: Set-to-Zero Constraint
+
+Impose the constraint $\alpha_3 = 0$ (Group 3 is reference).
+
+1. Write out the 3×3 normal equations (removing $\alpha_3$).
+2. Solve for $\mu, \alpha_1, \alpha_2$.
+3. Verify that $\mu + \alpha_1 = 11.0$ (Group 1 mean).
+
+## Part B: Sum-to-Zero Constraint
+
+Impose the weighted constraint: $3\alpha_1 + 2\alpha_2 + 1\alpha_3 = 0$.
+
+1. Write the augmented 4×4 system.
+2. Solve for $\mu, \alpha_1, \alpha_2, \alpha_3$.
+3. Verify that group means $\mu + \alpha_i$ match Part A.
+
+## Part C: Compare Solutions
+
+Create a table comparing the two solutions:
+
+| Parameter | Set-to-Zero ($\alpha_3=0$) | Sum-to-Zero ($\sum n_i\alpha_i=0$) |
+|-----------|----------------------------|-------------------------------------|
+| $\mu$ | ? | ? |
+| $\alpha_1$ | ? | ? |
+| $\alpha_2$ | ? | ? |
+| $\alpha_3$ | ? | ? |
+| Group 1 mean | ? | ? |
+| Group 2 mean | ? | ? |
+| Group 3 mean | ? | ? |
+| $\alpha_1 - \alpha_2$ | ? | ? |
+
+## Part D: Contrast Uniqueness
+
+Show that the contrast $\alpha_1 - \alpha_2$ has the **same value** under both constraint systems.
+
+What does this demonstrate about estimable functions?
+
+## Part E: When to Use Each Constraint?
+
+Discuss (2-3 sentences each):
+
+1. When is **set-to-zero** constraint most useful?
+2. When is **sum-to-zero** constraint most useful?
+3. Does the choice of constraint affect:
+   - Fitted values $\hat{\mathbf{y}}$?
+   - Residuals?
+   - Estimable contrasts?
+   - Non-estimable parameters?
+
+---
+
+# Submission Guidelines
+
+For each exercise:
+
+- **Show all work** for computational problems (matrix calculations, equations)
+- **Include R code** for applied problems (well-commented)
+- **Explain reasoning** for theoretical problems (not just answers)
+- **Interpret results** in livestock/breeding context where applicable
+
+**Formatting**:
+
+- Use matrix notation where appropriate
+- Label all equations
+- Include units for measurements
+- Report appropriate significant figures
+
+**R Code Requirements**:
+
+- Load data properly
+- Verify assumptions (check for NAs, outliers)
+- Use both manual calculations and verification with `lm()`/`emmeans`
+- Comment code to explain each step
+
+---
+
+# Additional Challenge (Optional)
+
+**Multi-Farm Sire Evaluation**:
+
+Design a small simulation study (n = 30-50 observations) where:
+
+- 5 sires are evaluated across 3 farms
+- Not all sires are present on all farms (missing cells)
+- Progeny per sire varies (3 to 12 progeny per sire)
+
+1. Generate simulated data with known sire and farm effects
+2. Analyze using effects model with rank deficiency
+3. Show that sire differences (contrasts) are estimable even though individual sire effects are not
+4. Use `emmeans` to compute sire breeding values (marginal means)
+5. Compare estimated sire differences to true simulated values
+
+This exercise previews Week 14 (mixed models) by showing how unbalanced progeny groups occur in real genetic evaluation.
+
+---
+
+## Solutions
+
+Complete worked solutions are available in `Week12_Solutions.qmd`.

@@ -10,7 +10,7 @@ format:
 bibliography: ../references.bib
 ---
 
-# Learning Objectives
+## Learning Objectives
 
 By the end of this week, you will be able to:
 
@@ -21,9 +21,9 @@ By the end of this week, you will be able to:
 5. **Apply** appropriate transformations (Box-Cox, logarithmic) when model assumptions are violated
 6. **Build** a systematic diagnostic workflow for evaluating linear models in livestock applications
 
-# Introduction: Why Diagnostics Matter
+## Introduction: Why Diagnostics Matter
 
-## The Danger of Trusting Models Blindly
+### The Danger of Trusting Models Blindly
 
 Linear models are powerful tools in animal breeding and genetics, but they are only as reliable as the assumptions on which they rest. Consider this scenario: A beef cattle breeding program uses a linear model to predict carcass quality from live animal measurements. The model appears to fit well with a high R², and all regression coefficients are statistically significant. Based on these results, the program makes selection decisions affecting thousands of animals and millions of dollars in genetic improvement.
 
@@ -42,7 +42,7 @@ However, the model was never properly diagnosed. Hidden in the data was a single
 **The bottom line**: Model diagnostics are not optional—they are essential for trustworthy inference and optimal breeding decisions.
 :::
 
-## Real Consequences in Animal Breeding
+### Real Consequences in Animal Breeding
 
 In applied animal breeding and genetics, the stakes are high:
 
@@ -53,7 +53,7 @@ In applied animal breeding and genetics, the stakes are high:
 
 When models fail due to violated assumptions or influential observations, the consequences ripple through entire breeding populations for years or even decades.
 
-## Connection to Previous Weeks
+### Connection to Previous Weeks
 
 In **Week 5**, we learned about the **Gauss-Markov Theorem**, which guarantees that least squares estimators are BLUE (Best Linear Unbiased Estimators) *under certain conditions*:
 
@@ -80,9 +80,9 @@ Up to this point, we've **assumed** these conditions hold. This week, we learn h
 - **Weeks 7-9**: ANOVA models—same diagnostic principles apply to categorical predictors
 - **Week 10**: ANCOVA—homogeneity of slopes relates to residual patterns
 
-# Mathematical Theory
+## Mathematical Theory
 
-## Review of Model Assumptions
+### Review of Model Assumptions
 
 The linear model in matrix form is:
 
@@ -516,11 +516,11 @@ Avoid transformations when:
 - Biological rationale supports transformed scale (e.g., log for growth, sqrt for counts)
 - Predictions and inference on transformed scale are meaningful
 
-# Checking Model Assumptions
+## Checking Model Assumptions
 
 We now have the mathematical tools (residuals, leverage, influence) to check whether our model assumptions hold.
 
-## The Four Assumptions and How to Check Them
+### The Four Assumptions and How to Check Them
 
 ::: {.callout-important}
 ## The Four Assumptions and Diagnostic Tools
@@ -535,7 +535,7 @@ We now have the mathematical tools (residuals, leverage, influence) to check whe
 **Note**: We check assumptions using **residuals** (not the raw response $y$) because residuals estimate the errors $e_i$, which are the quantities assumed to be normal, independent, and homoscedastic.
 :::
 
-## Linearity: Residuals vs. Fitted Values
+### Linearity: Residuals vs. Fitted Values
 
 **Assumption**: The relationship between $\mathbf{y}$ and $\mathbf{X}$ is correctly specified as linear.
 
@@ -559,7 +559,7 @@ We now have the mathematical tools (residuals, leverage, influence) to check whe
 - Transform predictor(s): $\log(x)$, $\sqrt{x}$
 - Consider non-linear models if relationship is fundamentally non-linear
 
-## Homoscedasticity: Constant Variance
+### Homoscedasticity: Constant Variance
 
 **Assumption**: $\text{Var}(e_i) = \sigma^2$ for all $i$ (constant variance).
 
@@ -591,7 +591,7 @@ We now have the mathematical tools (residuals, leverage, influence) to check whe
 - **Weighted least squares** (WLS) if variance structure is known
 - **Robust standard errors** (HC3, HC4) for inference without assuming homoscedasticity
 
-## Normality: Q-Q Plots
+### Normality: Q-Q Plots
 
 **Assumption**: Errors are normally distributed: $e_i \sim N(0, \sigma^2)$.
 
@@ -635,7 +635,7 @@ For large samples, the Central Limit Theorem provides approximate normality of $
 - **Bootstrap inference**: Doesn't require normality (beyond this course)
 - If violation is minor and $n$ is large, standard inference is approximately valid
 
-## Independence: Patterns in Residuals
+### Independence: Patterns in Residuals
 
 **Assumption**: Observations are independent; $\text{Cov}(e_i, e_j) = 0$ for $i \neq j$.
 
@@ -676,11 +676,11 @@ For large samples, the Central Limit Theorem provides approximate normality of $
 
 **Important**: Independence violations cannot be fixed with transformations. They require different modeling approaches.
 
-# The Four Essential Diagnostic Plots
+## The Four Essential Diagnostic Plots
 
 When you fit a linear model in R using `lm()`, the default `plot()` function produces four diagnostic plots. Let's understand each one.
 
-## Residuals vs. Fitted Values
+### Residuals vs. Fitted Values
 
 **Purpose**: Check linearity and homoscedasticity simultaneously.
 
@@ -704,7 +704,7 @@ When you fit a linear model in R using `lm()`, the default `plot()` function pro
 
 **Interpretation**: This is the **most important diagnostic plot**. It checks two assumptions at once.
 
-## Normal Q-Q Plot
+### Normal Q-Q Plot
 
 **Purpose**: Check normality of residuals.
 
@@ -724,7 +724,7 @@ When you fit a linear model in R using `lm()`, the default `plot()` function pro
 
 **Interpretation**: Focus on the middle 80% of points. Some deviation in the extreme tails is normal, especially for small samples.
 
-## Scale-Location Plot
+### Scale-Location Plot
 
 **Purpose**: Check homoscedasticity (constant variance) more clearly than Residuals vs. Fitted plot.
 
@@ -747,7 +747,7 @@ When you fit a linear model in R using `lm()`, the default `plot()` function pro
 
 **Why square root?** Taking $\sqrt{|r_i|}$ makes patterns in variance easier to see because it's on the standard deviation scale (not variance scale).
 
-## Residuals vs. Leverage
+### Residuals vs. Leverage
 
 **Purpose**: Identify influential observations by showing both leverage and residual size.
 
@@ -770,7 +770,7 @@ When you fit a linear model in R using `lm()`, the default `plot()` function pro
 
 **Interpretation**: Points in the **corners** (high leverage AND large residual) are the most concerning. These observations can dramatically change the fitted model.
 
-# Small Numerical Example: Beef Carcass Marbling
+## Small Numerical Example: Beef Carcass Marbling
 
 Now let's work through a complete diagnostic analysis with a small dataset where we can perform hand calculations.
 
@@ -1143,7 +1143,7 @@ plot(fit_beef, which = 1:4)
 This example illustrates that **high leverage does not necessarily mean high influence**. Observations far from the center of $X$ can still fit the model well.
 
 
-# Livestock Application 1: Poultry Feed Conversion Ratio
+## Livestock Application 1: Poultry Feed Conversion Ratio
 
 ## The Dataset
 
@@ -1413,7 +1413,7 @@ The outlier was **pulling the regression line upward**, making FCR increase appe
 
 This model accurately represents the population of **healthy** broilers and should be used for production decisions.
 
-# Livestock Application 2: Dairy Lactation with Heteroscedasticity
+## Livestock Application 2: Dairy Lactation with Heteroscedasticity
 
 ## The Dataset
 
@@ -1681,7 +1681,7 @@ print(round(pred_table, 2))
 This example demonstrates that **transformation can be essential** when variance structure violates assumptions, and that thoughtful interpretation bridges statistical methods and biological reality.
 
 
-# R Implementation: Building Diagnostic Tools
+## R Implementation: Building Diagnostic Tools
 
 In this section, we'll build custom functions to compute diagnostic statistics from first principles, then verify them against R's built-in functions.
 
@@ -2039,7 +2039,7 @@ cat("=== ALL VERIFICATIONS PASSED ===\n")
 
 Perfect agreement! Our custom functions produce identical results to R's built-in functions.
 
-# Practical Guidelines for Model Diagnostics
+## Practical Guidelines for Model Diagnostics
 
 ## A Systematic Diagnostic Workflow
 
@@ -2206,7 +2206,7 @@ When reporting analyses, include:
 5. **Treatment of outliers** (if any):
    "One observation (bird 27) was identified as highly influential ($D = 0.85$) and excluded from analysis due to documented illness."
 
-# Summary and Key Takeaways
+## Summary and Key Takeaways
 
 ## What We Learned This Week
 
@@ -2273,7 +2273,7 @@ When reporting analyses, include:
 
 **Week 14**: Special topics including weighted least squares (WLS) for known heteroscedasticity and preview of mixed models for handling dependence.
 
-# Exercises
+## Exercises
 
 See **Week11_Exercises.qmd** for 7 exercises covering:
 
@@ -2285,7 +2285,7 @@ See **Week11_Exercises.qmd** for 7 exercises covering:
 - Exercise 6: Box-Cox transformation selection (computational/applied)
 - Exercise 7: Complete diagnostic report for mastitis data (integrated)
 
-# References
+## References
 
 ::: {#refs}
 :::

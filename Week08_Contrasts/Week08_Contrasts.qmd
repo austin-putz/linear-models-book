@@ -495,6 +495,6 @@ cat("Off-diagonal elements:", ortho_mat[row(ortho_mat) != col(ortho_mat)], "\n")
 
 ---
 
-**Previous**: [Week 7: One-Way ANOVA](../Week07_OneWayANOVA/Week07_OneWayANOVA.qmd)
+**Previous**: [Week 7: One-Way ANOVA](../Week07_ANOVA_OneWay/Week07_ANOVA_OneWay.qmd)
 
 **Next**: [Week 9: Two-Way ANOVA and Factorial Models](../Week09_TwoWayANOVA/Week09_TwoWayANOVA.qmd)

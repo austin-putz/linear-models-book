@@ -1,14 +1,25 @@
-# Week 1: Course Overview & Computational Foundations {#sec-week01}
+---
+title: "Week 1: Course Overview & Computational Foundations"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    code-tools: true
+---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. Understand the philosophy of building equations from first principles before using statistical software
-2. Set up your computational environment for matrix operations in R
-3. Connect linear models to animal breeding applications (EPDs, breeding values, BLUP)
-4. Perform basic matrix operations in R
-5. Express the sample mean as a simple linear model
+1. **Understand** the **philosophy** of building equations from first principles before using statistical software
+2. **Set up** your **computational environment** for **matrix operations** in R
+3. **Connect** **linear models** to **animal breeding applications** (EPDs, breeding values, BLUP)
+4. **Perform** basic **matrix operations** in R
+5. **Express** the **sample mean** as a simple **linear model**
+:::
 
 ## Why Build Our Own Solvers?
 
@@ -850,10 +861,14 @@ This week we:
 
 ### Key Takeaways
 
+::: {.callout-note}
+## What We Learned
+
 - The sample mean is a special case of a linear model
 - Matrix notation provides a unified framework
 - Building solvers manually deepens understanding
 - The methods scale from simple means to complex breeding value prediction
+:::
 
 ### Looking Ahead
 

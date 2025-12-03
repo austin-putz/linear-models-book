@@ -1,14 +1,25 @@
-# Week 2: Linear Algebra Essentials {#sec-week02}
+---
+title: "Week 2: Linear Algebra Essentials"
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: false
+    code-tools: true
+---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. Define and compute the **rank** of a matrix
-2. Understand **linear independence** and its implications for solving equations
-3. Compute **regular inverses** and **generalized inverses** of matrices
-4. Solve systems of linear equations using matrix methods
-5. Recognize when a system has unique, infinite, or no solutions
+1. **Define** and **compute** the **rank** of a matrix
+2. **Understand** **linear independence** and its implications for solving equations
+3. **Compute** **regular inverses** and **generalized inverses** of matrices
+4. **Solve** systems of **linear equations** using matrix methods
+5. **Recognize** when a system has **unique**, **infinite**, or **no solutions**
+:::
 
 ## Why Linear Algebra Matters for Linear Models
 
@@ -190,6 +201,9 @@ print(XtX)
 print(paste("Rank of X'X:", qr(XtX)$rank))
 ```
 
+::: {.callout-warning}
+## Rank Deficiency in Design Matrices
+
 **Problem**: We have 3 columns but rank = 2. Why?
 
 The first column (overall mean) equals the sum of the second and third columns (pen effects):
@@ -198,7 +212,15 @@ $$
 \text{Column 1} = \text{Column 2} + \text{Column 3}
 $$
 
-This is called **linear dependence** or **singularity**. We'll handle this with constraints or generalized inverses.
+This is called **linear dependence** or **singularity**.
+
+**Consequences**:
+- $\mathbf{X}'\mathbf{X}$ is not invertible (no regular inverse exists)
+- Individual parameters ($\mu$, $\alpha_1$, $\alpha_2$) cannot be uniquely estimated
+- We need **constraints** or **generalized inverses** to obtain solutions
+
+**Solution**: Use generalized inverses (next section) or apply constraints to make the design matrix full rank.
+:::
 
 ## Matrix Inverses
 
@@ -266,13 +288,34 @@ A **generalized inverse** (g-inverse) of matrix $\mathbf{A}$ is any matrix $\mat
 
 $$
 \mathbf{A}\mathbf{A}^{-}\mathbf{A} = \mathbf{A}
-$$
+$$ {#eq-ginv-definition}
 
 **Key facts:**
 
 - Generalized inverses exist for **any** matrix (even non-square, rank deficient)
 - Generalized inverses are **not unique** (many possible g-inverses)
 - If $\mathbf{A}$ is full rank, then $\mathbf{A}^{-} = \mathbf{A}^{-1}$ (unique)
+
+::: {.callout-warning}
+## NOTATION EXTENSION
+
+We now extend our notation from Week 1 to include **generalized inverses**:
+
+- $\mathbf{A}^{-}$ = generalized inverse (g-inverse) of matrix $\mathbf{A}$
+  - Satisfies: $\mathbf{A}\mathbf{A}^{-}\mathbf{A} = \mathbf{A}$ (@eq-ginv-definition)
+  - **Not unique** (multiple g-inverses exist)
+  - Works for any matrix (even rank deficient)
+
+- $\mathbf{A}^{+}$ = Moore-Penrose inverse (special g-inverse)
+  - **Unique** generalized inverse
+  - Computed with `ginv()` in R
+
+**Key distinction from Week 1**:
+- Regular inverse $\mathbf{A}^{-1}$: requires square, full rank matrix
+- Generalized inverse $\mathbf{A}^{-}$: works for any matrix, including rank deficient
+
+This notation will be essential for handling **overparameterized models** and **missing cells** in ANOVA (Weeks 7-12).
+:::
 
 ### Moore-Penrose Inverse
 
@@ -328,13 +371,13 @@ For rank deficient $\mathbf{X}'\mathbf{X}$:
 
 $$
 \mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}
-$$
+$$ {#eq-normal-equations-rankdef}
 
 One solution is:
 
 $$
 \mathbf{b} = (\mathbf{X}'\mathbf{X})^{-}\mathbf{X}'\mathbf{y}
-$$
+$$ {#eq-ginv-solution}
 
 **Important**: This gives **a** solution, but not necessarily a unique solution. Different g-inverses give different $\mathbf{b}$ vectors.
 
@@ -348,7 +391,7 @@ A system of linear equations can be written as:
 
 $$
 \mathbf{A}\mathbf{x} = \mathbf{b}
-$$
+$$ {#eq-linear-system}
 
 Where:
 
@@ -676,6 +719,9 @@ This week covered essential linear algebra for linear models:
 
 ### Key Concepts
 
+::: {.callout-note}
+## What We Learned
+
 1. **Linear independence**: Vectors that can't be written as combinations of each other
 2. **Rank**: Number of linearly independent rows/columns
    - Full rank: $r(\mathbf{A}) = \min(m, n)$
@@ -688,16 +734,17 @@ This week covered essential linear algebra for linear models:
 4. **Generalized inverse** $\mathbf{A}^{-}$:
    - Works for any matrix
    - Not unique
-   - $\mathbf{A}\mathbf{A}^{-}\mathbf{A} = \mathbf{A}$
+   - $\mathbf{A}\mathbf{A}^{-}\mathbf{A} = \mathbf{A}$ (@eq-ginv-definition)
 
 5. **Moore-Penrose inverse** $\mathbf{A}^{+}$:
    - Unique generalized inverse
    - Computed with `ginv()` in R
 
-6. **Solving** $\mathbf{A}\mathbf{x} = \mathbf{b}$:
+6. **Solving** $\mathbf{A}\mathbf{x} = \mathbf{b}$ (@eq-linear-system):
    - Full rank → unique solution
    - Rank deficient → infinite solutions (use g-inverse)
    - Inconsistent → no exact solution
+:::
 
 ### Implications for Linear Models
 

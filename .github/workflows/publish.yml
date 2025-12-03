@@ -33,7 +33,23 @@ jobs:
 
       - name: Install R packages
         run: |
-          install.packages(c("rmarkdown", "knitr", "MASS", "car", "emmeans", "multcomp", "lme4"))
+          install.packages(c(
+            "rmarkdown",
+            "knitr",
+            "MASS",
+            "car",
+            "emmeans",
+            "estimability",
+            "dplyr",
+            "tidyr",
+            "ggplot2",
+            "gridExtra",
+            "lme4",
+            "lmtest",
+            "Matrix",
+            "multcomp",
+            "microbenchmark"
+          ))
         shell: Rscript {0}
 
       - name: Render Quarto book

@@ -33,7 +33,7 @@ jobs:
 
       - name: Install R packages
         run: |
-          install.packages(c("MASS", "car", "emmeans", "multcomp", "lme4"))
+          install.packages(c("rmarkdown", "knitr", "MASS", "car", "emmeans", "multcomp", "lme4"))
         shell: Rscript {0}
 
       - name: Render Quarto book

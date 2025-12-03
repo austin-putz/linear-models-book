@@ -34,7 +34,7 @@ book:
       chapters:
         - Week11_Diagnostics/Week11_ModelDiagnostics.qmd
         - Week12_NonFullRank/Week12_NonFullRank.qmd
-        - Week13_SpecialTopics1/Week13_SpecialTopics1.qmd
+        - Week13_SpecialTopicsI/Week13_SpecialTopicsI.qmd
         - Week14_SpecialTopics2/Week14_SpecialTopics2.qmd
 
     - part: "Integration"
@@ -56,10 +56,13 @@ book:
 
   page-navigation: true
 
-  repo-url: https://github.com/austinputz/LinearModels
+  repo-url: https://github.com/austin-putz/linear-models-book
   repo-actions: [edit, issue]
 
 bibliography: references.bib
+
+crossref:
+  chapters: true
 
 format:
   html:

@@ -10,16 +10,18 @@ format:
 bibliography: ../references.bib
 ---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. **Compute** different types of residuals (raw, standardized, studentized) and understand their uses
-2. **Identify** outliers and high-leverage observations using diagnostic statistics (Cook's D, hat values, DFFITS)
-3. **Create and interpret** the four essential diagnostic plots to check model assumptions
-4. **Distinguish** between high-leverage and high-influence observations and understand their impact
-5. **Apply** appropriate transformations (Box-Cox, logarithmic) when model assumptions are violated
-6. **Build** a systematic diagnostic workflow for evaluating linear models in livestock applications
+1. **Compute** different types of **residuals** (**raw**, **standardized**, **studentized**) and understand their uses
+2. **Identify** **outliers** and **high-leverage observations** using diagnostic statistics (**Cook's D**, **hat values**, **DFFITS**)
+3. **Create** and **interpret** the **four essential diagnostic plots** to check **model assumptions**
+4. **Distinguish** between **high-leverage** and **high-influence observations** and understand their impact
+5. **Apply** appropriate **transformations** (**Box-Cox**, **logarithmic**) when model assumptions are violated
+6. **Build** a systematic **diagnostic workflow** for evaluating linear models in livestock applications
+:::
 
 ## Introduction: Why Diagnostics Matter
 

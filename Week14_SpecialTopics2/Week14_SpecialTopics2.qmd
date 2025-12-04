@@ -9,15 +9,17 @@ format:
     code-tools: true
 ---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 After completing this week's material, you will be able to:
 
-- Fit polynomial regression models to capture nonlinear relationships, such as animal growth curves.
-- Apply weighted least squares when error variances are heterogeneous or known to differ.
-- Understand when and how to use regression through the origin (no-intercept models).
-- Recognize the distinction between fixed and random effects.
-- Preview mixed model equations and understand how they extend the least squares framework to accommodate random effects and genetic evaluation (BLUP).
+1. **Fit** **polynomial regression models** to capture **nonlinear relationships**, such as **animal growth curves**
+2. **Apply** **weighted least squares** when **error variances** are **heterogeneous** or known to differ
+3. **Understand** when and how to use **regression through the origin** (no-intercept models)
+4. **Recognize** the distinction between **fixed** and **random effects**
+5. **Preview** **mixed model equations** and understand how they extend the least squares framework to accommodate **random effects** and **genetic evaluation (BLUP)**
+:::
 
 ---
 

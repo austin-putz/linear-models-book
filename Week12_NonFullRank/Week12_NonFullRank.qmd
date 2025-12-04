@@ -10,19 +10,21 @@ format:
 bibliography: ../references.bib
 ---
 
-# Learning Objectives
+::: {.callout-note icon=false}
+## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. **Understand** the consequences of unbalanced data on design matrix rank and the resulting impact on parameter estimation
-2. **Compute and use** generalized inverses to solve normal equations when $\mathbf{X}'\mathbf{X}$ is singular
-3. **Determine** which linear functions of parameters are estimable in rank-deficient models using the row space criterion
-4. **Apply** constraints (set-to-zero, sum-to-zero) to obtain unique parameter solutions and interpret their effects
-5. **Analyze** realistic multi-farm livestock datasets with missing cells using appropriate methods (Type III SS, estimable contrasts, `emmeans`)
+1. **Understand** the consequences of **unbalanced data** on **design matrix rank** and the resulting impact on **parameter estimation**
+2. **Compute** and **use** **generalized inverses** to solve **normal equations** when $\mathbf{X}'\mathbf{X}$ is singular
+3. **Determine** which **linear functions of parameters** are **estimable** in **rank-deficient models** using the **row space criterion**
+4. **Apply** **constraints** (set-to-zero, sum-to-zero) to obtain **unique parameter solutions** and interpret their effects
+5. **Analyze** realistic **multi-farm livestock datasets** with **missing cells** using appropriate methods (**Type III SS**, **estimable contrasts**, `emmeans`)
+:::
 
 ---
 
-# Introduction: When Real Data Gets Messy
+## Introduction: When Real Data Gets Messy
 
 In Weeks 7 and 8, we worked primarily with balanced designs where every group had equal sample sizes. The mathematics was clean: $\mathbf{X}'\mathbf{X}$ was full rank, orthogonal contrasts partitioned sums of squares neatly, and every parameter was uniquely estimable. Real livestock data is rarely so cooperative.
 
@@ -48,7 +50,7 @@ This week, we confront the reality of unbalanced data head-on. We'll learn:
 - Practical methods for analyzing real unbalanced datasets
 
 ::: {.callout-important}
-## Why This Week Matters in Animal Breeding
+### Why This Week Matters in Animal Breeding
 
 In real animal breeding programs:
 
@@ -61,7 +63,7 @@ Understanding rank deficiency and estimability is not academic—it's essential 
 :::
 
 ::: {.callout-note}
-## Connection to Previous Weeks
+### Connection to Previous Weeks
 
 This week synthesizes concepts from:
 
@@ -73,7 +75,7 @@ This week synthesizes concepts from:
 Week 12 is where all these pieces unite to handle real-world complexity.
 :::
 
-## Chapter Roadmap
+### Chapter Roadmap
 
 Here's what we'll cover:
 
@@ -87,9 +89,9 @@ By the end, you'll be equipped to handle the messy reality of livestock data wit
 
 ---
 
-# Mathematical Theory of Rank Deficiency
+## Mathematical Theory of Rank Deficiency
 
-## Rank Deficiency in Linear Models
+### Rank Deficiency in Linear Models
 
 Recall the **effects model** for one-way ANOVA:
 
@@ -141,7 +143,7 @@ Therefore: $r(\mathbf{X}) = 3 < 4 = p$ (number of parameters)
 The design matrix **does not have full column rank**. This is not a numerical precision issue—it's structural. The model has **inherent redundancy**: we cannot simultaneously estimate both $\mu$ and all $\alpha_i$ because they are **confounded**.
 
 ::: {.callout-warning}
-## Rank Deficiency is Structural, Not Numerical
+### Rank Deficiency is Structural, Not Numerical
 
 This is not computational roundoff error. The model
 
@@ -227,11 +229,11 @@ $$
 
 ---
 
-## Generalized Inverses
+### Generalized Inverses
 
 Since $(\mathbf{X}'\mathbf{X})^{-1}$ doesn't exist when $\mathbf{X}'\mathbf{X}$ is singular, we need an alternative: the **generalized inverse**.
 
-### Definition
+#### Definition
 
 A matrix $\mathbf{G}$ is a **generalized inverse** of $\mathbf{A}$ (denoted $\mathbf{A}^-$) if:
 
@@ -266,7 +268,7 @@ $$
 (using $\mathbf{A}\mathbf{A}^-\mathbf{A} = \mathbf{A}$ with $\mathbf{A} = \mathbf{X}'$)
 
 ::: {.callout-important}
-## G-Inverse in Solving Normal Equations
+### G-Inverse in Solving Normal Equations
 
 For rank-deficient normal equations $\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$:
 
@@ -308,7 +310,7 @@ where $\mathbf{D}^+$ replaces each nonzero singular value $d_i$ with $1/d_i$.
 **In R**: Use `MASS::ginv(A)` which computes the Moore-Penrose inverse.
 
 ::: {.callout-tip}
-## Computing G-Inverses in R
+### Computing G-Inverses in R
 
 ```r
 library(MASS)
@@ -365,7 +367,7 @@ For any two g-inverses $\mathbf{G}_1$ and $\mathbf{G}_2$ of $\mathbf{X}'\mathbf{
 - Since $\hat{\mathbf{y}} = \mathbf{Xb}$ is unique, $\mathbf{c}'\mathbf{b}_1 = \mathbf{c}'\mathbf{b}_2$ $\square$
 
 ::: {.callout-important}
-## Testing Estimability in R
+### Testing Estimability in R
 
 ```r
 is_estimable <- function(c, X, tol = 1e-10) {
@@ -447,7 +449,7 @@ $$\sum_{i=1}^g n_i \alpha_i = 0$$ {#eq-weighted-sum}
 - Each group weighted by sample size
 
 ::: {.callout-note}
-## Constraints vs. G-Inverses: Two Paths, Same Destination
+### Constraints vs. G-Inverses: Two Paths, Same Destination
 
 Two equivalent approaches to handle rank deficiency:
 
@@ -471,11 +473,11 @@ Two equivalent approaches to handle rank deficiency:
 
 ---
 
-# Small Example: Sheep Fleece Weight
+## Small Example: Sheep Fleece Weight
 
 Let's work through a complete example small enough for hand calculations but rich enough to illustrate all concepts.
 
-## Problem Setup
+### Problem Setup
 
 **Research question**: Compare fleece weight (kg) across three sheep breeds.
 
@@ -492,7 +494,7 @@ Let's work through a complete example small enough for hand calculations but ric
 **Note the unbalanced design**: Group sizes are 3, 2, and 1. This is realistic—perhaps Corriedale is a less common breed in the study region.
 
 ::: {.callout-note}
-## Why This Example?
+### Why This Example?
 
 This example is pedagogically ideal:
 
@@ -505,14 +507,14 @@ This example is pedagogically ideal:
 
 ---
 
-## Cell Means Model (Full Rank)
+### Cell Means Model (Full Rank)
 
 **Model**:
 $$y_{ij} = \mu_i + e_{ij}$$
 
 where $\mu_i$ is the mean for breed $i$ (no overall $\mu$, no $\alpha_i$).
 
-### Step 1: Design Matrix
+#### Step 1: Design Matrix
 
 $$
 \mathbf{X} = \begin{bmatrix}
@@ -534,7 +536,7 @@ $$
 
 The cell means model is **always full rank**, even with unbalanced data.
 
-### Step 2: Normal Equations
+#### Step 2: Normal Equations
 
 $$
 \mathbf{X}'\mathbf{X} = \begin{bmatrix}
@@ -551,7 +553,7 @@ $$
 
 **Note**: $\mathbf{X}'\mathbf{X}$ is **diagonal** (always true for cell means, even unbalanced).
 
-### Step 3: Solve
+#### Step 3: Solve
 
 Since $\mathbf{X}'\mathbf{X}$ is diagonal and invertible:
 
@@ -585,7 +587,7 @@ $$
 
 **These are just the group means!** The cell means model directly estimates what we observe.
 
-### Step 4: Residuals and SSE
+#### Step 4: Residuals and SSE
 
 Fitted values:
 
@@ -616,14 +618,14 @@ $$
 
 ---
 
-## Effects Model (Rank Deficient)
+### Effects Model (Rank Deficient)
 
 **Model**:
 $$y_{ij} = \mu + \alpha_i + e_{ij}$$
 
 This is the traditional ANOVA parameterization.
 
-### Step 1: Design Matrix
+#### Step 1: Design Matrix
 
 $$
 \mathbf{X} = \begin{bmatrix}
@@ -649,7 +651,7 @@ Column 1 = Column 2 + Column 3 + Column 4
 Therefore: $r(\mathbf{X}) = 3 < 4 = p$ → **NOT full rank**
 
 ::: {.callout-warning}
-## Rank Deficiency Identified
+### Rank Deficiency Identified
 
 The effects model $y_{ij} = \mu + \alpha_i + e_{ij}$ has:
 
@@ -661,7 +663,7 @@ The effects model $y_{ij} = \mu + \alpha_i + e_{ij}$ has:
 **But**: Contrasts like $\alpha_1 - \alpha_2$ ARE uniquely estimable.
 :::
 
-### Step 2: Normal Equations (Singular System)
+#### Step 2: Normal Equations (Singular System)
 
 $$
 \mathbf{X}'\mathbf{X} = \begin{bmatrix}
@@ -680,11 +682,11 @@ $$
 
 Check: $\det(\mathbf{X}'\mathbf{X}) = 0$ (singular)
 
-### Step 3: Two G-Inverse Solutions
+#### Step 3: Two G-Inverse Solutions
 
 We'll solve using two different approaches to show non-uniqueness of $\mathbf{b}$ but uniqueness of estimable functions.
 
-#### Approach 1: Set-to-Zero Constraint ($\alpha_3 = 0$)
+##### Approach 1: Set-to-Zero Constraint ($\alpha_3 = 0$)
 
 Impose $\alpha_3 = 0$. This removes the last parameter, giving a 3×3 system:
 
@@ -739,7 +741,7 @@ $$
 - Corriedale: $\mu + \alpha_3 = 5.60 + 0 = 5.60$ ✓
 
 ::: {.callout-important}
-## Cell Means vs. Effects: Key Lesson
+### Cell Means vs. Effects: Key Lesson
 
 **Cell Means Model** ($y_{ij} = \mu_i + e_{ij}$):
 
@@ -760,7 +762,7 @@ $$
 
 ---
 
-# R Implementation: Sheep Fleece Example
+## R Implementation: Sheep Fleece Example
 
 Now let's implement these analyses in R, building our own solvers and verifying against `lm()`.
 
@@ -798,7 +800,7 @@ n <- length(y)
 
 ---
 
-## Cell Means Model in R
+### Cell Means Model in R
 
 ```{r}
 #| label: sheep-cell-means
@@ -854,7 +856,7 @@ cat("Match:", all.equal(c(b_cell), coef(fit_cell)), "\n")
 
 ---
 
-## Effects Model with Set-to-Zero
+### Effects Model with Set-to-Zero
 
 ```{r}
 #| label: sheep-effects-setzero
@@ -880,7 +882,7 @@ cat("Romney:", coef(fit_effects)[1] + coef(fit_effects)[3], "\n")
 
 ---
 
-## G-Inverse Approach
+### G-Inverse Approach
 
 ```{r}
 #| label: sheep-ginv
@@ -929,7 +931,7 @@ cat("\nFitted values match cell means:", all.equal(c(y_hat_ginv), c(y_hat)), "\n
 
 ---
 
-## Testing Estimability
+### Testing Estimability
 
 ```{r}
 #| label: sheep-estimability
@@ -977,7 +979,7 @@ cat("\n→ Contrasts are estimable and unique!\n")
 ```
 
 ::: {.callout-tip}
-## Practical Advice for One-Way ANOVA (Unbalanced)
+### Practical Advice for One-Way ANOVA (Unbalanced)
 
 **Recommendation**: Use **cell means model** for unbalanced one-way ANOVA.
 
@@ -999,11 +1001,11 @@ cat("\n→ Contrasts are estimable and unique!\n")
 
 ---
 
-# Realistic Application: Multi-Farm Beef Cattle
+## Realistic Application: Multi-Farm Beef Cattle
 
 Now let's apply these concepts to a realistic dataset with missing cells—a common scenario in multi-farm breeding evaluations.
 
-## Background and Data
+### Background and Data
 
 **Scenario**: Multi-farm evaluation of beef cattle breeds
 
@@ -1024,7 +1026,7 @@ Now let's apply these concepts to a realistic dataset with missing cells—a com
 This reflects real-world genetic evaluation data.
 
 ::: {.callout-warning}
-## Real-World Complexity
+### Real-World Complexity
 
 Typical of commercial livestock data:
 
@@ -1041,7 +1043,7 @@ Standard ANOVA assumptions (balanced, orthogonal) are violated. Must use:
 
 ---
 
-## Data Exploration
+### Data Exploration
 
 ```{r}
 #| label: beef-load-data
@@ -1088,7 +1090,7 @@ cat("\nGrand mean ADG:", mean(beef$adg), "kg/day\n")
 
 ---
 
-## Visualization
+### Visualization
 
 ```{r}
 #| label: beef-visualization
@@ -1134,7 +1136,7 @@ ggplot(cell_means, aes(x = farm, y = adg, color = breed, group = breed)) +
 
 ---
 
-## Model 1: Breed Only (Cell Means)
+### Model 1: Breed Only (Cell Means)
 
 ```{r}
 #| label: beef-model1-breed
@@ -1166,7 +1168,7 @@ cat("\nBUT: This ignores farm effects! Breeds not equally distributed across far
 
 ---
 
-## Model 2: Additive (Breed + Farm)
+### Model 2: Additive (Breed + Farm)
 
 ```{r}
 #| label: beef-model2-additive
@@ -1192,7 +1194,7 @@ cat("   Type III tests each effect adjusted for the other.\n")
 ```
 
 ::: {.callout-note}
-## Type I vs Type III SS
+### Type I vs Type III SS
 
 With unbalanced data, Type I and Type III SS differ:
 
@@ -1214,7 +1216,7 @@ With unbalanced data, Type I and Type III SS differ:
 
 ---
 
-## Model 3: Interaction (Missing Cells)
+### Model 3: Interaction (Missing Cells)
 
 ```{r}
 #| label: beef-model3-interaction
@@ -1259,7 +1261,7 @@ if (anova(fit_additive, fit_interaction)$`Pr(>F)`[2] < 0.05) {
 ```
 
 ::: {.callout-important}
-## Handling Missing Cells
+### Handling Missing Cells
 
 When some breed × farm combinations don't exist:
 
@@ -1275,7 +1277,7 @@ When some breed × farm combinations don't exist:
 
 ---
 
-## Estimable Contrasts with emmeans
+### Estimable Contrasts with emmeans
 
 ```{r}
 #| label: beef-estimable-contrasts
@@ -1312,7 +1314,7 @@ cat("Continental breeds gain", abs(effect_size), "kg/day more than British breed
 ```
 
 ::: {.callout-tip}
-## Using emmeans for Unbalanced Data
+### Using emmeans for Unbalanced Data
 
 The `emmeans` package is invaluable for unbalanced designs:
 
@@ -1341,7 +1343,7 @@ contrast(emm, list("Custom" = c(...))) # Custom contrasts
 
 ---
 
-## Precision Under Unbalanced Data
+### Precision Under Unbalanced Data
 
 ```{r}
 #| label: beef-precision
@@ -1382,9 +1384,9 @@ $$
 
 ---
 
-# Practical Guidelines
+## Practical Guidelines
 
-## Statistical Recommendations
+### Statistical Recommendations
 
 When analyzing unbalanced livestock data, follow these best practices:
 
@@ -1419,7 +1421,7 @@ When analyzing unbalanced livestock data, follow these best practices:
 - Document missing cells and their impact
 
 ::: {.callout-warning}
-## Common Pitfalls with Unbalanced Data
+### Common Pitfalls with Unbalanced Data
 
 1. **Using Type I SS when order matters**: Type I depends on order effects entered—misleading for unbalanced data
 
@@ -1441,7 +1443,7 @@ When analyzing unbalanced livestock data, follow these best practices:
 
 ---
 
-## Experimental Design Implications
+### Experimental Design Implications
 
 **Why balanced designs are preferred**:
 
@@ -1466,9 +1468,9 @@ When analyzing unbalanced livestock data, follow these best practices:
 
 ---
 
-# Summary
+## Summary
 
-## Conceptual Summary
+### Conceptual Summary
 
 Real livestock data is messy, but the linear models framework still works—we just need additional tools.
 
@@ -1492,7 +1494,7 @@ Real livestock data is messy, but the linear models framework still works—we j
 - Focus on estimable functions and use appropriate methods (`emmeans`, Type III SS)
 
 ::: {.callout-note}
-## Looking Ahead
+### Looking Ahead
 
 **Week 13: Special Topics I**
 
@@ -1531,7 +1533,7 @@ Week 12 provides the foundation for understanding mixed models in genetic evalua
 
 ---
 
-## Key Equations Summary
+### Key Equations Summary
 
 **Rank-deficient normal equations**:
 $$\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}, \quad r(\mathbf{X}'\mathbf{X}) < p$$
@@ -1553,17 +1555,17 @@ $$SE(\hat{\mu}_i - \hat{\mu}_j) \approx \hat{\sigma}\sqrt{\frac{1}{n_i} + \frac{
 
 ---
 
-## Cross-References
+### Cross-References
 
 - **Previous**: [Week 11: Model Diagnostics](../Week11_Diagnostics/Week11_Diagnostics.qmd)
-- **Next**: [Week 13: Special Topics I](../Week13_SpecialTopics1/Week13_SpecialTopics1.qmd)
+- **Next**: [Week 13: Special Topics I](../Week13_SpecialTopicsI/Week13_SpecialTopicsI.qmd)
 
 ---
 
-## References
+### References
 
 ::: {.callout-tip}
-## Additional Resources
+### Additional Resources
 
 **Textbooks**:
 

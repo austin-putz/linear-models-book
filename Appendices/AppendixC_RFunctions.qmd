@@ -1,15 +1,591 @@
 # Appendix C: R Functions Reference {#sec-appendix-c .unnumbered}
 
-## Coming Soon
+## Introduction
 
-This appendix will provide a comprehensive guide to R functions used in this course:
+This appendix provides a concise reference guide to all R functions used throughout the 15-week linear models course. Functions are organized by **functional category** (not alphabetically) to help you quickly locate related operations.
 
-- Matrix operations: `matrix()`, `t()`, `%*%`, `solve()`
-- Linear models: `lm()`, `anova()`, `coef()`, `residuals()`
-- Matrix properties: `qr()$rank`, `det()`, `eigen()`
-- Generalized inverse: `ginv()` (MASS package)
-- Contrasts: `emmeans`, `multcomp` packages
-- Diagnostics: `plot()`, `hatvalues()`, `cooks.distance()`
-- And more...
+### Purpose and Scope
 
-Each function will include syntax, examples, and livestock applications.
+This reference is designed to:
+
+- Provide quick lookup of function syntax and key parameters
+- Show which weeks each function is introduced or used heavily
+- Distinguish between base R and package functions
+- Offer troubleshooting guidance for common issues
+
+### How to Use This Appendix
+
+- **Quick lookup**: Use the table of contents to jump to a specific category
+- **Function search**: Use your browser's search function (Ctrl+F or Cmd+F) to find a specific function name
+- **Week review**: Check the "Week(s)" column to see where concepts are taught
+- **Troubleshooting**: Jump to @sec-rfunc-pitfalls or @sec-rfunc-troubleshoot for common issues
+
+:::{.callout-note}
+## Relationship to Other Appendices
+
+- **Appendix A**: Mathematical notation reference
+- **Appendix B**: In-depth matrix algebra tutorial with derivations
+- **Appendix C** (this): Quick reference for R functions
+:::
+
+---
+
+## Package Installation and Setup {#sec-rfunc-setup}
+
+Most functions in this appendix are from **base R** and require no additional installation. For package functions, install as needed:
+
+```{r}
+#| eval: false
+
+# Essential packages
+install.packages("MASS")      # ginv(), boxcox()
+install.packages("car")       # Anova(), vif()
+install.packages("emmeans")   # emmeans(), contrast(), pairs()
+install.packages("Matrix")    # rankMatrix(), sparse matrices
+
+# Optional packages (used in specific weeks)
+install.packages("lme4")      # lmer() for mixed models preview (Week 14)
+install.packages("multcomp")  # Multiple comparisons (Week 8)
+install.packages("ggplot2")   # Enhanced graphics
+```
+
+### Loading Packages
+
+Load required packages at the start of your R session:
+
+```{r}
+#| eval: false
+#| message: false
+#| warning: false
+
+library(MASS)
+library(car)
+library(emmeans)
+library(Matrix)
+```
+
+:::{.callout-note}
+## Base R vs Packages
+
+- **Base R functions** (like `lm()`, `solve()`, `matrix()`) are always available
+- **Package functions** (like `ginv()`, `Anova()`) require loading the package first with `library()`
+:::
+
+---
+
+## Basic Matrix Operations {#sec-rfunc-matrix-basic}
+
+Functions for creating and manipulating matrices.
+
+| Function | Package | Syntax | Description | Key Parameters | Week(s) |
+|----------|---------|--------|-------------|----------------|---------|
+| `matrix()` | base R | `matrix(data, nrow, ncol)` | Create a matrix from vector | `data=`, `nrow=`, `ncol=`, `byrow=` | 1-15 |
+| `t()` | base R | `t(X)` | Transpose matrix | `x=` | 1-15 |
+| `%*%` | base R | `A %*% B` | Matrix multiplication | - | 1-15 |
+| `solve()` | base R | `solve(A)` or `solve(A, b)` | Compute matrix inverse or solve linear system | `a=`, `b=` | 2-15 |
+| `ginv()` | MASS | `ginv(X)` | Generalized (Moore-Penrose) inverse | `X=`, `tol=` | 2,12-13 |
+| `cbind()` | base R | `cbind(v1, v2, ...)` | Combine vectors/matrices by columns | `...` | 3-15 |
+| `rbind()` | base R | `rbind(v1, v2, ...)` | Combine vectors/matrices by rows | `...` | Throughout |
+| `c()` | base R | `c(x1, x2, ...)` | Combine values into vector | `...` | 1-15 |
+
+:::{.callout-note}
+## Matrix Multiplication vs Element-wise
+
+- `%*%` performs **matrix multiplication** (inner dimensions must match: (m×n) × (n×p) → (m×p))
+- `*` performs **element-wise multiplication** (dimensions must match exactly)
+:::
+
+:::{.callout-tip}
+## Efficiency Tip
+
+For computing $\mathbf{X}'\mathbf{X}$, use `crossprod(X)` instead of `t(X) %*% X` - it's faster and more numerically stable.
+:::
+
+---
+
+## Matrix Properties and Decompositions {#sec-rfunc-matrix-props}
+
+Functions for examining matrix characteristics and performing decompositions.
+
+| Function | Package | Syntax | Description | Key Parameters | Week(s) |
+|----------|---------|--------|-------------|----------------|---------|
+| `qr()` | base R | `qr(X)` | QR decomposition; use `$rank` to get rank | `x=`, `tol=` | 2,12 |
+| `det()` | base R | `det(A)` | Compute determinant | `x=` | 2 |
+| `diag()` | base R | `diag(X)` or `diag(n)` | Extract diagonal or create diagonal matrix | `x=`, `nrow=`, `ncol=` | 2-15 |
+| `eigen()` | base R | `eigen(A)` | Eigenvalue decomposition | `x=`, `symmetric=` | 2,5 |
+| `svd()` | base R | `svd(X)` | Singular value decomposition | `x=` | 2,13 |
+| `rankMatrix()` | Matrix | `rankMatrix(X)` | Compute rank (more reliable than `qr()$rank`) | `x=`, `method=` | 2,12 |
+| `crossprod()` | base R | `crossprod(X)` or `crossprod(X, Y)` | Compute $\mathbf{X}'\mathbf{X}$ or $\mathbf{X}'\mathbf{Y}$ efficiently | `x=`, `y=` | 5-15 |
+| `tcrossprod()` | base R | `tcrossprod(X)` | Compute $\mathbf{X}\mathbf{X}'$ efficiently | `x=`, `y=` | 5-15 |
+| `norm()` | base R | `norm(X, type)` | Compute matrix norm | `x=`, `type=` | 2 |
+
+:::{.callout-important}
+## Rank Determination
+
+For rank deficiency detection, use `rankMatrix()` from the Matrix package - it's more robust than `qr()$rank` for near-singular matrices. See Week 12 for details on non-full rank models.
+:::
+
+---
+
+## Linear Model Fitting {#sec-rfunc-lm-fitting}
+
+Functions for fitting linear models and building design matrices.
+
+| Function | Package | Syntax | Description | Key Parameters | Week(s) |
+|----------|---------|--------|-------------|----------------|---------|
+| `lm()` | base R | `lm(formula, data)` | Fit linear model using ordinary least squares | `formula=`, `data=`, `weights=` | 4-15 |
+| `model.matrix()` | base R | `model.matrix(formula, data)` | Build design matrix $\mathbf{X}$ from formula | `object=`, `data=` | 3-15 |
+| `formula()` | base R | `formula(model)` | Extract formula from fitted model | `x=` | Throughout |
+| `update()` | base R | `update(model, new_formula)` | Update and refit model with new formula | `object=`, `formula=`, `data=` | 6-10 |
+| `lmer()` | lme4 | `lmer(formula, data)` | Fit mixed model (preview only) | `formula=`, `data=`, `REML=` | 14 |
+
+:::{.callout-tip}
+## Design Matrix Construction
+
+Always verify your design matrix before fitting:
+```r
+X <- model.matrix(~ breed + sex, data=mydata)
+head(X)  # Check structure
+qr(X)$rank  # Check rank
+```
+:::
+
+---
+
+## Model Summaries and Extraction {#sec-rfunc-lm-summary}
+
+Functions for extracting information from fitted models.
+
+| Function | Package | Syntax | Description | Key Parameters | Week(s) |
+|----------|---------|--------|-------------|----------------|---------|
+| `summary()` | base R | `summary(model)` | Comprehensive model summary (coefficients, R², F-test) | `object=` | 4-15 |
+| `coef()` | base R | `coef(model)` | Extract coefficient estimates $\mathbf{b}$ | `object=` | 4-15 |
+| `residuals()` | base R | `residuals(model)` or `resid(model)` | Extract residuals $\mathbf{e} = \mathbf{y} - \hat{\mathbf{y}}$ | `object=`, `type=` | 4-15 |
+| `fitted()` | base R | `fitted(model)` | Extract fitted values $\hat{\mathbf{y}} = \mathbf{Xb}$ | `object=` | 4-15 |
+| `predict()` | base R | `predict(model, newdata)` | Predict for new observations | `object=`, `newdata=`, `interval=` | 4,6 |
+| `vcov()` | base R | `vcov(model)` | Variance-covariance matrix of estimates $(\mathbf{X}'\mathbf{X})^{-1}\hat{\sigma}^2$ | `object=` | 5-15 |
+| `sigma()` | base R | `sigma(model)` | Extract residual standard error $\hat{\sigma}$ | `object=` | 5-15 |
+| `deviance()` | base R | `deviance(model)` | Residual sum of squares (SSE) | `object=` | 5-15 |
+| `logLik()` | base R | `logLik(model)` | Log-likelihood of fitted model | `object=` | 6,14 |
+| `AIC()` | base R | `AIC(model)` | Akaike Information Criterion | `object=`, `k=` | 6,14 |
+| `confint()` | base R | `confint(model, level=0.95)` | Confidence intervals for parameters | `object=`, `parm=`, `level=` | 5-6 |
+
+:::{.callout-note}
+## Residuals vs Fitted Values
+
+- `residuals(model)`: Returns $\mathbf{e} = \mathbf{y} - \hat{\mathbf{y}}$
+- `fitted(model)`: Returns $\hat{\mathbf{y}} = \mathbf{Xb}$
+- Verify: `all.equal(y, fitted(model) + residuals(model))` should be `TRUE`
+:::
+
+---
+
+## Hypothesis Testing and ANOVA {#sec-rfunc-testing}
+
+Functions for testing hypotheses about model parameters.
+
+| Function | Package | Syntax | Description | Key Parameters | Week(s) |
+|----------|---------|--------|-------------|----------------|---------|
+| `anova()` | base R | `anova(model)` or `anova(model1, model2)` | ANOVA table with Type I (sequential) SS | `object=` | 6-10 |
+| `Anova()` | car | `Anova(model, type=3)` | Type II or Type III SS for unbalanced data | `mod=`, `type=` | 9-10,12 |
+| `emmeans()` | emmeans | `emmeans(model, specs)` | Estimated marginal means (LSMEANS) | `object=`, `specs=`, `by=` | 8-10 |
+| `contrast()` | emmeans | `contrast(emm, method)` | Test contrasts among means | `object=`, `method=`, `adjust=` | 8-10 |
+| `pairs()` | emmeans | `pairs(emm)` | Pairwise comparisons | `x=`, `adjust=` | 8-9 |
+| `drop1()` | base R | `drop1(model, test="F")` | Test dropping each term | `object=`, `scope=`, `test=` | 6,9 |
+| `add1()` | base R | `add1(model, scope, test="F")` | Test adding each term | `object=`, `scope=`, `test=` | 6 |
+| `vif()` | car | `vif(model)` | Variance inflation factors (detect collinearity) | `mod=` | 6 |
+
+:::{.callout-important}
+## Type I vs Type III SS
+
+- **Type I SS** (sequential): Order matters! Each term adjusted for previous terms only
+  - Use `anova(model)` - default in R
+  - Appropriate for **balanced** designs
+
+- **Type III SS** (partial): Each term adjusted for all other terms
+  - Use `car::Anova(model, type=3)`
+  - Appropriate for **unbalanced** designs and recommended for general use
+
+See Weeks 9-10 for detailed discussion.
+:::
+
+---
+
+## Model Diagnostics {#sec-rfunc-diagnostics}
+
+Functions for checking model assumptions and identifying influential observations.
+
+| Function | Package | Syntax | Description | Key Parameters | Week(s) |
+|----------|---------|--------|-------------|----------------|---------|
+| `plot()` | base R | `plot(lm_object)` | Create 4 diagnostic plots automatically | `x=`, `which=` | 11 |
+| `hatvalues()` | base R | `hatvalues(model)` | Extract leverage values (diagonal of hat matrix $\mathbf{H}$) | `model=` | 11 |
+| `cooks.distance()` | base R | `cooks.distance(model)` | Compute Cook's distance for each observation | `model=` | 11 |
+| `rstandard()` | base R | `rstandard(model)` | Standardized residuals | `model=`, `type=` | 11 |
+| `rstudent()` | base R | `rstudent(model)` | Studentized deleted residuals | `model=` | 11 |
+| `influence.measures()` | base R | `influence.measures(model)` | Comprehensive influence diagnostics | `model=` | 11 |
+| `dffits()` | base R | `dffits(model)` | Change in fitted value when observation deleted | `model=` | 11 |
+| `dfbetas()` | base R | `dfbetas(model)` | Change in coefficients when observation deleted | `model=` | 11 |
+| `qqnorm()` | base R | `qqnorm(residuals)` | Normal Q-Q plot to check normality | `y=` | 11 |
+| `boxcox()` | MASS | `boxcox(model)` | Box-Cox transformation for normality/homoscedasticity | `object=`, `lambda=` | 11,14 |
+
+:::{.callout-tip}
+## Rule-of-Thumb Thresholds
+
+- **High leverage**: $h_{ii} > 2p/n$ or $3p/n$ where $p$ = number of parameters, $n$ = sample size
+- **Influential observation**: Cook's D > 1 or Cook's D > 4/n
+- **Outlier**: |studentized residual| > 3
+
+Week 11 provides detailed guidance on interpretation and remedial measures.
+:::
+
+:::{.callout-note}
+## Quick Diagnostic Check
+
+```r
+par(mfrow=c(2,2))
+plot(model)  # Creates all 4 diagnostic plots at once
+```
+
+1. **Residuals vs Fitted**: Check linearity and homoscedasticity
+2. **Q-Q Plot**: Check normality assumption
+3. **Scale-Location**: Check homoscedasticity
+4. **Residuals vs Leverage**: Identify influential points
+:::
+
+---
+
+## Advanced Model Tools {#sec-rfunc-advanced}
+
+Functions for working with contrasts, constraints, and model parameterizations.
+
+| Function | Package | Syntax | Description | Key Parameters | Week(s) |
+|----------|---------|--------|-------------|----------------|---------|
+| `contr.treatment()` | base R | `contr.treatment(n)` | Treatment (reference cell) contrasts | `n=`, `base=` | 3,8,13 |
+| `contr.sum()` | base R | `contr.sum(n)` | Sum-to-zero contrasts | `n=` | 8,13 |
+| `contrasts()` | base R | `contrasts(factor)` | Get or set contrasts for a factor | `x=`, `value=` | 8,13 |
+| `options()` | base R | `options(contrasts=c(...))` | Set default contrast system | `contrasts=` | 13 |
+| `relevel()` | base R | `relevel(factor, ref)` | Change reference level of factor | `x=`, `ref=` | 8-9 |
+| `interaction.plot()` | base R | `interaction.plot(f1, f2, y)` | Plot interaction between two factors | `x.factor=`, `trace.factor=`, `response=` | 9 |
+| `all.equal()` | base R | `all.equal(x, y)` | Compare objects with tolerance (for floating-point) | `target=`, `current=`, `tolerance=` | Throughout |
+| `is.estimable()` | estimability | `is.estimable(contrast, X)` | Check if linear function is estimable | `x=`, `X=` | 8,12-13 |
+
+:::{.callout-important}
+## Contrast Systems
+
+**Set-to-zero (treatment) contrasts**:
+```r
+options(contrasts = c("contr.treatment", "contr.poly"))
+```
+- Default in R
+- First level is reference (coefficient = 0)
+- Other coefficients are **differences from reference**
+
+**Sum-to-zero (effects) contrasts**:
+```r
+options(contrasts = c("contr.sum", "contr.poly"))
+```
+- Coefficients sum to zero: $\sum \alpha_i = 0$
+- Each coefficient is **deviation from overall mean**
+- More symmetric, preferred for balanced designs
+
+See Week 13 for detailed comparison and implications.
+:::
+
+---
+
+## Data Manipulation {#sec-rfunc-data}
+
+Functions for organizing and summarizing data.
+
+| Function | Package | Syntax | Description | Key Parameters | Week(s) |
+|----------|---------|--------|-------------|----------------|---------|
+| `tapply()` | base R | `tapply(X, INDEX, FUN)` | Apply function to subgroups | `X=`, `INDEX=`, `FUN=` | 7-10 |
+| `aggregate()` | base R | `aggregate(x, by, FUN)` | Compute summary statistics by groups | `x=`, `by=`, `FUN=` | 7-10 |
+| `factor()` | base R | `factor(x, levels)` | Create or modify factor variable | `x=`, `levels=`, `labels=` | 3-15 |
+| `mean()` | base R | `mean(x)` | Compute arithmetic mean | `x=`, `na.rm=` | 1-15 |
+| `sum()` | base R | `sum(x)` | Compute sum | `x=`, `na.rm=` | 1-15 |
+| `length()` | base R | `length(x)` | Number of elements in vector | `x=` | Throughout |
+| `nrow()` | base R | `nrow(X)` | Number of rows in matrix/data frame | `x=` | Throughout |
+| `ncol()` | base R | `ncol(X)` | Number of columns in matrix/data frame | `x=` | Throughout |
+| `subset()` | base R | `subset(data, condition)` | Extract subset of data | `x=`, `subset=`, `select=` | Throughout |
+| `transform()` | base R | `transform(data, ...)` | Add or modify variables | `_data=`, `...` | Throughout |
+| `with()` | base R | `with(data, expr)` | Evaluate expression in data environment | `data=`, `expr=` | Throughout |
+| `round()` | base R | `round(x, digits)` | Round to specified decimal places | `x=`, `digits=` | Throughout |
+| `sprintf()` | base R | `sprintf(fmt, ...)` | Format output with C-style formatting | `fmt=`, `...` | Throughout |
+| `cat()` | base R | `cat(...)` | Print output (useful in R Markdown) | `...`, `sep=`, `fill=` | Throughout |
+
+:::{.callout-tip}
+## Computing Group Statistics
+
+Three common approaches:
+
+**1. Using `tapply()`** - Returns vector/array:
+```r
+tapply(y, group, mean)  # Mean of y for each group
+```
+
+**2. Using `aggregate()`** - Returns data frame:
+```r
+aggregate(y ~ group, data=mydata, FUN=mean)
+```
+
+**3. Using `emmeans()`** - Returns model-based estimates:
+```r
+emmeans(lm(y ~ group), specs="group")
+```
+
+Choose based on your needs:
+- `tapply()`: Quick calculations
+- `aggregate()`: Multiple variables at once
+- `emmeans()`: Adjusted means from models
+:::
+
+---
+
+## Common Pitfalls {#sec-rfunc-pitfalls}
+
+Common issues encountered when working with linear models in R, their symptoms, and solutions.
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| **Singular matrix** | `Error in solve.default(X): system is computationally singular` | Use `ginv()` from MASS package instead of `solve()`. Occurs when $\mathbf{X}'\mathbf{X}$ is not full rank (Week 12). |
+| **Object not found** | `Error: object 'variable_name' not found` | Add `data=` argument to `lm()`: `lm(y ~ x, data=mydata)`. Ensures variables are found in the data frame. |
+| **Wrong SS type** | Type I SS gives different results than expected in unbalanced data | Use `car::Anova(model, type=3)` instead of base `anova()` for unbalanced designs (Weeks 9-10). |
+| **Non-estimable contrasts** | Different g-inverses give different parameter estimates | Verify contrast is estimable: check $\sum c_i = 0$ for treatment contrasts. Only interpret estimable functions (Week 8, 12-13). |
+| **Uncentered covariate** | Intercept not interpretable as group mean at $\bar{x}$ | Center covariate: `lm(y ~ group + I(x - mean(x)))` (Week 10). |
+| **Rank deficiency warnings** | `Coefficients: (1 not defined because of singularities)` | Either use cell means model (`~ factor - 1`) or apply explicit constraints. Check design matrix rank: `qr(X)$rank` (Week 12). |
+| **Factor vs numeric** | `contrasts can be applied only to factors with 2 or more levels` | Convert numeric variable to factor: `factor(variable)` or include in formula as `factor(variable)`. |
+| **Dimension mismatch** | `non-conformable arrays` or `arguments imply differing number of rows` | Check dimensions with `dim(X)`, `length(y)`. Matrix multiplication requires matching inner dimensions (Week 1-2). |
+
+:::{.callout-important}
+## Debugging Strategy
+
+When encountering errors, follow this systematic approach:
+
+1. **Check your data**: `str(data)`, `summary(data)`, `head(data)`
+2. **Check your formula**: `formula(model)`
+3. **Check design matrix**: `X <- model.matrix(model)`, then `dim(X)`, `qr(X)$rank`
+4. **Verify dimensions**: Ensure $n \times p$ design matrix matches $n \times 1$ response
+5. **Check for rank deficiency**: Compare `qr(X)$rank` to `ncol(X)`
+6. **Compare with lm()**: Verify manual calculations match `lm()` output
+7. **Test estimability**: For contrasts, verify $\mathbf{c}'\boldsymbol{\beta}$ is estimable
+
+See Week 11 (Diagnostics) and Week 12 (Non-Full Rank) for detailed troubleshooting.
+:::
+
+---
+
+## Quick Troubleshooting Guide {#sec-rfunc-troubleshoot}
+
+### Common Error Messages and Solutions
+
+**"Error in solve.default(): system is computationally singular"**
+
+- **Cause**: Matrix $\mathbf{X}'\mathbf{X}$ is not full rank (determinant ≈ 0)
+- **Solution**:
+  ```r
+  library(MASS)
+  b <- ginv(t(X) %*% X) %*% t(X) %*% y  # Use generalized inverse
+  ```
+- **Related**: Week 2 (Linear Algebra), Week 12 (Non-Full Rank Models)
+
+**"Error: object 'variable_name' not found"**
+
+- **Cause**: Variable not in current environment or data frame not specified
+- **Solution**:
+  ```r
+  model <- lm(y ~ x, data=mydata)  # Always use data= argument
+  ```
+- **Related**: Week 4 (Simple Regression)
+
+**"Coefficients: (1 not defined because of singularities)"**
+
+- **Cause**: Design matrix is rank deficient (overparameterized model)
+- **Solution**:
+  ```r
+  # Option 1: Cell means model
+  model <- lm(y ~ breed - 1, data=mydata)
+
+  # Option 2: Check which parameters are aliased
+  alias(model)
+  ```
+- **Related**: Week 12 (Non-Full Rank Models)
+
+**"contrasts can be applied only to factors with 2 or more levels"**
+
+- **Cause**: Categorical variable coded as numeric instead of factor
+- **Solution**:
+  ```r
+  mydata$breed <- factor(mydata$breed)
+  # Or in formula:
+  model <- lm(y ~ factor(breed), data=mydata)
+  ```
+- **Related**: Week 3 (Design Matrices), Week 7 (ANOVA)
+
+**"non-conformable arrays"**
+
+- **Cause**: Matrix dimensions don't match for the operation
+- **Solution**:
+  ```r
+  dim(X)  # Check dimensions
+  dim(y)
+  # For matrix multiplication A %*% B, need ncol(A) == nrow(B)
+  ```
+- **Related**: Week 1-2 (Matrix Operations)
+
+---
+
+### Getting Help in R
+
+**Function documentation**:
+```r
+?lm           # Quick help
+help(lm)      # Same as ?
+??regression  # Search all help files
+```
+
+**Examples**:
+```r
+example(lm)           # Run examples from help file
+demo("graphics")      # Interactive demonstrations
+```
+
+**Package information**:
+```r
+help(package="MASS")  # Package overview and function list
+```
+
+**Vignettes** (detailed tutorials):
+```r
+vignette()                    # List all available vignettes
+vignette("emmeans")           # View specific vignette
+browseVignettes("emmeans")    # Open in browser
+```
+
+**Online resources**:
+
+- R Documentation: https://www.rdocumentation.org/
+- Stack Overflow: https://stackoverflow.com/questions/tagged/r
+- R-bloggers: https://www.r-bloggers.com/
+- Quick-R: https://www.statmethods.net/
+
+---
+
+### Verification Strategy
+
+When building your own least squares solvers, always verify against `lm()`:
+
+```r
+# 1. Manual calculation
+X <- model.matrix(~ breed + sex, data=mydata)
+y <- mydata$weight
+b_manual <- solve(t(X) %*% X) %*% t(X) %*% y
+
+# 2. Using lm()
+model <- lm(weight ~ breed + sex, data=mydata)
+b_lm <- coef(model)
+
+# 3. Compare (should be near-zero)
+max(abs(b_manual - b_lm))
+
+# 4. Use all.equal() for floating-point comparisons
+all.equal(as.vector(b_manual), b_lm)
+# Should return TRUE (or very small tolerance message)
+
+# 5. Verify fitted values
+y_hat_manual <- X %*% b_manual
+y_hat_lm <- fitted(model)
+all.equal(as.vector(y_hat_manual), y_hat_lm)
+
+# 6. Verify residuals
+e_manual <- y - y_hat_manual
+e_lm <- residuals(model)
+all.equal(as.vector(e_manual), e_lm)
+
+# 7. Verify SSE
+SSE_manual <- sum(e_manual^2)
+SSE_lm <- deviance(model)
+all.equal(SSE_manual, SSE_lm)
+```
+
+:::{.callout-tip}
+## Floating-Point Comparison
+
+Never use `==` to compare floating-point numbers! Use `all.equal()` instead:
+
+```r
+# BAD
+b_manual == b_lm  # May fail due to rounding errors
+
+# GOOD
+all.equal(b_manual, b_lm)  # Allows small tolerance (default: 1.5e-8)
+```
+:::
+
+---
+
+## Week-by-Week Function Index {#sec-rfunc-by-week}
+
+Quick reference showing which functions are introduced or used heavily in each week.
+
+| Week | Topic | Key Functions |
+|------|-------|---------------|
+| **1** | Overview & Foundations | `matrix()`, `t()`, `%*%`, `c()`, `mean()`, `sum()`, `length()` |
+| **2** | Linear Algebra | `solve()`, `ginv()`, `qr()`, `det()`, `diag()`, `eigen()`, `svd()`, `rankMatrix()` |
+| **3** | Design Matrices | `model.matrix()`, `factor()`, `cbind()`, `rbind()`, `formula()`, `contr.treatment()`, `contr.sum()` |
+| **4** | Simple Regression | `lm()`, `coef()`, `fitted()`, `residuals()`, `predict()`, `summary()` |
+| **5** | Least Squares Theory | `crossprod()`, `tcrossprod()`, `vcov()`, `sigma()`, `deviance()`, `confint()` |
+| **6** | Multiple Regression | `anova()`, `drop1()`, `add1()`, `vif()`, `cor()`, `AIC()`, `update()` |
+| **7** | One-Way ANOVA | `anova()`, `tapply()`, `aggregate()`, `aov()`, `TukeyHSD()` |
+| **8** | Contrasts | `emmeans()`, `contrast()`, `pairs()`, `contr.sum()`, `contr.treatment()`, `contrasts()`, `relevel()` |
+| **9** | Two-Way ANOVA | `Anova()` (Type III), `interaction.plot()`, `model.tables()`, `emmeans()` with interactions |
+| **10** | ANCOVA | `emmeans()` (adjusted means), `anova()` (sequential tests), `Anova()` (partial tests), centering covariates |
+| **11** | Diagnostics | `plot()`, `hatvalues()`, `cooks.distance()`, `rstandard()`, `rstudent()`, `influence.measures()`, `dffits()`, `dfbetas()`, `qqnorm()` |
+| **12** | Non-Full Rank | `ginv()`, `rankMatrix()`, `qr()`, `all.equal()`, `alias()`, checking estimability |
+| **13** | Special Topics I | `options(contrasts)`, `relevel()`, `is.estimable()`, different constraint systems |
+| **14** | Special Topics II | `poly()`, `lm(weights=)`, `lmer()` (preview), `boxcox()`, `logLik()` |
+| **15** | Capstone | **Integration of all functions above** - comprehensive livestock data analysis |
+
+:::{.callout-note}
+## Progressive Learning
+
+- **Weeks 1-3**: Foundations (matrix operations, design matrices)
+- **Weeks 4-6**: Core regression (simple, theory, multiple)
+- **Weeks 7-10**: ANOVA family (one-way, contrasts, two-way, ANCOVA)
+- **Week 11**: Diagnostics (checking all assumptions)
+- **Weeks 12-14**: Advanced topics (rank deficiency, special cases)
+- **Week 15**: Integration (real-world application)
+
+Each week builds on previous concepts - review earlier weeks as needed.
+:::
+
+---
+
+## Additional Resources
+
+### R Cheat Sheets
+
+- **Base R**: https://iqss.github.io/dss-workshops/R/Rintro/base-r-cheat-sheet.pdf
+- **RStudio**: https://www.rstudio.com/resources/cheatsheets/
+
+### Textbooks with R Code
+
+- *Linear Models with R* by Julian Faraway
+- *The R Book* by Michael Crawley
+- *Applied Linear Statistical Models* by Kutner et al. (has R companion)
+
+### Online Courses
+
+- DataCamp: "Introduction to Linear Modeling in R"
+- Coursera: "Regression Models" (Johns Hopkins)
+- R-exercises: https://www.r-exercises.com/
+
+### Package Documentation
+
+- **MASS**: https://cran.r-project.org/web/packages/MASS/MASS.pdf
+- **car**: https://cran.r-project.org/web/packages/car/car.pdf
+- **emmeans**: https://cran.r-project.org/web/packages/emmeans/vignettes/
+
+---
+
+This completes Appendix C. For mathematical notation, see [Appendix A](#sec-appendix-a). For in-depth matrix algebra, see [Appendix B](#sec-appendix-b).

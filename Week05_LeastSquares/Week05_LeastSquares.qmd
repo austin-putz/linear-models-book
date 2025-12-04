@@ -9,16 +9,18 @@ format:
     code-tools: true
 ---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 After completing this week's material, you will be able to:
 
--   Understand the theoretical foundation of the least squares criterion.
--   Derive the normal equations from the principle of minimizing squared error.
--   Prove the key properties of least squares estimators, including unbiasedness.
--   Understand and apply the Gauss-Markov theorem, recognizing why LS estimators are "BLUE".
--   Decompose the total sum of squares and estimate the residual variance.
--   Utilize projection matrices to understand the geometry of least squares.
+1. **Understand** the theoretical foundation of the **least squares criterion**
+2. **Derive** the **normal equations** from the principle of minimizing **squared error**
+3. **Prove** the key properties of **least squares estimators**, including **unbiasedness**
+4. **Understand** and **apply** the **Gauss-Markov theorem**, recognizing why LS estimators are **BLUE**
+5. **Decompose** the **total sum of squares** and estimate the **residual variance**
+6. **Utilize** **projection matrices** to understand the geometry of least squares
+:::
 
 ---
 

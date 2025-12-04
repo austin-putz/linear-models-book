@@ -10,15 +10,17 @@ format:
 bibliography: ../references.bib
 ---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. **Define** linear contrasts and estimable functions in overparameterized models
-2. **Determine** which functions are estimable using the row space criterion
-3. **Construct** and test hypotheses involving single and multiple contrasts
-4. **Create** orthogonal contrast sets and understand their role in partitioning sums of squares
-5. **Compute** standard errors and test statistics for estimable functions
+1. **Define** **linear contrasts** and **estimable functions** in **overparameterized models**
+2. **Determine** which functions are **estimable** using the **row space criterion**
+3. **Construct** and **test** hypotheses involving **single** and **multiple contrasts**
+4. **Create** **orthogonal contrast sets** and understand their role in **partitioning sums of squares**
+5. **Compute** **standard errors** and **test statistics** for estimable functions
+:::
 
 ## Why Contrasts Matter in Animal Breeding
 

@@ -10,15 +10,17 @@ format:
 bibliography: ../references.bib
 ---
 
-# Learning Objectives
+::: {.callout-note icon=false}
+## Learning Objectives
 
 By the end of this week, you will be able to:
 
-- Build and interpret two-way ANOVA models with interaction effects in the context of animal breeding and genetics
-- Construct design matrices for factorial designs (both balanced and unbalanced) and understand their rank properties
-- Compute and interpret Type I, II, and III sums of squares, and understand when each is appropriate
-- Test hypotheses about main effects and interactions using F-tests and interpret results biologically
-- Conduct simple effects analysis when interactions are significant to understand effect patterns
+1. **Build** and **interpret** **two-way ANOVA models** with **interaction effects** in the context of animal breeding and genetics
+2. **Construct** **design matrices** for **factorial designs** (both balanced and unbalanced) and understand their **rank properties**
+3. **Compute** and **interpret** **Type I**, **Type II**, and **Type III sums of squares**, and understand when each is appropriate
+4. **Test** hypotheses about **main effects** and **interactions** using **F-tests** and interpret results biologically
+5. **Conduct** **simple effects analysis** when interactions are significant to understand effect patterns
+:::
 
 ---
 
@@ -38,7 +40,7 @@ In Week 7, we learned how to compare groups using one-way ANOVA—testing whethe
 
 4. **Treatment × Time Interactions**: The effectiveness of a health intervention may vary across different stages of production or ages of animals.
 
-:::{.callout-important}
+::: {.callout-important}
 ## Interactions Change Everything
 
 An **interaction** occurs when the effect of one factor depends on the level of another factor. When an interaction is present, we cannot simply interpret main effects in isolation—the story is more complex and usually more interesting biologically.
@@ -70,7 +72,7 @@ The mathematical principles remain the same (least squares, normal equations, F-
 6. **Effect Sizes**: Quantifying practical significance beyond p-values
 7. **R Implementation**: Building a complete two-way ANOVA solver from scratch
 
-:::{.callout-note}
+::: {.callout-note}
 ## The Two-Way ANOVA Table Structure
 
 We'll partition total variation into **four components** instead of two:
@@ -108,7 +110,7 @@ where:
 - $n_{ij}$ is the number of observations in cell $(i,j)$
 - $N = \sum_{i=1}^{a} \sum_{j=1}^{b} n_{ij}$ is the total sample size
 
-:::{.callout-note}
+::: {.callout-note}
 ## Notation and Dimensions
 
 **Scalar quantities**:
@@ -203,7 +205,7 @@ where the coding depends on the chosen constraints. With sum-to-zero constraints
 - Other levels coded as 0/1 indicators
 - Interactions are products of these indicators
 
-:::{.callout-warning}
+::: {.callout-warning}
 ## Rank Deficiency Alert
 
 With effects parameterization and no constraints, **X'X** is **singular** (not full rank). The normal equations $\mathbf{X'Xb} = \mathbf{X'y}$ have infinitely many solutions.
@@ -310,7 +312,7 @@ $$ {#eq-ss-decomposition}
 
 This beautiful decomposition breaks down for **unbalanced designs** (unequal $n_{ij}$), which is why we need Type I, II, and III SS (covered later).
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## Geometric Interpretation
 
 Each sum of squares represents a **squared length** of a projection:
@@ -418,7 +420,7 @@ $$
 
 **Decision rule**: Reject $H_0$ if $F_A > F_{\alpha; a-1, N-ab}$
 
-:::{.callout-warning}
+::: {.callout-warning}
 If interaction is significant, the main effect of A may not be meaningful! The effect of A **depends on the level of B**, so reporting an "average" effect across all B levels can be misleading.
 :::
 
@@ -463,7 +465,7 @@ For **balanced designs**, the order in which we fit effects doesn't matter—all
 
 The issue arises because with unbalanced data, Factor A and Factor B are **correlated**—the marginal totals are not proportional. This means the subspaces spanned by A and B effects are **not orthogonal**, leading to ambiguity about how to partition variance.
 
-:::{.callout-note}
+::: {.callout-note}
 ## The Core Problem
 
 In unbalanced designs, we must decide: When testing Factor A, should we adjust for Factor B or not? Different answers lead to different SS types.
@@ -562,7 +564,7 @@ $$
 - Tests hypotheses about population marginal means
 - Most conservative approach
 
-:::{.callout-important}
+::: {.callout-important}
 ## Type III SS: The Standard for Unbalanced Designs
 
 For unbalanced two-way ANOVAs, **Type III SS is generally recommended** because:
@@ -646,7 +648,7 @@ We'll demonstrate this computationally in the examples below.
    - Rank order changes
    - e.g., Breed 1 best on Diet 1, but Breed 2 best on Diet 2
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## Interaction Plots are Mandatory
 
 Never interpret a two-way ANOVA without creating an interaction plot. The plot reveals patterns that numbers alone cannot show—especially **ordinal vs. disordinal** interactions.
@@ -726,7 +728,7 @@ This shows that the interaction measures how much the simple effects of A vary a
 **Interpretation example**:
 - If "Diet effect within Breed 1" is significant but "Diet effect within Breed 2" is not, we conclude that diet matters for Breed 1 but not for Breed 2—a clear interaction pattern.
 
-:::{.callout-warning}
+::: {.callout-warning}
 ## Multiple Testing Correction
 
 When conducting multiple simple effects tests, consider adjusting p-values for multiple comparisons (e.g., Bonferroni correction). If testing simple effects at $b$ levels, use $\alpha/b$ for each test, or report adjusted p-values.
@@ -805,7 +807,7 @@ $$
 | $\eta_p^2$ | $\frac{SS}{SS+SSE}$ | 0-1 | Overestimates | Partial effects |
 | $\omega^2$ | $\frac{SS-df \cdot MSE}{SST+MSE}$ | 0-1 (or 0) | Unbiased | **Inferential (population)** |
 
-:::{.callout-important}
+::: {.callout-important}
 ## Report Effect Sizes Alongside p-values
 
 A p-value of 0.001 tells us an effect is unlikely due to chance, but it doesn't tell us if the effect is **practically important**.
@@ -857,7 +859,7 @@ print(swine)
 table(swine$breed, swine$diet)  # Check balance
 ```
 
-:::{.callout-note}
+::: {.callout-note}
 ## Balanced Design
 
 This is a **perfectly balanced design**: $n_{ij} = 2$ for all four cells. With balanced data:
@@ -1162,7 +1164,7 @@ Anova(model, type = 3)
 
 **Note**: For this balanced design, Type I and Type III SS are identical (as expected).
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## Key Takeaways from Example 1
 
 1. **Balanced design**: All SS types are equal, calculations are straightforward
@@ -1223,7 +1225,7 @@ cat("\n=== Type III SS ===\n")
 print(Anova(model_balanced, type = 3))
 ```
 
-:::{.callout-note}
+::: {.callout-note}
 ## Type I vs Type III in Balanced Designs
 
 For this **balanced** design, notice:
@@ -1309,7 +1311,7 @@ f_comparison <- data.frame(
 print(f_comparison)
 ```
 
-:::{.callout-important}
+::: {.callout-important}
 ## Key Observations from Unbalanced Data
 
 1. **Type I SS differ by order**: SS(Breed) when entered first ≠ SS(Breed) when entered after Diet
@@ -1354,7 +1356,7 @@ ggplot(lamb_summary, aes(x = diet, y = mean, color = breed, group = breed)) +
 - Lines are non-parallel (suggesting interaction) but don't cross (ordinal interaction)
 - Diet3 provides best performance for both breeds
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## Key Takeaways from Example 2
 
 1. **Balanced vs. unbalanced matters**: Imbalance creates dependency between factors
@@ -1799,7 +1801,7 @@ print(anova(lm(fat_pct ~ breed * diet, data = dairy)))
 cat("\n✓ Results match!\n")
 ```
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## Custom Solver Success
 
 Our solver produces results identical to R's built-in functions, confirming we understand the underlying mathematics. This is the power of building from first principles!
@@ -1843,7 +1845,7 @@ cat("✓ ANOVA and regression are mathematically identical\n")
 
 # Common Pitfalls and Best Practices
 
-:::{.callout-warning}
+::: {.callout-warning}
 ## Top 5 Pitfalls
 
 1. **Interpreting main effects with significant interactions** – Focus on simple effects instead
@@ -1853,7 +1855,7 @@ cat("✓ ANOVA and regression are mathematically identical\n")
 5. **Assuming balance** – Check with `table()` first
 :::
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## Best Practices
 
 ✓ Check balance before analysis

@@ -9,14 +9,16 @@ format:
     code-tools: true
 ---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. **Derive** least squares estimates for simple linear regression from first principles
-2. **Interpret** slope and intercept parameters in biological context
-3. **Make predictions** and compute residuals for new observations
-4. **Understand** the geometry of least squares and the concept of "best fit"
+1. **Derive** **least squares estimates** for **simple linear regression** from first principles
+2. **Interpret** **slope** and **intercept parameters** in biological context
+3. **Make predictions** and compute **residuals** for new observations
+4. **Understand** the geometry of **least squares** and the concept of **"best fit"**
+:::
 
 ## Why Simple Linear Regression Matters
 

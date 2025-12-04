@@ -20,15 +20,17 @@ format:
 bibliography: ../references.bib
 ---
 
-# Learning Objectives {.unnumbered}
+::: {.callout-note icon=false}
+## Learning Objectives
 
 After completing this week, you will be able to:
 
-1. **Diagnose** when unbalanced data causes problems and select appropriate analytical strategies
-2. **Distinguish** between different types of generalized inverses and understand when each is appropriate
-3. **Apply** different constraint systems (set-to-zero, sum-to-zero, custom) and interpret their effects on parameter estimates
-4. **Identify** estimable vs. non-estimable functions and correctly interpret results from rank-deficient models
-5. **Analyze** real genetic evaluation data with unequal information and understand the limitations of fixed-effects least squares
+1. **Diagnose** when **unbalanced data** causes problems and select appropriate **analytical strategies**
+2. **Distinguish** between different types of **generalized inverses** and understand when each is appropriate
+3. **Apply** different **constraint systems** (set-to-zero, sum-to-zero, custom) and interpret their effects on **parameter estimates**
+4. **Identify** **estimable** vs. **non-estimable functions** and correctly interpret results from **rank-deficient models**
+5. **Analyze** real **genetic evaluation data** with unequal information and understand the limitations of **fixed-effects least squares**
+:::
 
 ---
 
@@ -45,7 +47,7 @@ Consider these common scenarios in animal breeding and genetics:
 
 This week synthesizes concepts from multiple previous weeks to provide practical strategies for handling these real-world challenges:
 
-:::{.callout-note}
+::: {.callout-note}
 ## Connections to Previous Weeks
 
 - **Week 2**: Generalized inverses (mathematical foundation)
@@ -204,7 +206,7 @@ print(XtX_bal)
 # Balanced design has more structure (some zeros in off-diagonals after centering)
 ```
 
-:::{.callout-important}
+::: {.callout-important}
 ## When Unbalance is Problematic
 
 Unbalanced data itself is not always problematic. The issue arises when unbalance creates:
@@ -329,7 +331,7 @@ pairs(emm_cm)  # Identical to effects model contrasts
 
 **R Implementation**: `car::Anova(fit, type=3)`
 
-:::{.callout-warning}
+::: {.callout-warning}
 ## Choosing SS Type
 
 With severe unbalance and missing cells, Type III SS can be difficult to interpret. The "adjusted" means may not correspond to observable data patterns.
@@ -444,7 +446,7 @@ strategy_table <- data.frame(
 kable(strategy_table, caption = "Choosing an Analytical Strategy for Unbalanced Data")
 ```
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## General Recommendations
 
 1. **Always check cell counts first**: Use `table()` to see the data structure
@@ -591,7 +593,7 @@ cat("A b3:", A %*% b3, "\n")
 # All the same!
 ```
 
-:::{.callout-important}
+::: {.callout-important}
 ## Key Insight: What's Unique and What's Not
 
 For rank-deficient normal equations $\mathbf{X}'\mathbf{X}\mathbf{b} = \mathbf{X}'\mathbf{y}$:
@@ -696,7 +698,7 @@ cat("Norm of M-P solution:", sqrt(sum(b_plus^2)), "\n")
 # Moore-Penrose gives minimum norm
 ```
 
-:::{.callout-note}
+::: {.callout-note}
 ## R's Default
 
 In R, `MASS::ginv()` computes the **Moore-Penrose inverse** using SVD. This is the most commonly used generalized inverse in practice because:
@@ -900,7 +902,7 @@ print(contrasts_treat)
 cat("\nConclusion: Contrasts are identical! ✓\n")
 ```
 
-:::{.callout-important}
+::: {.callout-important}
 ## The Big Picture
 
 Three very different parameter estimates ($\mu$, $\alpha_i$), but:
@@ -1079,7 +1081,7 @@ cat("Group 2:", coefs_sum[1] + coefs_sum[3], "\n")
 cat("Group 3:", coefs_sum[1] - coefs_sum[2] - coefs_sum[3], "\n")
 ```
 
-:::{.callout-note}
+::: {.callout-note}
 ## Weighted Sum-to-Zero for Unbalanced Data
 
 For unbalanced designs, you might prefer **weighted sum-to-zero**: $\sum_i n_i \alpha_i = 0$
@@ -1207,7 +1209,7 @@ kable(comp_df,
       col.names = c("Constraint", "μ", "α₁", "α₂", "α₃", "Parity 1 Mean", "Parity 2 vs 1"))
 ```
 
-:::{.callout-important}
+::: {.callout-important}
 ## Key Insight
 
 The two parameterizations give **completely different individual parameter values**:
@@ -1291,7 +1293,7 @@ cat("  - Enforcing biological relationships\n")
 cat("  - Hierarchical model structures\n")
 ```
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## Practical Advice on Constraints
 
 **For most animal breeding applications**:
@@ -1386,7 +1388,7 @@ estimable_2way <- data.frame(
 knitr::kable(estimable_2way, caption = "Estimable Functions in Two-Way ANOVA")
 ```
 
-:::{.callout-note}
+::: {.callout-note}
 ## Balanced vs. Unbalanced Designs
 
 In **balanced** designs (equal $n_{ij}$):
@@ -1561,7 +1563,7 @@ is.estble(contrast, X)  # Returns TRUE if estimable
 
 *Best*: Clear, interpretable, reproducible, acknowledges constraint is arbitrary.
 
-:::{.callout-warning}
+::: {.callout-warning}
 ## Common Mistake: Reporting Software Output Blindly
 
 Many students report whatever the software prints, including non-estimable parameters!
@@ -1606,7 +1608,7 @@ summary_estimable <- data.frame(
 kable(summary_estimable, caption = "Common Estimable Functions Across Model Types")
 ```
 
-:::{.callout-important}
+::: {.callout-important}
 ## The Golden Rule
 
 **If you can observe it directly from the data (or a simple linear combination of data), it's estimable.**
@@ -2178,7 +2180,7 @@ legend("topleft",
 
 This is exactly what we want! Small-sample estimates are **less reliable**, so we pull them toward the population mean.
 
-:::{.callout-important}
+::: {.callout-important}
 ## Why We Need Mixed Models (Week 14 Preview)
 
 Fixed-effects least squares has fundamental limitations for genetic evaluation:
@@ -2329,7 +2331,7 @@ This week gave you the tools to handle these challenges with confidence:
 
 **Most importantly**: You now understand that estimable functions are the currency of statistical inference. Everything else is just notation.
 
-:::{.callout-tip}
+::: {.callout-tip}
 ## Before Next Week
 
 1. Review Henderson's original papers on MME (optional, provided in references)

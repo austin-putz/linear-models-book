@@ -1,17 +1,991 @@
 # Appendix D: Datasets Description {#sec-appendix-d .unnumbered}
 
-## Coming Soon
+## Introduction
 
-This appendix will describe all datasets used in the course:
+This appendix provides a comprehensive reference guide to all datasets used throughout the 15-week linear models course. Each dataset is carefully designed to illustrate specific statistical concepts while maintaining biological realism relevant to animal breeding and genetics.
 
-- Data structure and variables
-- Source and collection methods
-- Appropriate analyses
-- Access information (CSV files in `/Datasets` folder)
+### Purpose and Scope
 
-Datasets span various livestock species:
-- Dairy cattle (milk yield, lactation curves)
-- Beef cattle (growth, carcass traits)
-- Swine (litter size, growth rate)
-- Poultry (egg production, meat yield)
-- Sheep (fleece weight, lamb growth)
+This reference is designed to:
+
+- **Document all datasets**: Complete descriptions of 48 datasets spanning 5 livestock species
+- **Provide context**: Explain the pedagogical purpose and biological relevance of each dataset
+- **Enable quick lookup**: Multiple access paths (by week, species, size, or alphabetically)
+- **Support learning**: Variable descriptions and special features clearly noted
+
+### How to Use This Appendix
+
+- **Week-by-week sections**: Find datasets organized chronologically (Weeks 1-15)
+- **Species Index** ([@sec-datasets-species]): Browse datasets by livestock type
+- **Size Guide** ([@sec-datasets-size]): Find hand-calculable vs. realistic datasets
+- **Quick Reference** ([@sec-datasets-quick-ref]): Alphabetical listing of all datasets
+
+### Relationship to Course Structure
+
+Datasets are organized to match the 15-week course progression:
+- **Weeks 1-3**: Small examples for matrix operations and design matrices
+- **Weeks 4-6**: Regression datasets (simple and multiple)
+- **Weeks 7-10**: ANOVA family (one-way, contrasts, two-way, ANCOVA)
+- **Week 11**: Diagnostic datasets with special features (outliers, influential points)
+- **Weeks 12-14**: Advanced topics (unbalanced, constraints, special cases)
+- **Week 15**: Comprehensive capstone integration
+
+---
+
+## Summary Statistics {#sec-datasets-summary}
+
+### Overview
+
+| Metric | Value |
+|--------|-------|
+| **Total datasets** | 48 |
+| **Total observations** | 2,011 |
+| **Size range** | 4-177 observations |
+| **Species covered** | 5 (Dairy, Beef, Swine, Poultry, Sheep) |
+| **Weeks with datasets** | 14 (Week 2 is pure theory) |
+
+### Distribution by Week
+
+| Week | # Datasets | Total Obs | Statistical Focus |
+|------|------------|-----------|-------------------|
+| 1 | 1 | 30 | Matrix notation, sample mean |
+| 2 | 0 | 0 | Linear algebra theory |
+| 3 | 2 | 26 | Design matrix construction |
+| 4 | 4 | 59 | Simple linear regression |
+| 5 | 1 | 40 | Least squares theory |
+| 6 | 1 | 50 | Multiple regression |
+| 7 | 4 | 123 | One-way ANOVA |
+| 8 | 2 | 62 | Contrasts, estimable functions |
+| 9 | 3 | 74 | Two-way ANOVA, interactions |
+| 10 | 4 | 119 | ANCOVA, adjusted means |
+| 11 | 8 | 425 | Model diagnostics |
+| 12 | 4 | 300 | Non-full rank, unbalanced |
+| 13 | 5 | 422 | Special topics, constraints |
+| 14 | 8 | 300 | Polynomial, WLS, mixed model preview |
+| 15 | 1 | ~120 (planned) | Capstone integration |
+
+### Distribution by Species
+
+| Species | # Datasets | Avg Size | Size Range | Primary Traits |
+|---------|-----------|----------|------------|----------------|
+| Dairy Cattle | 13 | 52 | 12-100 | Milk yield, lactation curves, SCC |
+| Beef Cattle | 9 | 56 | 9-177 | ADG, marbling, carcass traits |
+| Swine | 8 | 26 | 6-162 | Litter size, ADG, growth |
+| Poultry | 12 | 41 | 4-89 | Egg production, body weight, FCR |
+| Sheep | 6 | 32 | 5-72 | Weaning weight, fleece, growth |
+
+### Distribution by Size Category
+
+| Category | Size Range | # Datasets | Purpose | Example Weeks |
+|----------|------------|------------|---------|---------------|
+| Hand-calculable | 4-12 | 15 | Manual computation practice | 1, 3, 4, 7, 8, 9, 12 |
+| Moderate | 20-50 | 25 | Realistic applications | 4, 5, 6, 7, 8, 10, 13, 14 |
+| Large | 60-177 | 8 | Complex structures, diagnostics | 11, 12, 13, 14 |
+
+---
+
+## File Conventions {#sec-datasets-conventions}
+
+### Directory Structure
+
+All datasets are stored in week-specific subdirectories:
+
+```
+WeekXX_TopicName/data/dataset_name.csv
+```
+
+**Example**:
+- Week 4 datasets: `Week04_SimpleRegression/data/`
+- Week 7 datasets: `Week07_ANOVA_OneWay/data/`
+
+### Naming Convention
+
+Dataset filenames follow the pattern: `species_trait.csv`
+
+**Examples**:
+- `dairy_lactation.csv` - Dairy cattle lactation data
+- `beef_carcass_marbling.csv` - Beef carcass quality
+- `swine_growth_breed_diet.csv` - Swine growth factorial
+- `broiler_growth.csv` - Poultry growth curve
+
+### File Format
+
+- **Format**: CSV (comma-separated values) with headers
+- **Missing data**: Coded as `NA`
+- **Encoding**: UTF-8
+- **Line endings**: Unix-style (LF)
+
+### Variable Naming
+
+Variables use descriptive names with underscores:
+- IDs: `cow_id`, `pig_id`, `lamb_id`
+- Traits: `milk_yield_kg`, `adg_kg_day`, `body_weight_kg`
+- Factors: `breed`, `diet`, `sex`, `strain`
+
+:::{.callout-tip}
+## Accessing Datasets
+
+From the book's root directory:
+```r
+data <- read.csv("Week04_SimpleRegression/data/broiler_growth.csv")
+```
+
+Or with relative paths from within a week's folder:
+```r
+data <- read.csv("data/broiler_growth.csv")
+```
+:::
+
+---
+
+## Week 1: Course Overview & Computational Foundations {#sec-datasets-week1}
+
+**Statistical Focus**: Matrix notation, computing sample mean as a linear model.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `dairy_milk_practice.csv` | Dairy | 30 | cow_id, milk_yield | Milk yield (kg/day) | Introduction to vectors and matrices |
+
+**Variable Details**:
+
+**dairy_milk_practice.csv**:
+- `cow_id`: Unique cow identifier (1-30)
+- `milk_yield`: Daily milk production in kilograms
+
+:::{.callout-note}
+## Pedagogical Design
+
+This is the first dataset students encounter. It demonstrates:
+- How to represent data as vectors (**y**)
+- Building the simplest design matrix (**X** = column of ones)
+- Computing the sample mean using matrix operations: $\bar{y} = (\mathbf{X}'\mathbf{X})^{-1}\mathbf{X}'\mathbf{y}$
+- Introduction to Holstein dairy production (realistic milk yields 20-35 kg/day)
+:::
+
+---
+
+## Week 2: Linear Algebra Essentials {#sec-datasets-week2}
+
+**Statistical Focus**: Matrix rank, determinants, inverses, generalized inverses, solving systems.
+
+:::{.callout-note}
+## Week 2: Pure Theory
+
+Week 2 focuses exclusively on linear algebra essentials. All examples are inline in the lecture notes with small matrices (typically 2×2 or 3×3) for hand calculations. No CSV files are provided as students work through theoretical concepts.
+
+**Topics covered**: Rank, linear independence, regular vs. generalized inverse, eigenvalues, QR decomposition.
+:::
+
+---
+
+## Week 3: Building the Design Matrix Framework {#sec-datasets-week3}
+
+**Statistical Focus**: Construct design matrices from raw data, understand coding schemes (cell means, effects model).
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `pig_litter_breeds.csv` | Swine | 6 | sow_id, breed, litter_size | Litter size by breed | Hand-calculable, cell means model |
+| `broiler_bodyweight_sex.csv` | Poultry | 20 | bird_id, sex, body_weight_kg | Body weight by sex | Realistic categorical predictor |
+
+**Variable Details**:
+
+**pig_litter_breeds.csv**:
+- `sow_id`: Individual sow identifier
+- `breed`: Yorkshire, Landrace, or Duroc (3 levels)
+- `litter_size`: Number of piglets born alive
+
+**broiler_bodyweight_sex.csv**:
+- `bird_id`: Individual broiler identifier
+- `sex`: Male or Female (2 levels)
+- `body_weight_kg`: Body weight in kilograms at processing
+
+:::{.callout-note}
+## Biological Context
+
+**Litter size** is a key reproductive trait in swine breeding. Genetic differences exist among breeds:
+- Yorkshire: Known for large litters (average 11-12 pigs)
+- Landrace: Similar to Yorkshire (10-11 pigs)
+- Duroc: Slightly smaller litters (9-10 pigs) but higher growth rate
+
+**Body weight** in broilers shows strong sexual dimorphism, with males typically 15-20% heavier than females at the same age.
+:::
+
+---
+
+## Week 4: Simple Linear Regression {#sec-datasets-week4}
+
+**Statistical Focus**: Fit bivariate models, interpret slope and intercept, compute residuals, make predictions.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `broiler_growth.csv` | Poultry | 4 | age_days, weight_kg | Weight vs age | Hand-calculable, perfect for learning X'X, X'y |
+| `sheep_weight.csv` | Sheep | 5 | lamb_id, birth_weight_kg, weaning_weight_kg | Weaning vs birth weight | Small hand-calculable regression |
+| `pig_feed_efficiency.csv` | Swine | 20 | pig_id, feed_intake_kg, adg_kg_day | ADG vs feed intake | Growth response to nutrition |
+| `dairy_lactation.csv` | Dairy | 30 | cow_id, days_in_milk, milk_yield_kg | Milk yield vs DIM | Realistic lactation curve (linear approx) |
+
+**Variable Details**:
+
+**broiler_growth.csv**:
+- `age_days`: Age in days (7, 14, 21, 28)
+- `weight_kg`: Body weight in kilograms
+
+**sheep_weight.csv**:
+- `lamb_id`: Individual lamb identifier
+- `birth_weight_kg`: Weight at birth in kilograms
+- `weaning_weight_kg`: Weight at weaning (~60 days) in kilograms
+
+**pig_feed_efficiency.csv**:
+- `pig_id`: Individual pig identifier
+- `feed_intake_kg`: Daily feed consumption in kilograms
+- `adg_kg_day`: Average daily gain in kg per day
+
+**dairy_lactation.csv**:
+- `cow_id`: Unique cow identifier
+- `days_in_milk`: Days since calving (lactation stage)
+- `milk_yield_kg`: Daily milk production in kilograms
+
+:::{.callout-note}
+## Pedagogical Design
+
+Week 4 provides datasets of increasing complexity:
+1. **broiler_growth.csv** (n=4) - Perfect for hand calculations to verify `lm()` output
+2. **sheep_weight.csv** (n=5) - Still hand-calculable but slightly larger
+3. **pig_feed_efficiency.csv** (n=20) - Transition to realistic sample sizes
+4. **dairy_lactation.csv** (n=30) - Authentic livestock production scenario
+
+This progression helps students build confidence from manual computation to software-based analysis.
+:::
+
+:::{.callout-tip}
+## File Location
+
+All Week 4 datasets are located in: `Week04_SimpleRegression/data/`
+:::
+
+---
+
+## Week 5: Least Squares Theory {#sec-datasets-week5}
+
+**Statistical Focus**: Derive LS estimates, prove Gauss-Markov theorem, partition sums of squares, compute confidence intervals.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `lamb_data.csv` | Sheep | 40 | lamb_id, birth_weight_kg, dam_age, weaning_weight_kg | Weaning weight prediction | Full ANOVA table, confidence intervals |
+
+**Variable Details**:
+
+**lamb_data.csv**:
+- `lamb_id`: Individual lamb identifier
+- `birth_weight_kg`: Weight at birth in kilograms
+- `dam_age`: Age of dam (mother) in years
+- `weaning_weight_kg`: Weight at weaning in kilograms
+
+:::{.callout-note}
+## Biological Context
+
+Weaning weight in sheep is influenced by:
+- **Birth weight**: Strong positive correlation (heavier birth → heavier weaning)
+- **Dam age**: Mature ewes (3-6 years) typically raise heavier lambs than young or old ewes
+- **Genetics**: High heritability (~0.15-0.25)
+:::
+
+---
+
+## Week 6: Multiple Regression {#sec-datasets-week6}
+
+**Statistical Focus**: Extend to multiple predictors, interpret partial regression coefficients, assess collinearity, compute R².
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `beef_carcass_marbling.csv` | Beef | 50 | steer_id, live_weight_kg, ribeye_area_cm2, backfat_mm, marbling_score | Marbling quality | Three predictors, check VIF |
+
+**Variable Details**:
+
+**beef_carcass_marbling.csv**:
+- `steer_id`: Individual steer identifier
+- `live_weight_kg`: Live weight before slaughter in kilograms
+- `ribeye_area_cm2`: Ribeye muscle area in square centimeters
+- `backfat_mm`: Backfat thickness in millimeters
+- `marbling_score`: Intramuscular fat score (1-10 scale)
+
+:::{.callout-note}
+## Biological Context
+
+**Marbling** (intramuscular fat) is a premium carcass quality trait:
+- Positively correlated with palatability and meat tenderness
+- Influenced by genetics (heritability ~0.40), nutrition, and management
+- Predictors: Live weight (growth), ribeye area (muscularity), backfat (overall fatness)
+- Important for understanding multicollinearity as these predictors are correlated
+:::
+
+---
+
+## Week 7: Analysis of Variance (One-Way) {#sec-datasets-week7}
+
+**Statistical Focus**: Express ANOVA as linear model, partition variation, conduct F-tests, compare groups.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `dairy_milk_breeds.csv` | Dairy | 12 | breed, milk_yield | Milk yield by breed | Hand-calculable, 4 breeds, balanced (3 per breed) |
+| `broiler_feed_efficiency.csv` | Poultry | 50 | pen_id, diet, fcr | FCR by diet | Realistic, 5 diets, balanced (10 per diet) |
+| `litter_size_genetics.csv` | Swine | 32 | sow_id, line, litter_size | Litter size by line | Moderate size, 4 lines, balanced |
+| `swine_growth_unbalanced.csv` | Swine | 29 | pig_id, diet, adg | ADG by diet | **First unbalanced dataset**, introduces Type I/II/III SS |
+
+**Variable Details**:
+
+**dairy_milk_breeds.csv**:
+- `breed`: Holstein, Jersey, Brown Swiss, or Ayrshire (4 levels)
+- `milk_yield`: Daily milk production in kilograms
+
+**broiler_feed_efficiency.csv**:
+- `pen_id`: Pen identifier
+- `diet`: Dietary program (1-5)
+- `fcr`: Feed conversion ratio (kg feed / kg gain)
+
+**litter_size_genetics.csv**:
+- `sow_id`: Individual sow identifier
+- `line`: Genetic line (A, B, C, D)
+- `litter_size`: Number of piglets born alive
+
+**swine_growth_unbalanced.csv**:
+- `pig_id`: Individual pig identifier
+- `diet`: Dietary treatment (5 levels)
+- `adg`: Average daily gain in kg per day
+
+:::{.callout-important}
+## Special Features
+
+`swine_growth_unbalanced.csv` intentionally has unequal sample sizes across diets (ranging from 4-8 pigs per diet). This introduces students to:
+- Challenges of unbalanced designs
+- Difference between Type I (sequential) and Type III (partial) sums of squares
+- Loss of orthogonality in ANOVA
+:::
+
+---
+
+## Week 8: Contrasts and Estimable Functions {#sec-datasets-week8}
+
+**Statistical Focus**: Define contrasts, test specific hypotheses, construct orthogonal contrasts, determine estimability.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `beef_breeds_small.csv` | Beef | 12 | breed, carcass_weight_kg | Carcass weight by breed | Hand-calculable contrasts, 4 breeds, balanced |
+| `layer_strains_egg.csv` | Poultry | 50 | hen_id, strain, eggs_month | Egg production by strain | Test orthogonal contrasts, 5 strains |
+
+**Variable Details**:
+
+**beef_breeds_small.csv**:
+- `breed`: Angus, Hereford, Charolais, or Simmental (4 levels)
+- `carcass_weight_kg`: Hot carcass weight in kilograms
+
+**layer_strains_egg.csv**:
+- `hen_id`: Individual hen identifier
+- `strain`: Layer strain/line (5 levels)
+- `eggs_month`: Number of eggs produced per month
+
+:::{.callout-note}
+## Example Contrasts
+
+**beef_breeds_small.csv** enables contrasts such as:
+- British breeds vs. Continental breeds: (Angus + Hereford)/2 - (Charolais + Simmental)/2
+- Angus vs. Hereford: Angus - Hereford
+- Charolais vs. Simmental: Charolais - Simmental
+
+Students verify orthogonality and partition SS(Breeds) using these contrasts.
+:::
+
+---
+
+## Week 9: Two-Way ANOVA and Factorial Models {#sec-datasets-week9}
+
+**Statistical Focus**: Model main effects and interactions, interpret interaction plots, understand Type I/II/III SS.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `swine_growth_breed_diet.csv` | Swine | 8 | breed, diet, adg | ADG (breed × diet) | Hand-calculable 2×2 factorial |
+| `lamb_growth_breed_diet.csv` | Sheep | 12 | lamb_id, breed, diet, weight_gain_kg | Weight gain | Two-way with interaction |
+| `dairy_milk_fat_breed_diet.csv` | Dairy | 54 | cow_id, breed, diet, fat_pct, protein_pct, days_in_milk | Milk composition | Realistic factorial, multiple responses |
+
+**Variable Details**:
+
+**swine_growth_breed_diet.csv**:
+- `breed`: Yorkshire or Duroc (2 levels)
+- `diet`: Diet 1 or Diet 2 (2 levels)
+- `adg`: Average daily gain in kg per day
+
+**lamb_growth_breed_diet.csv**:
+- `lamb_id`: Individual lamb identifier
+- `breed`: Breed type (3 levels)
+- `diet`: Dietary treatment (2 levels)
+- `weight_gain_kg`: Weight gain from birth to weaning in kilograms
+
+**dairy_milk_fat_breed_diet.csv**:
+- `cow_id`: Unique cow identifier
+- `breed`: Dairy breed (3 levels)
+- `diet`: Dietary treatment (2 levels)
+- `fat_pct`: Milk fat percentage
+- `protein_pct`: Milk protein percentage
+- `days_in_milk`: Days since calving
+
+:::{.callout-important}
+## Interaction Interpretation
+
+If breed × diet interaction is significant in `swine_growth_breed_diet.csv`, it indicates:
+- The effect of diet on ADG **depends on breed**
+- Or equivalently, the breed difference **varies by diet**
+- Cannot make general statements about diet or breed effects
+- Must report simple effects (diet effect within each breed)
+:::
+
+---
+
+## Week 10: Analysis of Covariance (ANCOVA) {#sec-datasets-week10}
+
+**Statistical Focus**: Combine categorical and continuous predictors, adjust treatment means for covariates, test homogeneity of slopes.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `swine_litter_parity.csv` | Swine | 9 | sow_id, breed, parity, litter_size | Litter size adjusted for parity | Hand-calculable ANCOVA |
+| `layer_egg_bodyweight.csv` | Poultry | 30 | hen_id, strain, body_weight_kg, eggs_month | Eggs adjusted for body weight | Covariate adjustment |
+| `beef_feedlot_adg.csv` | Beef | 40 | steer_id, ration, initial_weight_kg, adg | ADG adjusted for initial weight | Remove confounding |
+| `dairy_milk_herds.csv` | Dairy | 40 | cow_id, herd, days_in_milk, milk_yield_kg | Milk adjusted for DIM | Multi-herd comparison |
+
+**Variable Details**:
+
+**swine_litter_parity.csv**:
+- `sow_id`: Individual sow identifier
+- `breed`: Breed (3 levels)
+- `parity`: Parity number (reproductive cycle: 1, 2, or 3+)
+- `litter_size`: Number of piglets born alive
+
+**layer_egg_bodyweight.csv**:
+- `hen_id`: Individual hen identifier
+- `strain`: Layer strain (3 levels)
+- `body_weight_kg`: Hen body weight in kilograms
+- `eggs_month`: Eggs produced per month
+
+**beef_feedlot_adg.csv**:
+- `steer_id`: Individual steer identifier
+- `ration`: Feedlot ration (4 levels)
+- `initial_weight_kg`: Weight at feedlot entry in kilograms
+- `adg`: Average daily gain in kg per day
+
+**dairy_milk_herds.csv**:
+- `cow_id`: Unique cow identifier
+- `herd`: Herd/farm identifier (4 levels)
+- `days_in_milk`: Days since calving (covariate)
+- `milk_yield_kg`: Daily milk production in kilograms
+
+:::{.callout-note}
+## Covariate Purpose
+
+**ANCOVA removes confounding**:
+- **Parity** affects litter size (mature sows have larger litters)
+- **Body weight** affects egg production (heavier hens may lay more eggs)
+- **Initial weight** affects ADG (lighter calves may have compensatory gain)
+- **Days in milk** strongly affects yield (lactation curve)
+
+Adjusting for these covariates provides fairer comparisons of treatments.
+:::
+
+---
+
+## Week 11: Model Diagnostics {#sec-datasets-week11}
+
+**Statistical Focus**: Check assumptions, identify outliers and influential observations, use diagnostic plots, apply transformations.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `beef_marbling.csv` | Beef | 9 | obs, live_weight_kg, marbling_score | Marbling vs weight | Hand-calculable, **includes outlier** |
+| `beef_feedlot_gain.csv` | Beef | 45 | steer_id, ration, adg | ADG by ration | Residual analysis practice |
+| `broiler_bodyweight_growth.csv` | Poultry | 50 | bird_id, age_days, weight_kg | Growth curve | Diagnostic patterns |
+| `dairy_lactation_variance.csv` | Dairy | 40 | cow_id, days_in_milk, milk_yield_kg | Milk vs DIM | **Heteroscedasticity** example |
+| `dairy_scc_mastitis.csv` | Dairy | 100 | cow_id, days_in_milk, scc | Somatic cell count | Outliers, influential points |
+| `swine_birth_weight_outliers.csv` | Swine | 40 | pig_id, litter_id, birth_weight_kg | Birth weight | **Intentional outliers** |
+| `lamb_weaning_weight.csv` | Sheep | 60 | lamb_id, sex, birth_weight_kg, weaning_weight_kg | Weaning weight | Comprehensive diagnostics |
+| `poultry_fcr.csv` | Poultry | 50 | bird_id, fcr, feed_intake_kg, weight_gain_kg | Feed conversion | FCR diagnostics |
+
+**Variable Details**:
+
+**beef_marbling.csv**:
+- `obs`: Observation number
+- `live_weight_kg`: Live weight in kilograms
+- `marbling_score`: Marbling score (1-10)
+- **Special**: One observation is an extreme outlier (very heavy steer, low marbling)
+
+**dairy_lactation_variance.csv**:
+- `cow_id`: Unique cow identifier
+- `days_in_milk`: Days since calving
+- `milk_yield_kg`: Daily milk yield in kilograms
+- **Special**: Variance increases with DIM (heteroscedasticity)
+
+**swine_birth_weight_outliers.csv**:
+- `pig_id`: Individual pig identifier
+- `litter_id`: Litter identifier
+- `birth_weight_kg`: Birth weight in kilograms
+- **Special**: Contains 2-3 intentionally extreme values for outlier detection practice
+
+**dairy_scc_mastitis.csv**:
+- `cow_id`: Unique cow identifier
+- `days_in_milk`: Days since calving
+- `scc`: Somatic cell count (cells/mL, mastitis indicator)
+- **Special**: Several high-leverage, high-influence observations
+
+:::{.callout-important}
+## Week 11 Design Philosophy
+
+Week 11 datasets are specifically designed with diagnostic challenges:
+- **Outliers**: Unusual observations far from the regression line
+- **Heteroscedasticity**: Non-constant variance
+- **Influential points**: High leverage combined with large residuals
+- **Nonlinearity**: Patterns in residual plots
+
+These features are intentional to teach students how to recognize and handle violations of model assumptions.
+:::
+
+---
+
+## Week 12: Unequal Subclass Numbers & Non-Full Rank Models {#sec-datasets-week12}
+
+**Statistical Focus**: Handle unbalanced data, work with non-full rank design matrices, use generalized inverses, determine estimability.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `sheep_fleece_unbalanced.csv` | Sheep | 6 | breed, fleece_weight | Fleece weight | Hand-calculable, unequal n (3, 2, 1) |
+| `dairy_herds_unbalanced.csv` | Dairy | 45 | cow_id, herd, breed, milk_yield_kg | Milk yield | Multi-herd, unbalanced |
+| `lamb_breed_environment.csv` | Sheep | 72 | lamb_id, breed, environment, weaning_weight_kg | Weaning weight | Nested design |
+| `beef_multifarm_unbalanced.csv` | Beef | 177 | steer_id, farm, breed, adg, initial_weight_kg | ADG multi-farm | **Largest dataset**, missing breed × farm cells |
+
+**Variable Details**:
+
+**sheep_fleece_unbalanced.csv**:
+- `breed`: Sheep breed (3 levels)
+- `fleece_weight`: Annual fleece weight in kilograms
+- **Structure**: Breed 1 (n=3), Breed 2 (n=2), Breed 3 (n=1)
+
+**dairy_herds_unbalanced.csv**:
+- `cow_id`: Unique cow identifier
+- `herd`: Herd identifier (5 herds)
+- `breed`: Dairy breed (3 breeds)
+- `milk_yield_kg`: Daily milk production
+- **Structure**: Not all herds have all breeds
+
+**lamb_breed_environment.csv**:
+- `lamb_id`: Individual lamb identifier
+- `breed`: Breed (3 levels)
+- `environment`: Production environment (3 levels)
+- `weaning_weight_kg`: Weight at weaning
+- **Structure**: Breeds nested within environments
+
+**beef_multifarm_unbalanced.csv**:
+- `steer_id`: Individual steer identifier
+- `farm`: Farm/feedlot identifier (5 farms)
+- `breed`: Beef breed (4 breeds)
+- `adg`: Average daily gain
+- `initial_weight_kg`: Weight at feedlot entry
+- **Structure**: Missing breed × farm combinations, highly unbalanced
+
+:::{.callout-important}
+## Rank Deficiency
+
+Week 12 datasets demonstrate:
+- **Unequal sample sizes**: Loss of orthogonality
+- **Missing cells**: Design matrix **X** is not full rank
+- **Normal equations**: **X'X** is singular, requires generalized inverse
+- **Estimability**: Individual parameters may not be estimable, but contrasts often are
+- **Type III SS**: Essential for unbalanced data
+:::
+
+---
+
+## Week 13: Special Topics I {#sec-datasets-week13}
+
+**Statistical Focus**: Handle constraints, check estimability, preview genetic evaluation concepts (unequal progeny).
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `swine_litter.csv` | Swine | 31 | sow_id, dam_id, litter_size | Litter size | Unequal progeny per dam |
+| `layer_egg_production.csv` | Poultry | 45 | hen_id, sire_id, eggs_month | Egg production | Sire comparison, unequal daughters |
+| `beef_feedlot.csv` | Beef | 162 | steer_id, lot, breed, diet, adg, backfat_mm | Multi-trait feedlot | Complex multi-factor design |
+| `dairy_sire.csv` | Dairy | 95 | daughter_id, sire_id, sire_name, milk_yield | Milk yield | **Genetic evaluation**, unequal daughters (3-25 per sire) |
+| `broiler_bodyweight.csv` | Poultry | 89 | bird_id, strain, sex, body_weight_kg | Body weight | Multi-strain comparison |
+
+**Variable Details**:
+
+**dairy_sire.csv**:
+- `daughter_id`: Individual daughter (cow) identifier
+- `sire_id`: Sire identifier (10 sires)
+- `sire_name`: Sire name/code
+- `milk_yield`: Daughter's milk production in kilograms
+- **Structure**: Highly unbalanced (3 to 25 daughters per sire)
+
+**beef_feedlot.csv**:
+- `steer_id`: Individual steer identifier
+- `lot`: Feedlot pen/lot identifier
+- `breed`: Beef breed (3 breeds)
+- `diet`: Dietary treatment (4 diets)
+- `adg`: Average daily gain
+- `backfat_mm`: Backfat thickness at slaughter
+
+:::{.callout-note}
+## Genetic Evaluation Preview
+
+`dairy_sire.csv` introduces concepts critical for animal breeding:
+- **Unequal information**: Some sires have many daughters (high reliability), others have few (low reliability)
+- **Shrinkage**: Sires with few daughters are "shrunk" toward the population mean
+- **Best Linear Unbiased Prediction (BLUP)**: Preview of Week 14 mixed models
+- **Estimability**: Sire differences are estimable even though individual sire effects are not
+:::
+
+---
+
+## Week 14: Special Topics II {#sec-datasets-week14}
+
+**Statistical Focus**: Polynomial regression, weighted least squares, no-intercept models, mixed model preview.
+
+| Dataset Name | Species | n | Variables | Trait(s) | Purpose/Features |
+|--------------|---------|---|-----------|----------|------------------|
+| `broiler_growth.csv` | Poultry | 6 | age_days, weight_kg | Growth curve | **Reused from Week 4**, polynomial regression |
+| `lactation_curve.csv` | Dairy | 60 | cow_id, days_in_milk, milk_yield_kg | Lactation curve | 2nd/3rd degree polynomials |
+| `pen_avg_adg.csv` | Swine | 5 | pen, adg, pen_size | Pen average ADG | Hand-calculable WLS example |
+| `feed_efficiency_pens.csv` | Swine/Poultry | 30 | pen_id, diet, fcr, pen_size | FCR by pen | WLS, heterogeneous variance |
+| `milk_feed.csv` | Dairy | 5 | feed_intake_kg, milk_yield_kg | Milk vs feed | Through-origin regression |
+| `broiler_gain_feed.csv` | Poultry | 40 | bird_id, feed_intake_kg, weight_gain_kg | Feed efficiency | Gain vs feed |
+| `simple_sire_model.csv` | Dairy | 20 | daughter_id, sire_id, milk_yield | Milk by sire | Mixed model preview, 3-25 daughters |
+| `dairy_sire_eval.csv` | Dairy | 100 | daughter_id, sire_id, herd, milk_yield_kg | Sire evaluation | Comprehensive mixed model preview |
+
+**Variable Details**:
+
+**lactation_curve.csv**:
+- `cow_id`: Unique cow identifier
+- `days_in_milk`: Days since calving (0-305)
+- `milk_yield_kg`: Daily milk yield
+- **Purpose**: Fit polynomial models (quadratic, cubic) to capture lactation curve shape
+
+**pen_avg_adg.csv**:
+- `pen`: Pen identifier
+- `adg`: Pen average daily gain
+- `pen_size`: Number of pigs in pen
+- **Purpose**: WLS with weights = pen_size (variance ∝ 1/n)
+
+**milk_feed.csv**:
+- `feed_intake_kg`: Daily feed consumption
+- `milk_yield_kg`: Daily milk production
+- **Purpose**: No-intercept model (biological constraint: zero feed → zero milk)
+
+**dairy_sire_eval.csv**:
+- `daughter_id`: Individual daughter identifier
+- `sire_id`: Sire identifier (10 sires)
+- `herd`: Herd identifier (contemporary group)
+- `milk_yield_kg`: Daughter's milk yield
+- **Purpose**: Full mixed model with fixed (herd) and random (sire) effects
+
+:::{.callout-note}
+## Dataset Reuse
+
+`broiler_growth.csv` first appeared in Week 4 for simple linear regression. In Week 14, the same data demonstrates:
+- **Linear model** (Week 4): weight = β₀ + β₁(age)
+- **Quadratic model** (Week 14): weight = β₀ + β₁(age) + β₂(age²)
+- **Cubic model** (Week 14): weight = β₀ + β₁(age) + β₂(age²) + β₃(age³)
+
+This shows how the same data can be analyzed with different models depending on the research question.
+:::
+
+---
+
+## Week 15: Capstone Project {#sec-datasets-week15}
+
+**Statistical Focus**: Integrate all concepts from Weeks 1-14 in a comprehensive multi-breed, multi-farm beef cattle analysis.
+
+:::{.callout-important}
+## Week 15: Dataset Under Development
+
+The Week 15 capstone dataset is planned but not yet created. The planned structure:
+
+**Dataset**: `beef_capstone.csv`
+- **Species**: Beef cattle (steers)
+- **n**: ~120 observations
+- **Breeds**: Angus, Hereford, Charolais (3 levels)
+- **Farms**: 5 feedlots (unbalanced design)
+- **Traits**:
+  - `adg`: Average daily gain (kg/day)
+  - `initial_weight_kg`: Weight at feedlot entry
+  - `days_on_feed`: Duration of feedlot period
+- **Design Features**:
+  - Missing breed × farm cells (not all breeds on all farms)
+  - Unbalanced sample sizes (4-15 steers per cell)
+  - Intentional outliers for diagnostic practice
+  - Covariate (initial weight) for ANCOVA
+  - Rank deficiency requiring generalized inverse
+
+**Analysis Tasks**:
+1. Exploratory data analysis and design matrix construction
+2. Multiple regression with covariates
+3. Two-way ANOVA (breed × farm) with interaction testing
+4. Model diagnostics (outliers, leverage, influence)
+5. Handle rank deficiency and estimability
+6. Build custom least squares solver from scratch
+7. Compare manual calculations with `lm()` output
+
+Students integrate all course concepts in this comprehensive real-world scenario.
+:::
+
+---
+
+## Species Index {#sec-datasets-species}
+
+Datasets grouped by livestock species for easy lookup.
+
+### Dairy Cattle (13 datasets)
+
+| Dataset | Week | n | Traits |
+|---------|------|---|--------|
+| dairy_milk_practice.csv | 1 | 30 | Milk yield |
+| dairy_lactation.csv | 4 | 30 | Milk vs DIM |
+| dairy_milk_breeds.csv | 7 | 12 | Milk by breed |
+| dairy_milk_fat_breed_diet.csv | 9 | 54 | Milk composition, factorial |
+| dairy_milk_herds.csv | 10 | 40 | Milk by herd, adjust for DIM |
+| dairy_lactation_variance.csv | 11 | 40 | Heteroscedasticity example |
+| dairy_scc_mastitis.csv | 11 | 100 | SCC, outliers/influence |
+| dairy_herds_unbalanced.csv | 12 | 45 | Multi-herd unbalanced |
+| dairy_sire.csv | 13 | 95 | Sire evaluation, unequal progeny |
+| lactation_curve.csv | 14 | 60 | Polynomial lactation curve |
+| milk_feed.csv | 14 | 5 | Through-origin regression |
+| simple_sire_model.csv | 14 | 20 | Mixed model preview |
+| dairy_sire_eval.csv | 14 | 100 | Comprehensive sire evaluation |
+
+### Beef Cattle (9 datasets)
+
+| Dataset | Week | n | Traits |
+|---------|------|---|--------|
+| beef_carcass_marbling.csv | 6 | 50 | Marbling, multiple predictors |
+| beef_breeds_small.csv | 8 | 12 | Carcass weight, contrasts |
+| beef_feedlot_adg.csv | 10 | 40 | ADG, ANCOVA |
+| beef_marbling.csv | 11 | 9 | Marbling with outlier |
+| beef_feedlot_gain.csv | 11 | 45 | ADG, diagnostics |
+| beef_multifarm_unbalanced.csv | 12 | 177 | Largest dataset, missing cells |
+| beef_feedlot.csv | 13 | 162 | Multi-factor feedlot |
+| beef_capstone.csv (planned) | 15 | ~120 | Comprehensive capstone |
+
+### Swine (8 datasets)
+
+| Dataset | Week | n | Traits |
+|---------|------|---|--------|
+| pig_litter_breeds.csv | 3 | 6 | Litter size by breed |
+| pig_feed_efficiency.csv | 4 | 20 | ADG vs feed intake |
+| litter_size_genetics.csv | 7 | 32 | Litter size by line |
+| swine_growth_unbalanced.csv | 7 | 29 | ADG unbalanced |
+| swine_growth_breed_diet.csv | 9 | 8 | Factorial 2×2 |
+| swine_litter_parity.csv | 10 | 9 | Litter size ANCOVA |
+| swine_birth_weight_outliers.csv | 11 | 40 | Intentional outliers |
+| swine_litter.csv | 13 | 31 | Unequal progeny |
+| pen_avg_adg.csv | 14 | 5 | WLS example |
+| feed_efficiency_pens.csv | 14 | 30 | WLS heterogeneous variance |
+
+### Poultry (12 datasets)
+
+| Dataset | Week | n | Traits |
+|---------|------|---|--------|
+| broiler_bodyweight_sex.csv | 3 | 20 | Weight by sex |
+| broiler_growth.csv | 4, 14 | 4-6 | Growth curve (reused) |
+| broiler_feed_efficiency.csv | 7 | 50 | FCR by ration |
+| layer_strains_egg.csv | 8 | 50 | Egg production |
+| layer_egg_bodyweight.csv | 10 | 30 | Eggs ANCOVA |
+| broiler_bodyweight_growth.csv | 11 | 50 | Growth diagnostics |
+| poultry_fcr.csv | 11 | 50 | FCR diagnostics |
+| layer_egg_production.csv | 13 | 45 | Sire comparison |
+| broiler_bodyweight.csv | 13 | 89 | Multi-strain |
+| broiler_gain_feed.csv | 14 | 40 | Feed efficiency |
+
+### Sheep (6 datasets)
+
+| Dataset | Week | n | Traits |
+|---------|------|---|--------|
+| sheep_weight.csv | 4 | 5 | Birth to weaning weight |
+| lamb_data.csv | 5 | 40 | Weaning weight prediction |
+| lamb_growth_breed_diet.csv | 9 | 12 | Factorial growth |
+| lamb_weaning_weight.csv | 11 | 60 | Comprehensive diagnostics |
+| sheep_fleece_unbalanced.csv | 12 | 6 | Fleece weight unbalanced |
+| lamb_breed_environment.csv | 12 | 72 | Nested design |
+
+---
+
+## Dataset Size Guide {#sec-datasets-size}
+
+Datasets organized by sample size to help find appropriate examples for different learning goals.
+
+### Hand-Calculable (4-12 observations)
+
+Perfect for manual matrix calculations, verifying software output, and understanding mechanics.
+
+| Dataset | Week | n | Species | Purpose |
+|---------|------|---|---------|---------|
+| broiler_growth.csv | 4 | 4 | Poultry | Simple regression by hand |
+| sheep_weight.csv | 4 | 5 | Sheep | Regression practice |
+| milk_feed.csv | 14 | 5 | Dairy | Through-origin |
+| pen_avg_adg.csv | 14 | 5 | Swine | WLS by hand |
+| pig_litter_breeds.csv | 3 | 6 | Swine | Design matrix |
+| sheep_fleece_unbalanced.csv | 12 | 6 | Sheep | Unbalanced by hand |
+| swine_growth_breed_diet.csv | 9 | 8 | Swine | 2×2 factorial |
+| beef_marbling.csv | 11 | 9 | Beef | Outlier detection |
+| swine_litter_parity.csv | 10 | 9 | Swine | ANCOVA by hand |
+| beef_breeds_small.csv | 8 | 12 | Beef | Contrasts |
+| dairy_milk_breeds.csv | 7 | 12 | Dairy | One-way ANOVA |
+| lamb_growth_breed_diet.csv | 9 | 12 | Sheep | Factorial |
+
+### Moderate (20-60 observations)
+
+Realistic sample sizes for most livestock experiments, transition from hand calculation to software.
+
+| Dataset | Week | n | Species |
+|---------|------|---|---------|
+| pig_feed_efficiency.csv | 4 | 20 | Swine |
+| broiler_bodyweight_sex.csv | 3 | 20 | Poultry |
+| simple_sire_model.csv | 14 | 20 | Dairy |
+| swine_growth_unbalanced.csv | 7 | 29 | Swine |
+| dairy_milk_practice.csv | 1 | 30 | Dairy |
+| dairy_lactation.csv | 4 | 30 | Dairy |
+| layer_egg_bodyweight.csv | 10 | 30 | Poultry |
+| feed_efficiency_pens.csv | 14 | 30 | Swine |
+| swine_litter.csv | 13 | 31 | Swine |
+| litter_size_genetics.csv | 7 | 32 | Swine |
+| lamb_data.csv | 5 | 40 | Sheep |
+| beef_feedlot_adg.csv | 10 | 40 | Beef |
+| dairy_milk_herds.csv | 10 | 40 | Dairy |
+| dairy_lactation_variance.csv | 11 | 40 | Dairy |
+| swine_birth_weight_outliers.csv | 11 | 40 | Swine |
+| broiler_gain_feed.csv | 14 | 40 | Poultry |
+| dairy_herds_unbalanced.csv | 12 | 45 | Dairy |
+| beef_feedlot_gain.csv | 11 | 45 | Beef |
+| layer_egg_production.csv | 13 | 45 | Poultry |
+| beef_carcass_marbling.csv | 6 | 50 | Beef |
+| broiler_feed_efficiency.csv | 7 | 50 | Poultry |
+| layer_strains_egg.csv | 8 | 50 | Poultry |
+| broiler_bodyweight_growth.csv | 11 | 50 | Poultry |
+| poultry_fcr.csv | 11 | 50 | Poultry |
+| dairy_milk_fat_breed_diet.csv | 9 | 54 | Dairy |
+| lactation_curve.csv | 14 | 60 | Dairy |
+| lamb_weaning_weight.csv | 11 | 60 | Sheep |
+
+### Large (60+ observations)
+
+Complex datasets for advanced analyses, diagnostics, and realistic production scenarios.
+
+| Dataset | Week | n | Species | Features |
+|---------|------|---|---------|----------|
+| lamb_breed_environment.csv | 12 | 72 | Sheep | Nested design |
+| broiler_bodyweight.csv | 13 | 89 | Poultry | Multi-strain |
+| dairy_sire.csv | 13 | 95 | Dairy | Genetic evaluation |
+| dairy_scc_mastitis.csv | 11 | 100 | Dairy | Outliers/influence |
+| dairy_sire_eval.csv | 14 | 100 | Dairy | Mixed model |
+| beef_feedlot.csv | 13 | 162 | Beef | Multi-factor complex |
+| beef_multifarm_unbalanced.csv | 12 | 177 | Beef | Largest, missing cells |
+
+---
+
+## Quick Reference: Alphabetical Listing {#sec-datasets-quick-ref}
+
+All 48 datasets in alphabetical order with key information.
+
+| Dataset | Week | Species | n | Primary Trait(s) |
+|---------|------|---------|---|------------------|
+| beef_breeds_small.csv | 8 | Beef | 12 | Carcass weight |
+| beef_capstone.csv (planned) | 15 | Beef | ~120 | ADG multi-factor |
+| beef_carcass_marbling.csv | 6 | Beef | 50 | Marbling quality |
+| beef_feedlot.csv | 13 | Beef | 162 | Multi-trait feedlot |
+| beef_feedlot_adg.csv | 10 | Beef | 40 | ADG ANCOVA |
+| beef_feedlot_gain.csv | 11 | Beef | 45 | ADG diagnostics |
+| beef_marbling.csv | 11 | Beef | 9 | Marbling with outlier |
+| beef_multifarm_unbalanced.csv | 12 | Beef | 177 | ADG unbalanced |
+| broiler_bodyweight.csv | 13 | Poultry | 89 | Body weight multi-strain |
+| broiler_bodyweight_growth.csv | 11 | Poultry | 50 | Growth diagnostics |
+| broiler_bodyweight_sex.csv | 3 | Poultry | 20 | Weight by sex |
+| broiler_feed_efficiency.csv | 7 | Poultry | 50 | FCR by ration |
+| broiler_gain_feed.csv | 14 | Poultry | 40 | Feed efficiency |
+| broiler_growth.csv | 4, 14 | Poultry | 4-6 | Growth curve |
+| dairy_herds_unbalanced.csv | 12 | Dairy | 45 | Milk unbalanced |
+| dairy_lactation.csv | 4 | Dairy | 30 | Lactation curve |
+| dairy_lactation_variance.csv | 11 | Dairy | 40 | Heteroscedasticity |
+| dairy_milk_breeds.csv | 7 | Dairy | 12 | Milk by breed |
+| dairy_milk_fat_breed_diet.csv | 9 | Dairy | 54 | Milk composition |
+| dairy_milk_herds.csv | 10 | Dairy | 40 | Milk by herd |
+| dairy_milk_practice.csv | 1 | Dairy | 30 | Milk yield |
+| dairy_scc_mastitis.csv | 11 | Dairy | 100 | SCC outliers |
+| dairy_sire.csv | 13 | Dairy | 95 | Sire evaluation |
+| dairy_sire_eval.csv | 14 | Dairy | 100 | Mixed model sire |
+| feed_efficiency_pens.csv | 14 | Swine | 30 | FCR WLS |
+| lactation_curve.csv | 14 | Dairy | 60 | Polynomial lactation |
+| lamb_breed_environment.csv | 12 | Sheep | 72 | Nested design |
+| lamb_data.csv | 5 | Sheep | 40 | Weaning weight |
+| lamb_growth_breed_diet.csv | 9 | Sheep | 12 | Factorial growth |
+| lamb_weaning_weight.csv | 11 | Sheep | 60 | Diagnostics |
+| layer_egg_bodyweight.csv | 10 | Poultry | 30 | Eggs ANCOVA |
+| layer_egg_production.csv | 13 | Poultry | 45 | Sire comparison |
+| layer_strains_egg.csv | 8 | Poultry | 50 | Egg production |
+| litter_size_genetics.csv | 7 | Swine | 32 | Litter size |
+| milk_feed.csv | 14 | Dairy | 5 | Through-origin |
+| pen_avg_adg.csv | 14 | Swine | 5 | WLS pens |
+| pig_feed_efficiency.csv | 4 | Swine | 20 | ADG vs feed |
+| pig_litter_breeds.csv | 3 | Swine | 6 | Litter size |
+| poultry_fcr.csv | 11 | Poultry | 50 | FCR diagnostics |
+| sheep_fleece_unbalanced.csv | 12 | Sheep | 6 | Fleece weight |
+| sheep_weight.csv | 4 | Sheep | 5 | Birth to weaning |
+| simple_sire_model.csv | 14 | Dairy | 20 | Mixed model preview |
+| swine_birth_weight_outliers.csv | 11 | Swine | 40 | Outliers |
+| swine_growth_breed_diet.csv | 9 | Swine | 8 | Factorial 2×2 |
+| swine_growth_unbalanced.csv | 7 | Swine | 29 | ADG unbalanced |
+| swine_litter.csv | 13 | Swine | 31 | Unequal progeny |
+| swine_litter_parity.csv | 10 | Swine | 9 | Litter ANCOVA |
+
+---
+
+## Notes and Future Plans {#sec-datasets-notes}
+
+### Missing Data Conventions
+
+- Missing values are coded as `NA` in all CSV files
+- Students should check for missing data before analysis
+- Missing data is rare in these datasets (most are complete cases)
+- When present, missingness is documented in variable descriptions
+
+### Data Integrity
+
+All datasets have been verified for:
+- Correct variable names matching descriptions
+- Realistic trait values for each species
+- Appropriate sample sizes for pedagogical purposes
+- Consistent units (kg, days, etc.)
+
+### Accessing Data Files
+
+All datasets are available in week-specific subdirectories:
+- Path pattern: `WeekXX_TopicName/data/dataset_name.csv`
+- Files are plain-text CSV with Unix line endings
+- First row contains variable names (headers)
+- No row names included
+
+### Future Dataset Development
+
+**Week 15 Capstone Dataset**:
+- Currently under development
+- Will provide comprehensive integration of all course concepts
+- Designed to challenge students with realistic complexity
+- Includes all major features: unbalanced design, covariates, outliers, rank deficiency
+
+**Potential Additions**:
+- Additional aquaculture datasets (tilapia, salmon)
+- Horse breeding examples
+- Multi-trait genetic evaluation datasets
+- Longitudinal/repeated measures examples
+
+### Citation and Use
+
+These datasets were created specifically for educational purposes in this linear models course. While inspired by real livestock production systems, all data values are simulated to ensure appropriate pedagogical features. Students may use these datasets for practice and learning but should cite this course if using them in reports or presentations.
+
+### Feedback
+
+If you encounter issues with any dataset (incorrect values, unclear variables, missing files), please report to the course instructor. Continuous improvement of these educational resources is a priority.
+
+---
+
+This completes Appendix D. For mathematical notation, see [Appendix A](#sec-appendix-a). For R function reference, see [Appendix C](#sec-appendix-c).

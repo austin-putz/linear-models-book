@@ -9,17 +9,17 @@ format:
     code-tools: true
 ---
 
-# Week 7: Analysis of Variance (One-Way) {#sec-week07}
-
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. Express one-way ANOVA as a linear model in matrix notation
-2. Construct design matrices for categorical predictors (indicator variables)
-3. Partition total variation into model and error components
-4. Conduct F-tests for treatment effects and interpret results in biological context
-5. Understand the relationship between cell means and effects model parameterizations
+1. **Express** **one-way ANOVA** as a **linear model** in **matrix notation**
+2. **Construct** **design matrices** for **categorical predictors** (indicator variables)
+3. **Partition** **total variation** into **model** and **error components**
+4. **Conduct** **F-tests** for **treatment effects** and interpret results in biological context
+5. **Understand** the relationship between **cell means** and **effects model parameterizations**
+:::
 
 ## Introduction: Comparing Means in Animal Breeding
 

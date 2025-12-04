@@ -4,16 +4,18 @@ format: html
 bibliography: ../references.bib
 ---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-*   Extend simple linear regression to models with multiple predictors.
-*   Construct and solve the normal equations for multiple regression in matrix form.
-*   Interpret partial regression coefficients and distinguish them from marginal effects.
-*   Partition sums of squares into sequential (Type I) and partial (Type III) components.
-*   Identify collinearity and quantify its impact using Variance Inflation Factors (VIF).
-*   Compare and select models using criteria such as AIC, BIC, and Mallows' $C_p$.
+1. **Extend** simple linear regression to models with **multiple predictors**
+2. **Construct** and **solve** the **normal equations** for multiple regression in **matrix form**
+3. **Interpret** **partial regression coefficients** and distinguish them from **marginal effects**
+4. **Partition** sums of squares into **sequential (Type I)** and **partial (Type III)** components
+5. **Identify** **collinearity** and quantify its impact using **Variance Inflation Factors (VIF)**
+6. **Compare** and **select** models using criteria such as **AIC**, **BIC**, and **Mallows' $C_p$**
+:::
 
 ## Conceptual Introduction
 

@@ -9,16 +9,18 @@ format:
     code-tools: true
 ---
 
+::: {.callout-note icon=false}
 ## Learning Objectives
 
 By the end of this week, you will be able to:
 
-- Construct design matrices from raw data for different types of predictors
-- Understand and apply different coding schemes (cell means model, effects model, reference cell coding)
-- Write the general linear model in matrix form with correct notation
-- State and interpret the assumptions underlying linear models (Gauss-Markov conditions)
-- Identify when design matrices are full rank vs. rank deficient
-- Build design matrices manually in R and compare with `model.matrix()`
+1. **Construct** **design matrices** from raw data for different types of **predictors**
+2. **Understand** and **apply** different **coding schemes** (**cell means model**, **effects model**, **reference cell coding**)
+3. **Write** the **general linear model** in **matrix form** with correct notation
+4. **State** and **interpret** the **assumptions** underlying linear models (**Gauss-Markov conditions**)
+5. **Identify** when design matrices are **full rank** vs. **rank deficient**
+6. **Build** design matrices manually in R and compare with `model.matrix()`
+:::
 
 ## Introduction: From Raw Data to Matrix Representation
 

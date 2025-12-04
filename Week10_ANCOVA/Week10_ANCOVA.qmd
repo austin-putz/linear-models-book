@@ -10,15 +10,17 @@ format:
 bibliography: ../references.bib
 ---
 
-# Learning Objectives
+::: {.callout-note icon=false}
+## Learning Objectives
 
 By the end of this week, you will be able to:
 
-1. **Combine** categorical and continuous predictors in a unified linear model framework
-2. **Adjust** treatment means for covariate effects and interpret adjusted means correctly
-3. **Test** the homogeneity of slopes assumption and understand its critical importance
-4. **Construct** ANCOVA design matrices and solve normal equations manually
-5. **Apply** ANCOVA to increase precision and remove confounding in livestock breeding studies
+1. **Combine** **categorical** and **continuous predictors** in a unified **linear model framework**
+2. **Adjust** **treatment means** for **covariate effects** and interpret **adjusted means** correctly
+3. **Test** the **homogeneity of slopes assumption** and understand its critical importance
+4. **Construct** **ANCOVA design matrices** and solve **normal equations** manually
+5. **Apply** ANCOVA to increase **precision** and remove **confounding** in livestock breeding studies
+:::
 
 ---
 
